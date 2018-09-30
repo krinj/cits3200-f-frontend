@@ -1,8 +1,173 @@
 body {
-  padding: 50px;
-  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+  background-color: rgba(31, 31, 31);
+  padding: 0;
+  margin: 0;
+  font-family: 'Roboto Condensed', sans-serif;
+}
+
+h1 {
+  font-size: 30pt;
+  text-align: center;
+}
+
+h2 {
+  font-size: 20pt;
+  text-align: center;
+}
+
+h3 {
+  font-size: 16pt;
+  text-align: center;
+}
+
+td {
+  padding: 5px;
+}
+
+label {
+  font-weight: 600;
+}
+
+input, select, button {
+  font-size: 11pt;
+  padding: 3px;
+}
+
+input[type=date] {
+  font-family: 'Roboto Condensed', sans-serif; 
 }
 
 a {
   color: #00B7FF;
+  text-decoration: none;
 }
+
+.centred {
+  text-align: center;
+}
+
+#logoDiv {
+  height: 80px;
+  width: 200px;
+  padding: 0;
+  margin: 0;
+  background-color: white;
+}
+
+img#LFPlogo {
+  position: relative;
+  top: 15px;
+  left: 5px;
+}
+
+#main {
+  position: absolute;
+  left: 200px;
+  top: 80px;
+  right: 0px;
+  padding: 0px;
+  background-color: white;
+}
+
+.section {
+  overflow: hidden;
+  padding: 10px 0px 20px 0px;
+}
+
+.centredBody {
+  max-width: 1200px;
+  margin: auto;
+  padding: 10px;
+}
+
+#dateSlider {
+  width: 700px;
+  margin: 0px 20px
+}
+
+#sliderAxis {
+  height: 20px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#summary {
+  background-color: rgb(230,230,230);
+}
+
+#summary table {
+  width: 60%;
+  margin: auto;
+}
+
+#summary th {
+  width: 25%;
+  text-align: center;
+}
+
+#summary td {
+  font-size: 18pt;
+  text-align: center;
+}
+
+#aveOverallSentiment {
+  width:50%;
+  float: left;
+}
+
+#compareAveSentiment {
+  width:50%;
+  float: left;
+}
+
+canvas#dialCanvasContainer {
+  margin: 0;
+  padding: 0;
+}
+
+canvas#dialCanvas {
+  margin: 0px 10px 0px 50px;
+}
+
+#histogramContainer {
+  display: flex; /* or inline-flex */
+  min-height: 400px;
+}
+
+#histogramContainer #left {
+  width: 64%;
+  left: 0;
+  float: left;
+}
+
+#histogramContainer #right {
+  margin-left: 10px;
+  width: 32%;
+  right: 0;
+}
+
+#histogramContainer #selected-response {
+  border: 2px solid black;
+  background-color: #fee598;
+  height: 320px;
+  padding: 10px;
+}
+
+#histogramContainer #explanation-box {
+  background-color: #eee;
+  border: 1px dashed black;
+  height: 80px;
+  padding: 10px;
+  margin: auto auto 10px;
+}
+
+#histogramContainer #centered-text {
+  text-align: center;
+}
+
+td.alignRight {
+  text-align: right;
+}
+
+

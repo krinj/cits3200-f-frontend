@@ -1,0 +1,142 @@
+extends layout
+
+block content
+  .section#filters
+    .centredBody
+      h1 TEXT RESPONSE ANALYTICS
+      table
+        tr
+          td.alignRight 
+            label Survey 
+            |: 
+          td 
+            select#surveyName
+              option(value='glassDoorHoneywell') Glass Door Honeywell Data
+        tr
+          td.alignRight
+            label Question 
+            |: 
+          td
+            select#questionList(name='question')
+      
+      h2 RESULT FILTERS
+      p
+        label Gender 
+        | : 
+        select#gender(name="gender")
+          option(value='all') ALL
+          option(value='male') Male
+          option(value='female') Female
+          option(value='unspecified') Unspecified
+        | &emsp;  
+        label Age Range 
+        | : 
+        select#ageRange(name="ageRange")
+          option(value='all') ALL
+          option(value='ageunder18') Under 18
+          option(value='age18_24') 18-24
+          option(value='age25_34') 25-34
+          option(value='age35_44') 35-44
+          option(value='age45_54') 45-54
+          option(value='age55_64') 55-64
+          option(value='age65plus') 65+
+        | &emsp;        
+        label Employment Status 
+        | : 
+        select#employStatus(name="employStatus")
+          option(value='all') ALL
+          option(value='permanent') Permanent
+          option(value='fixedTerm') Fixed Term
+          option(value='partTime') Part-Time
+          option(value='casual') Casual
+      
+      table
+        tr
+          td(style="padding-left:0") 
+            label Date Range
+            | :
+          td.centred(colspan='3')
+            | Start: 
+            input(id="startDateBox" type="date" name="startDate")
+            | &emsp; End: 
+            input(id="endDateBox" type="date" name="endDate")
+        tr
+          td
+          td(style="color:grey")
+            | First result: 
+            span#firstDateSpan
+          td 
+            #dateSlider
+          td(style="color:grey") Today: 
+            span#todaysDate
+        tr
+          td.centred(colspan='4' style='font-size:10pt') Specify the start and end dates to filter the results. You can either use the slider handles or specify exact dates in the 'Start' and 'End' input boxes above. 
+      br
+      p.centred
+        button#fetchResults(type="button") FETCH RESULTS
+        | &emsp;
+        button#resetFilters(type="button") RESET FILTERS
+  
+  .section#summary
+    .centredBody
+      h2 RESPONSE SUMMARY
+      table
+        tr
+          th Response Count
+          th % Completed*
+          th Ave. Character Count
+          th Max. Character Count
+        tr
+          td#numResponses
+          td#percentCompleted
+          td#aveCharCount
+          td#maxCharCount
+        tr
+          td(align='center' colspan='4')
+            span(style='font-size: 11pt;') * Percentage of surveys submitted that had a response entered for this question.
+  
+  .section#aveSentiment
+    .centredBody
+      h2 OVERALL SENTIMENTS OF RESPONSES
+      p.centred 
+        | Overall sentiment of each response is scored from 
+        span(style="color:rgb(204, 69, 40)") -10 (extremely negative) 
+        | to 
+        span(style="color:rgb(52, 143, 104)") 10 (extremely positive)
+      #aveOverallSentiment
+        h3 Average Overall Sentiment
+        img#dialImg(src='/images/sentiment_dial.png', style='display:none')
+        #dialCanvasContainer
+
+        p.centred(style='font-size:24px; margin:0') Ave. Score: 
+          span#aveSentimentSpan
+        p.centred [Explanatory text about the dial]
+      #compareAveSentiment
+        h3 How Your Sentiment Compares
+        #compareAveSentContainer
+        p.centred [Explanatory text about this chart]
+
+  .section#histogramByScore
+    .centredBody
+      h3.centered-text Histogram of Response Sentiment Scores for Result Period
+      #histogramContainer
+        #left
+          #histogramByScoreContainer
+
+        #right
+          #explanation-box Explanatory Text. 
+          #selected-response
+            #centered-text
+              h3 SELECTED RESPONSE
+            p 
+              strong Date: 
+              span#responseDateSpan 
+              | &emsp;
+              strong Score: 
+              span#responseScoreSpan 
+            p 
+              strong Response:
+            p#responseText
+
+  script(type="text/javascript" src="/javascripts/sentiment-analytics-cs.js") 
+
