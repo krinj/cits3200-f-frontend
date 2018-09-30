@@ -14,7 +14,7 @@ router.get('/', function(req, res, next) {
     	password: process.env.SQL_PASSWORD,
     };
 
-    if (process.env.INSTANCE_CONNECTION_NAME && process.env.NODE_ENV === 'production') {
+    if (process.env.INSTANCE_CONNECTION_NAME) {
     	config.socketPath = `/cloudsql/${process.env.INSTANCE_CONNECTION_NAME}`;
     }
 
