@@ -2,7 +2,7 @@ var mysql = require('mysql');
 
 // LOAD/UPDATE THE PAGE WITH FILTERS SPECIFIED:
 module.exports.getResponse = function (req, res) {
-  //sdfds
+  
   let config = {
     user: process.env.SQL_USER,
     database: process.env.SQL_DATABASE,
