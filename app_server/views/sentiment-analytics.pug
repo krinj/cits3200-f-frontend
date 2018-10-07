@@ -135,6 +135,13 @@ block content
               strong Score: 
               span#responseScoreSpan 
             p 
+              button#previousButton(type="button") Previous
+              | &emsp;
+              button#nextButton(type="button") Next
+              | &emsp;
+              input#jumpTo(type="text" placeholder="Jump to.." value = '')
+              button#jumpToButton(type="button") Go
+            p 
               strong Response:
             p#responseText
 

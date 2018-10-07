@@ -25,9 +25,13 @@
   var FirstDate;
   var QuestionArray = [];
   var ScoreFreqArray = [];
-  var ResponseDate;
-  var ResponseScore;
-  var ResponseText; 
+  
+  var responseScore;
+  
+  var indexOfResponse = 0;
+  var checkflag = false;
+  var ResponseInfo;
+
 
   // Sentiment colour scale end a middle points:
   var RedColor = [204, 69, 40];
@@ -368,6 +372,76 @@
         }
       }
     });
+    canvasDOM.onclick = function(evt){
+        checkflag = true;
+        indexOfResponse = 0;
+        var activeElement = myFirstChart.getElementAtEvent(evt)[0];
+        
+        responseScore = myFirstChart.data.labels[activeElement._index];
+        $.ajax({
+          url: "/response",   // i.e. [Nodejs app]/app_server/controllers/load-results.js
+          data: { // data to send to load-results.js controller
+            score: responseScore,
+            "questionNum" : QuestionNum,
+            "gender" : Gender,
+            "ageRange" : AgeRange,
+            "employStatus" : EmployStatus,
+            "startDate" : toYYYY_MM_DD(StartDate), 
+            "endDate" : toYYYY_MM_DD(EndDate)
+          },
+          method: "POST",
+          dataType: 'JSON',
+          success: function (data) { // data is the JSON object returned from SQL via controller
+            // for(property in data) {
+            //   console.log("" + property + ": " + data[property]);
+            // }
+            ResponseInfo = data.responseResult;
+            
+            fillResponseDetails();
+            },
+          error: function (data) {
+              console.log("Could not fetch data.");
+            }
+            
+         });
+    }
+    var previous = document.getElementById("previousButton");
+    previous.onclick = function(){
+      if(indexOfResponse==0){
+        alert("This is already the first response.");
+        return;
+      }
+      indexOfResponse--;
+      fillResponseDetails();
+    }
+    var next = document.getElementById("nextButton");
+    next.onclick=function(){
+      if(indexOfResponse==ResponseInfo.length-1){
+        alert("This is already the last response.");
+        return;
+      }
+      indexOfResponse++;
+      fillResponseDetails();
+    }
+    var jump = document.getElementById("jumpToButton");
+    jump.onclick = function(){
+      if(checkflag==false){
+        alert("Please select a bar of responses first.");
+        return;
+      }
+      var responseNum = document.getElementById("jumpTo").value;
+      responseNum = parseInt(responseNum) || -1;
+      if(responseNum == -1){
+        alert("Please input valid number");
+        return;
+      }
+      if(responseNum < 1 || responseNum > ResponseInfo.length){
+        alert("Sentiment Score: "+ responseScore+" has " + ResponseInfo.length+" responses. Please input a number in this range");
+        return ;
+      }
+      indexOfResponse = responseNum-1;
+      fillResponseDetails();
+    }
   }
 
   /* Helper function for renderHistogramByScore()
@@ -398,9 +472,11 @@
   }
 
   function fillResponseDetails() {
-    document.getElementById('responseDateSpan').innerHTML = ResponseDate;
-    document.getElementById('responseScoreSpan').innerHTML = ResponseScore;
-    document.getElementById('responseText').innerHTML = ResponseText;
+    
+    var date = ResponseInfo[indexOfResponse].submitDate.slice(0,10);
+    document.getElementById('responseDateSpan').innerHTML = date;
+    document.getElementById('responseScoreSpan').innerHTML = responseScore;
+    document.getElementById('responseText').innerHTML = ResponseInfo[indexOfResponse].responseDetail;
   }
 
 })(jQuery);      
