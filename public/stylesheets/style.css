@@ -173,7 +173,15 @@ canvas#dialCanvas {
 td.alignRight {
   text-align: right;
 }
-#jumpTo{
-  width: 55px;
+#nextButton{
+  background-color: #00B7FF;
 }
-
+#firstButton{
+  background-color: #00B7FF;
+}
+#lastButton{
+  background-color: #00B7FF;
+}
+#previousButton{
+  background-color: #00B7FF;
+}

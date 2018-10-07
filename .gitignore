@@ -8,3 +8,6 @@ cits-3200-abc14d0972cf\.json
 node_modules/
 
 \.env
+.gitignore
+.DS_Store
+app_server/*

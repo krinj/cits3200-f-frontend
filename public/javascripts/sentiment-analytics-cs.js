@@ -407,6 +407,10 @@
     }
     var previous = document.getElementById("previousButton");
     previous.onclick = function(){
+      if(checkflag==false){
+        alert("Please select a bar of responses first.");
+        return;
+      }
       if(indexOfResponse==0){
         alert("This is already the first response.");
         return;
@@ -416,6 +420,10 @@
     }
     var next = document.getElementById("nextButton");
     next.onclick=function(){
+      if(checkflag==false){
+        alert("Please select a bar of responses first.");
+        return;
+      }
       if(indexOfResponse==ResponseInfo.length-1){
         alert("This is already the last response.");
         return;
@@ -423,23 +431,24 @@
       indexOfResponse++;
       fillResponseDetails();
     }
-    var jump = document.getElementById("jumpToButton");
-    jump.onclick = function(){
+    var first = document.getElementById("firstButton");
+    first.onclick = function(){
       if(checkflag==false){
         alert("Please select a bar of responses first.");
         return;
       }
-      var responseNum = document.getElementById("jumpTo").value;
-      responseNum = parseInt(responseNum) || -1;
-      if(responseNum == -1){
-        alert("Please input valid number");
+      
+      indexOfResponse = 0;
+      fillResponseDetails();
+    }
+    var last = document.getElementById("lastButton");
+    last.onclick = function(){
+      if(checkflag==false){
+        alert("Please select a bar of responses first.");
         return;
       }
-      if(responseNum < 1 || responseNum > ResponseInfo.length){
-        alert("Sentiment Score: "+ responseScore+" has " + ResponseInfo.length+" responses. Please input a number in this range");
-        return ;
-      }
-      indexOfResponse = responseNum-1;
+      
+      indexOfResponse = ResponseInfo.length-1;
       fillResponseDetails();
     }
   }
@@ -472,11 +481,15 @@
   }
 
   function fillResponseDetails() {
-    
+    if(checkflag==false){
+      document.getElementById('responseIndex').innerHTML ="No response selected"
+    }
     var date = ResponseInfo[indexOfResponse].submitDate.slice(0,10);
     document.getElementById('responseDateSpan').innerHTML = date;
     document.getElementById('responseScoreSpan').innerHTML = responseScore;
     document.getElementById('responseText').innerHTML = ResponseInfo[indexOfResponse].responseDetail;
+    var responseIndex = indexOfResponse+1;
+    document.getElementById('responseIndex').innerHTML ="Response: "+ responseIndex +" of "+ ResponseInfo.length+""
   }
 
 })(jQuery);      
