@@ -145,8 +145,11 @@ canvas#dialCanvas {
   margin-left: 10px;
   width: 32%;
   right: 0;
+  
 }
-
+#selected-response{
+  overflow: scroll;
+}
 #histogramContainer #selected-response {
   border: 2px solid black;
   background-color: #fee598;
@@ -164,10 +167,21 @@ canvas#dialCanvas {
 
 #histogramContainer #centered-text {
   text-align: center;
+  
 }
 
 td.alignRight {
   text-align: right;
 }
-
-
+#nextButton{
+  background-color: #00B7FF;
+}
+#firstButton{
+  background-color: #00B7FF;
+}
+#lastButton{
+  background-color: #00B7FF;
+}
+#previousButton{
+  background-color: #00B7FF;
+}

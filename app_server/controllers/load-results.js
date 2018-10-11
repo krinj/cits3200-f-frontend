@@ -2,7 +2,7 @@ var mysql = require('mysql');
 
 // LOAD/UPDATE THE PAGE WITH FILTERS SPECIFIED:
 module.exports.loadResults = function (req, res) {
-
+  
   let config = {
     user: process.env.SQL_USER,
     database: process.env.SQL_DATABASE,
@@ -14,7 +14,7 @@ module.exports.loadResults = function (req, res) {
 	config.socketPath = `/cloudsql/${process.env.INSTANCE_CONNECTION_NAME}`;
   }
 
-  let connection = mysql.createConnection(config);
+  //let connection = mysql.createConnection(config);
 
   // Google Cloud SQL Connection:
   // var connection = mysql.createConnection({
@@ -26,13 +26,13 @@ module.exports.loadResults = function (req, res) {
   // });
   
   // Terence's localhost MySQL Connection:
-  // var connection = mysql.createConnection({
-  //   host     : 'localhost',
-  //   user     : 'root',
-  //   password : '',
-  //   database : 'survey_data',
-  //   multipleStatements: true
-  // });
+   var connection = mysql.createConnection({
+     host     : 'localhost',
+     user     : 'root',
+     password : 'Cyr331705',
+     database : 'survey_data',
+     multipleStatements: true
+   });
 
   connection.connect(function(err) {
     if (err) throw err;
