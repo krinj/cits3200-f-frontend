@@ -308,7 +308,7 @@
 
   function renderHistogramByScore () {
 
-    // (Re-)create canvas DOM element 
+    // (Re-)create canvas DOM element:
     // (otherwise duplicate overlaying canvases will form on fetching new results)
     var canvasContainerDOM = document.getElementById("histogramByScoreContainer");
     var html = "<canvas id='histogramByScoreCanvas'>";
@@ -317,7 +317,6 @@
     var canvasDOM = document.getElementById("histogramByScoreCanvas");
 
     var ctx = canvasDOM.getContext('2d');
-
     var xData = [];
     var yData = [];
     var fillColor = [];
@@ -342,7 +341,7 @@
       ]
     };
 
-    var myFirstChart = new Chart(ctx, {
+    var histogramChart = new Chart(ctx, {
       type: 'bar',
       data: data,
       options: {
@@ -372,89 +371,103 @@
         }
       }
     });
-    canvasDOM.onclick = function(evt){
-        checkflag = true;
-        indexOfResponse = 0;
-        var activeElement = myFirstChart.getElementAtEvent(evt)[0];
-        
-        responseScore = myFirstChart.data.labels[activeElement._index];
-        $.ajax({
-          url: "/response",   // i.e. [Nodejs app]/app_server/controllers/load-results.js
-          data: { // data to send to load-results.js controller
-            score: responseScore,
-            "questionNum" : QuestionNum,
-            "gender" : Gender,
-            "ageRange" : AgeRange,
-            "employStatus" : EmployStatus,
-            "startDate" : toYYYY_MM_DD(StartDate), 
-            "endDate" : toYYYY_MM_DD(EndDate)
-          },
-          method: "POST",
-          dataType: 'JSON',
-          success: function (data) { // data is the JSON object returned from SQL via controller
-            // for(property in data) {
-            //   console.log("" + property + ": " + data[property]);
-            // }
-            ResponseInfo = data.responseResult;
-            
-            fillResponseDetails();
-            },
-          error: function (data) {
-              console.log("Could not fetch data.");
-            }
-            
-         });
-    }
+
+    canvasDOM.onclick = function(event) {
+      checkflag = true;
+      indexOfResponse = 0;
+      var activeElement = histogramChart.getElementAtEvent(event)[0];
+      responseScore = histogramChart.data.labels[activeElement._index];
+      $.ajax({
+        url: "/response-details", 
+        // i.e. [Nodejs app]/app_server/controllers/response-details.js
+        data: { // data to send to controller
+          score: responseScore,
+          "questionNum": QuestionNum,
+          "gender": Gender,
+          "ageRange": AgeRange,
+          "employStatus": EmployStatus,
+          "startDate": toYYYY_MM_DD(StartDate),
+          "endDate": toYYYY_MM_DD(EndDate)
+        },
+        method: "POST",
+        dataType: 'JSON',
+        success: function (data) { // data is the JSON object returned from SQL via controller
+          // for(property in data) {
+          //   console.log("" + property + ": " + data[property]);
+          // }
+          ResponseInfo = data.responseResult;
+
+          fillResponseDetails();
+        },
+        error: function (data) {
+          console.log("Could not fetch data.");
+        }
+
+      });
+    };
+
     var previous = document.getElementById("previousButton");
-    previous.onclick = function(){
-      if(checkflag==false){
+    previous.onclick = function () {
+      if (checkflag == false) {
         alert("Please select a bar of responses first.");
         return;
       }
-      if(indexOfResponse==0){
+      if (indexOfResponse == 0) {
         alert("This is already the first response.");
         return;
       }
       indexOfResponse--;
       fillResponseDetails();
-    }
+    };
+
     var next = document.getElementById("nextButton");
-    next.onclick=function(){
-      if(checkflag==false){
+    next.onclick = function () {
+      if (checkflag == false) {
         alert("Please select a bar of responses first.");
         return;
       }
-      if(indexOfResponse==ResponseInfo.length-1){
+      if (indexOfResponse == ResponseInfo.length - 1) {
         alert("This is already the last response.");
         return;
       }
       indexOfResponse++;
       fillResponseDetails();
-    }
+    };
+
     var first = document.getElementById("firstButton");
-    first.onclick = function(){
-      if(checkflag==false){
+    first.onclick = function () {
+      if (checkflag == false) {
         alert("Please select a bar of responses first.");
         return;
       }
-      
       indexOfResponse = 0;
       fillResponseDetails();
-    }
+    };
+
     var last = document.getElementById("lastButton");
-    last.onclick = function(){
-      if(checkflag==false){
+    last.onclick = function () {
+      if (checkflag == false) {
         alert("Please select a bar of responses first.");
         return;
       }
-      
-      indexOfResponse = ResponseInfo.length-1;
+      indexOfResponse = ResponseInfo.length - 1;
       fillResponseDetails();
-    }
+    };
   }
 
-  /* Helper function for renderHistogramByScore()
-   * returns an rgb(x,y,z) string based on factor from 0 to 1 of how far along the 
+  function fillResponseDetails() {
+    if(checkflag == false) {
+      document.getElementById('responseIndex').innerHTML = "No response selected";
+    }
+    var date = ResponseInfo[indexOfResponse].submitDate.slice(0,10);
+    document.getElementById('responseDateSpan').innerHTML = date;
+    document.getElementById('responseScoreSpan').innerHTML = responseScore;
+    document.getElementById('responseText').innerHTML = ResponseInfo[indexOfResponse].responseDetail;
+    var responseIndex = indexOfResponse + 1;
+    document.getElementById('responseIndex').innerHTML ="Response: " + responseIndex + " of " + ResponseInfo.length;
+  }
+
+  /* Returns an rgb(x,y,z) string based on factor from 0 to 1 of how far along the 
    * specified colour spectrum the output colour should be.
    */ 
   function getColor(factor) {
@@ -478,18 +491,6 @@
   function lerp(a, b, factor) {
     var delta = b - a;
     return a + delta * factor;
-  }
-
-  function fillResponseDetails() {
-    if(checkflag==false){
-      document.getElementById('responseIndex').innerHTML ="No response selected"
-    }
-    var date = ResponseInfo[indexOfResponse].submitDate.slice(0,10);
-    document.getElementById('responseDateSpan').innerHTML = date;
-    document.getElementById('responseScoreSpan').innerHTML = responseScore;
-    document.getElementById('responseText').innerHTML = ResponseInfo[indexOfResponse].responseDetail;
-    var responseIndex = indexOfResponse+1;
-    document.getElementById('responseIndex').innerHTML ="Response: "+ responseIndex +" of "+ ResponseInfo.length+""
   }
 
 })(jQuery);      

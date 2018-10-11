@@ -3,11 +3,11 @@ var dbConnection = require('./db-connection');
 // LOAD/UPDATE THE PAGE WITH FILTERS SPECIFIED:
 module.exports.loadResults = function (req, res) {
 
-  var connectionVars = dbConnection.connectToDB();
+  var connection = dbConnection.connectToDB();
 
-  connectionVars.connection.connect(function(err) {
+  connection.connect(function(err) {
     if (err) throw err;
-    console.log("Connected to " + connectionVars.dbName + " database!");
+    console.log("Connected to database!");
   });
 
   // Filter variables, set to values sent to this controller from client:
@@ -18,7 +18,7 @@ module.exports.loadResults = function (req, res) {
   var startDate = req.body.startDate;
   var endDate = req.body.endDate;
 
-    // Determine the start and end years of birth for different age ranges:
+  // Determine the start and end years of birth for different age ranges:
   var birthStart;
   var birthEnd; 
   var currentYear = (new Date()).getFullYear(); 
@@ -80,7 +80,7 @@ module.exports.loadResults = function (req, res) {
   }
 
   // Run the SQL queries:
-  connectionVars.connection.query(queryCopy, function (err, rows, fields) {
+  connection.query(queryCopy, function (err, rows, fields) {
     if (err) throw err;
 
     // NB using underscores to distinguish from variables of same name sent to pug file
@@ -169,7 +169,7 @@ module.exports.loadResults = function (req, res) {
       responseText: response_text,
     };
 
-    connectionVars.connection.end();
+    connection.end();
     
     return res.send(results);
   });  

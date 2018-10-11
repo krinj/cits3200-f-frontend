@@ -1,14 +1,15 @@
 var express = require('express');
 var router = express.Router();
 
-// Link to controller file for rendering Sentiment Analytics page:
-var ctrlSentimentAnalytics  = require('../controllers/sentiment-analytics');
+// Links to controller files:
+var ctrlInitialRender  = require('../controllers/initial-render');
 var ctrlLoadResults  = require('../controllers/load-results');
-var ctrlResponse = require('../controllers/response')
+var ctrlResponseDetails = require('../controllers/response-details');
+
 // GET & POST HTTP request for the page:
-router.get('/', ctrlSentimentAnalytics.initialPageRender);   // initial load
-router.post('/load-results', ctrlLoadResults.loadResults);    // load results
-router.post('/response',ctrlResponse.getResponse);
-// router.post('/', ctrlSentimentAnalytics.loadPage);  // submitting filter values
+router.get('/', ctrlInitialRender.initialRender); // initial HTML load
+router.post('/load-results', ctrlLoadResults.loadResults); // load results
+// Fetch response details (in the histogram section):
+router.post('/response-details', ctrlResponseDetails.getResponse);  
 
 module.exports = router;
