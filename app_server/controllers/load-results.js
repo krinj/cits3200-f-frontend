@@ -1,42 +1,13 @@
-var mysql = require('mysql');
+var dbConnection = require('./db-connection');
 
 // LOAD/UPDATE THE PAGE WITH FILTERS SPECIFIED:
 module.exports.loadResults = function (req, res) {
-  
-  let config = {
-    user: process.env.SQL_USER,
-    database: process.env.SQL_DATABASE,
-    password: process.env.SQL_PASSWORD,
-    multipleStatements: true
-  };
 
-  if (process.env.INSTANCE_CONNECTION_NAME) {
-	config.socketPath = `/cloudsql/${process.env.INSTANCE_CONNECTION_NAME}`;
-  }
-
-  //let connection = mysql.createConnection(config);
-
-  // Google Cloud SQL Connection:
-  // var connection = mysql.createConnection({
-  //   host     : '127.0.0.1',
-  //   user     : 'root',
-  //   password : 'M2jquKgPuDsbM7kN',
-  //   database : 'survey_data',
-  //   multipleStatements: true
-  // });
-  
-  // Terence's localhost MySQL Connection:
-   var connection = mysql.createConnection({
-     host     : 'localhost',
-     user     : 'root',
-     password : 'Cyr331705',
-     database : 'survey_data',
-     multipleStatements: true
-   });
+  var connection = dbConnection.connectToDB();
 
   connection.connect(function(err) {
     if (err) throw err;
-    console.log("Connected to Google Cloud SQL Database!");
+    console.log("Connected to database!");
   });
 
   // Filter variables, set to values sent to this controller from client:
@@ -47,7 +18,7 @@ module.exports.loadResults = function (req, res) {
   var startDate = req.body.startDate;
   var endDate = req.body.endDate;
 
-    // Determine the start and end years of birth for different age ranges:
+  // Determine the start and end years of birth for different age ranges:
   var birthStart;
   var birthEnd; 
   var currentYear = (new Date()).getFullYear(); 
