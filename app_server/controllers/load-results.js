@@ -20,8 +20,8 @@ module.exports.loadResults = function (req, res) {
 
   // Determine the start and end years of birth for different age ranges:
   var birthStart;
-  var birthEnd; 
-  var currentYear = (new Date()).getFullYear(); 
+  var birthEnd;
+  var currentYear = (new Date()).getFullYear();
   if (ageRange == 'all') {
     birthStart = 1900;   // No-one on Earth was born before then!
     birthEnd = currentYear;
@@ -29,7 +29,7 @@ module.exports.loadResults = function (req, res) {
     birthStart = currentYear - 18;
     birthEnd = currentYear;
   } else if (ageRange == 'age65plus') {
-    birthStart = 1900;  
+    birthStart = 1900;
     birthEnd = currentYear - 65;
   } else {
     var ageRangeSlice = ageRange.slice(3, 8);
@@ -37,7 +37,7 @@ module.exports.loadResults = function (req, res) {
     birthStart = currentYear - parseInt(ageRangeArray[1]);
     birthEnd = currentYear - parseInt(ageRangeArray[0]);
   }
-  
+
   var query = "";
 
   // Query 0: Total response count:
@@ -69,7 +69,7 @@ module.exports.loadResults = function (req, res) {
 
   // Query 9: Response Details table
   // query += "SELECT date_submitted, response, overall_sentiment FROM Response R, Submission S WHERE R.submission_id=S.submission_id AND R.question_num = 1 AND R.survey_id=1 AND S.gender = 'male' AND R.char_count != 0 AND S.date_submitted BETWEEN '2016-01-20' AND '2018-04-21' order by overall_sentiment;";
-  
+
   // Remove filters set to 'all' if applicable:
   var queryCopy = query;
   if (gender == 'all') {
@@ -145,9 +145,9 @@ module.exports.loadResults = function (req, res) {
     // TODO: Update with actual dynamic data
     var response_date = "06/07/2018";
     var response_score = 9;
-    var response_text =  "Honeywell is perfectly positioned to enter the Industrial IoT space and transition from creating physical products to analytics, digital products and AI."; 
+    var response_text =  "Honeywell is perfectly positioned to enter the Industrial IoT space and transition from creating physical products to analytics, digital products and AI.";
 
-    var results = { 
+    var results = {
       questionArray: question_array,
       questionValue: questionNum,
       genderValue: gender,
@@ -170,9 +170,8 @@ module.exports.loadResults = function (req, res) {
     };
 
     connection.end();
-    
-    return res.send(results);
-  });  
-  
-};
 
+    return res.send(results);
+  });
+
+};
