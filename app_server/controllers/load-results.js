@@ -1,42 +1,13 @@
-var mysql = require('mysql');
+var dbConnection = require('./db-connection');
 
 // LOAD/UPDATE THE PAGE WITH FILTERS SPECIFIED:
 module.exports.loadResults = function (req, res) {
-  
-  let config = {
-    user: process.env.SQL_USER,
-    database: process.env.SQL_DATABASE,
-    password: process.env.SQL_PASSWORD,
-    multipleStatements: true
-  };
 
-  if (process.env.INSTANCE_CONNECTION_NAME) {
-	config.socketPath = `/cloudsql/${process.env.INSTANCE_CONNECTION_NAME}`;
-  }
+  var connectionVars = dbConnection.connectToDB();
 
-  //let connection = mysql.createConnection(config);
-
-  // Google Cloud SQL Connection:
-  // var connection = mysql.createConnection({
-  //   host     : '127.0.0.1',
-  //   user     : 'root',
-  //   password : 'M2jquKgPuDsbM7kN',
-  //   database : 'survey_data',
-  //   multipleStatements: true
-  // });
-  
-  // Terence's localhost MySQL Connection:
-   var connection = mysql.createConnection({
-     host     : 'localhost',
-     user     : 'root',
-     password : 'Cyr331705',
-     database : 'survey_data',
-     multipleStatements: true
-   });
-
-  connection.connect(function(err) {
+  connectionVars.connection.connect(function(err) {
     if (err) throw err;
-    console.log("Connected to Google Cloud SQL Database!");
+    console.log("Connected to " + connectionVars.dbName + " database!");
   });
 
   // Filter variables, set to values sent to this controller from client:
@@ -109,7 +80,7 @@ module.exports.loadResults = function (req, res) {
   }
 
   // Run the SQL queries:
-  connection.query(queryCopy, function (err, rows, fields) {
+  connectionVars.connection.query(queryCopy, function (err, rows, fields) {
     if (err) throw err;
 
     // NB using underscores to distinguish from variables of same name sent to pug file
@@ -198,7 +169,7 @@ module.exports.loadResults = function (req, res) {
       responseText: response_text,
     };
 
-    connection.end();
+    connectionVars.connection.end();
     
     return res.send(results);
   });  
