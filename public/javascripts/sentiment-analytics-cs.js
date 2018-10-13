@@ -7,7 +7,18 @@
 
   /*** GLOBAL VARIABLES / 'MODEL' VARIABLES (Use capital first letter for globals): ***/
 
+  // Sentiment colour scale end a middle points:
+  const RedColor = [204, 69, 40];
+  const GreyColor = [188, 191, 191];
+  const GreenColor = [52, 143, 104];
+
+  const NUM_ENTITIES = 20; // Number of entities to display in Entity Table & Diagram
+
+  // *** TODO: Server should POST the logged in user's organisation name ***
+  var Organisation = "Honeywell"; 
+
   // Filter variables:
+  var SurveyName;
   var QuestionNum;
   var Gender;
   var AgeRange;
@@ -15,7 +26,7 @@
   var StartDate;
   var EndDate;
 
-  // Result Variables:
+  // Filter result variables:
   var NumResponses;
   var PercentCompleted;
   var AveCharCount;
@@ -24,19 +35,25 @@
   var OrgAveSentiment;
   var FirstDate;
   var QuestionArray = [];
-  var ScoreFreqArray = [];
-  
-  var responseScore;
-  
-  var indexOfResponse = 0;
-  var checkflag = false;
+  var ScoreFreqArray = [];  
+
+  // Histogram selected response variables:
+  var ResponseScore;
+  var IndexOfResponse = 0;
+  var ResponseSelected = false;
   var ResponseInfo;
 
+  // Entity Listing/Diagram variables:
+  var EntityDisplayMode = "topFreq";
+  var ResultEntities = [];
+  var FocusEntity;
 
-  // Sentiment colour scale end a middle points:
-  var RedColor = [204, 69, 40];
-  var GreyColor = [188, 191, 191];
-  var GreenColor = [52, 143, 104];
+  // Constructor for Entity objects
+  function Entity(name, freq, aveSentiment) {
+    this.name = name;
+    this.freq = freq;
+    this.aveSentiment = aveSentiment;
+  }
 
   window.onload = function() {
 
@@ -49,8 +66,8 @@
     // TODO: run a separate query when page loads
     EndDate = new Date(); // i.e. today
 
-    loadResults(QuestionNum, Gender, AgeRange, EmployStatus, 
-                toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
+    loadResults();
+    renderEntityTableDiagram();
 
     // Event Listener for Fetch Results button:
     document.getElementById('fetchResults').addEventListener('click', function() {          
@@ -60,8 +77,7 @@
       EmployStatus = document.getElementById("employStatus").value;
       StartDate = new Date(document.getElementById("startDateBox").valueAsDate);
       EndDate = new Date(document.getElementById("endDateBox").valueAsDate);
-      loadResults(QuestionNum, Gender, AgeRange, EmployStatus, 
-                  toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));   
+      loadResults();   
     });
 
     // When resetting filters, reset start date and end date to overall range start and range end: 
@@ -98,16 +114,16 @@
   }
 
   // jQuery AJAX function to fetch and load results from the database
-  function loadResults(questionNum, gender, ageRange, employStatus, startYYYY_MM_DD, endYYYY_MM_DD) {
+  function loadResults() {
     $.ajax({
       url: "/load-results",   // i.e. [Nodejs app]/app_server/controllers/load-results.js
       data: { // data to send to load-results.js controller
-        "questionNum" : questionNum,
-        "gender" : gender,
-        "ageRange" : ageRange,
-        "employStatus" : employStatus,
-        "startDate" : startYYYY_MM_DD,
-        "endDate" : endYYYY_MM_DD
+        "questionNum" : QuestionNum,
+        "gender" : Gender,
+        "ageRange" : AgeRange,
+        "employStatus" : EmployStatus,
+        "startDate" : toYYYY_MM_DD(StartDate),
+        "endDate" : toYYYY_MM_DD(EndDate)
       },
       method: "POST",
       dataType: 'JSON',
@@ -141,7 +157,7 @@
         fillResponseDetails();
       },
       error: function (data) {
-        console.log("Could not fetch data.");
+        console.log("Could not load results.");
       }
     });
   }    
@@ -373,15 +389,15 @@
     });
 
     canvasDOM.onclick = function(event) {
-      checkflag = true;
-      indexOfResponse = 0;
+      ResponseSelected = true;
+      IndexOfResponse = 0;
       var activeElement = histogramChart.getElementAtEvent(event)[0];
-      responseScore = histogramChart.data.labels[activeElement._index];
+      ResponseScore = histogramChart.data.labels[activeElement._index];
       $.ajax({
         url: "/response-details", 
         // i.e. [Nodejs app]/app_server/controllers/response-details.js
         data: { // data to send to controller
-          score: responseScore,
+          score: ResponseScore,
           "questionNum": QuestionNum,
           "gender": Gender,
           "ageRange": AgeRange,
@@ -408,63 +424,95 @@
 
     var previous = document.getElementById("previousButton");
     previous.onclick = function () {
-      if (checkflag == false) {
+      if (ResponseSelected == false) {
         alert("Please select a bar of responses first.");
         return;
       }
-      if (indexOfResponse == 0) {
+      if (IndexOfResponse == 0) {
         alert("This is already the first response.");
         return;
       }
-      indexOfResponse--;
+      IndexOfResponse--;
       fillResponseDetails();
     };
 
     var next = document.getElementById("nextButton");
     next.onclick = function () {
-      if (checkflag == false) {
+      if (ResponseSelected == false) {
         alert("Please select a bar of responses first.");
         return;
       }
-      if (indexOfResponse == ResponseInfo.length - 1) {
+      if (IndexOfResponse == ResponseInfo.length - 1) {
         alert("This is already the last response.");
         return;
       }
-      indexOfResponse++;
+      IndexOfResponse++;
       fillResponseDetails();
     };
 
     var first = document.getElementById("firstButton");
     first.onclick = function () {
-      if (checkflag == false) {
+      if (ResponseSelected == false) {
         alert("Please select a bar of responses first.");
         return;
       }
-      indexOfResponse = 0;
+      IndexOfResponse = 0;
       fillResponseDetails();
     };
 
     var last = document.getElementById("lastButton");
     last.onclick = function () {
-      if (checkflag == false) {
+      if (ResponseSelected == false) {
         alert("Please select a bar of responses first.");
         return;
       }
-      indexOfResponse = ResponseInfo.length - 1;
+      IndexOfResponse = ResponseInfo.length - 1;
       fillResponseDetails();
     };
   }
 
   function fillResponseDetails() {
-    if(checkflag == false) {
+    if(ResponseSelected == false) {
       document.getElementById('responseIndex').innerHTML = "No response selected";
+    } else {
+      var date = ResponseInfo[IndexOfResponse].submitDate.slice(0,10);
+      document.getElementById('responseDateSpan').innerHTML = date;
+      document.getElementById('responseScoreSpan').innerHTML = ResponseScore;
+      document.getElementById('responseText').innerHTML = ResponseInfo[IndexOfResponse].responseDetail;
+      var responseIndex = IndexOfResponse + 1;
+      document.getElementById('responseIndex').innerHTML ="Response: " + responseIndex + " of " + ResponseInfo.length;
     }
-    var date = ResponseInfo[indexOfResponse].submitDate.slice(0,10);
-    document.getElementById('responseDateSpan').innerHTML = date;
-    document.getElementById('responseScoreSpan').innerHTML = responseScore;
-    document.getElementById('responseText').innerHTML = ResponseInfo[indexOfResponse].responseDetail;
-    var responseIndex = indexOfResponse + 1;
-    document.getElementById('responseIndex').innerHTML ="Response: " + responseIndex + " of " + ResponseInfo.length;
+  }
+
+  // Render the Entity Table and Entity Linkage Diagram for a given set of filters,
+  // display mode and/or selected entity
+  function renderEntityTableDiagram() {
+    $.ajax({
+      url: "/entity-table-diagram",   
+      // i.e. [Nodejs app]/app_server/controllers/entity-table-diagram.js
+      data: { // data to send to controller
+        "questionNum" : QuestionNum,
+        "gender" : Gender,
+        "ageRange" : AgeRange,
+        "employStatus" : EmployStatus,
+        "startDate" : toYYYY_MM_DD(StartDate),
+        "endDate" : toYYYY_MM_DD(EndDate),
+        "displayMode" : EntityDisplayMode,
+        "numEntities" : NUM_ENTITIES,
+        "focusEntity" : FocusEntity
+      },
+      method: "POST",
+      dataType: 'JSON',
+      success: function (data) { // data is the JSON object returned from SQL via controller
+        // for(property in data) {
+        //   console.log("" + property + ": " + data[property]);
+        // }
+        console.log("Entity data successfully received");
+      },
+      error: function (data) {
+        console.log("Could not get data for entity table and diagram.");
+      }
+    });
   }
 
   /* Returns an rgb(x,y,z) string based on factor from 0 to 1 of how far along the 
