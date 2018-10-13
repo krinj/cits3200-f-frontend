@@ -135,18 +135,50 @@ block content
               strong Score: 
               span#responseScoreSpan 
             p 
-              button#firstButton(type = "button") First
+              button.responseCtrl#firstButton(type="button") First
               | &thinsp;
-              button#previousButton(type="button") Prev.
+              button.responseCtrl#previousButton(type="button") Prev.
               
               strong#responseIndex
               
-              button#nextButton(type="button") Next
+              button.responseCtrl#nextButton(type="button") Next
               | &thinsp;
-              button#lastButton(type="button") Last
+              button.responseCtrl#lastButton(type="button") Last
             p 
               strong Response:
             p#responseText
+  
+  .section#EntityAnalytics
+    .centredBody
+      h2 KEYWORDS/ENTITIES IN RESPONSES
+
+      p.centred
+        b Display Mode:
+        input(type="radio" class="dispModeRadio" name="displayMode" value="topFreq" checked) 
+        | Top Frequency Keywords 
+        input(type="radio" class="dispModeRadio" name="displayMode" value="mostPos") 
+        | Most Positive Keywords
+        input(type="radio" class="dispModeRadio" name="displayMode" value="mostNeg") 
+        | Most Negative Keywords
+        input(type="radio" class="dispModeRadio" name="displayMode" value="focus") 
+        | Keyword Focus
+        input(type="text" id="searchedEntity" size=15 placeholder="Search by Entity")
+        button(type="button" id="entitySearchButton") GO
+      
+      #entityTableDiag
+        #entityTable
+          h3 Keyword Listing
+          table#entityTable 
+            thead
+              tr
+                th Rank
+                th Keyword
+                th Frequency
+                th Ave. Sentiment Score
+            tbody#entityTableBody
+        #entityDiag
+          h3 Keyword Linkage Diagram
+          svg#entitySvg(width="750" height="750")
 
   script(type="text/javascript" src="/javascripts/sentiment-analytics-cs.js") 
 
