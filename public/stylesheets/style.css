@@ -218,3 +218,7 @@ svg#entitySvg {
   border: 1px dashed grey;
   margin: 0px 25px;
 }
+
+text.entLabel {
+  font-size: 10pt;
+}
