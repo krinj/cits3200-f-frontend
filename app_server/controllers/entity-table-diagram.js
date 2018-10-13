@@ -64,7 +64,7 @@ module.exports.getResults = function (req, res) {
     else if (displayMode == "mostNeg") {
       query1End = "ORDER BY AVG(sentiment) ASC, COUNT(*) DESC LIMIT  " + numEntities;
     }
-    queries = query1Start + query1End + "; " + query2Start + query1Start + query1End + query2End;
+    queries = query1Start + query1End + ";\n" + query2Start + query1Start + query1End + query2End;
   }
   
   if (gender == 'all') {
@@ -75,7 +75,7 @@ module.exports.getResults = function (req, res) {
     queries = queries.replace(/S.employment_status = 'all' AND/g, '');
   }
 
-  // console.log("Queries:\n" + queries);
+  console.log("Queries:\n" + queries);
 
   connection.query(queries, function (err, rows, fields) {
     if (err) throw err;

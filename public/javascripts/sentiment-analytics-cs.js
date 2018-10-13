@@ -45,11 +45,13 @@
 
   // Entity Listing/Diagram variables:
   var EntityDisplayMode = "topFreq";
-  var ResultEntities = [];
+  var DisplayedEntities = [];
+  var ConcurrencyMatrix = [];
   var FocusEntity;
 
   // Constructor for Entity objects
-  function Entity(name, freq, aveSentiment) {
+  function Entity(rank, name, freq, aveSentiment) {
+    this.rank = rank;
     this.name = name;
     this.freq = freq;
     this.aveSentiment = aveSentiment;
@@ -67,7 +69,7 @@
     EndDate = new Date(); // i.e. today
 
     loadResults();
-    renderEntityTableDiagram();
+    getEntityTableDiagData();
 
     // Event Listener for Fetch Results button:
     document.getElementById('fetchResults').addEventListener('click', function() {          
@@ -486,7 +488,7 @@
 
   // Render the Entity Table and Entity Linkage Diagram for a given set of filters,
   // display mode and/or selected entity
-  function renderEntityTableDiagram() {
+  function getEntityTableDiagData() {
     $.ajax({
       url: "/entity-table-diagram",   
       // i.e. [Nodejs app]/app_server/controllers/entity-table-diagram.js
@@ -504,15 +506,98 @@
       method: "POST",
       dataType: 'JSON',
       success: function (data) { // data is the JSON object returned from SQL via controller
-        // for(property in data) {
-        //   console.log("" + property + ": " + data[property]);
-        // }
-        console.log("Entity data successfully received");
+        // console.log("Entity data successfully received");
+
+        // Populate array of Entity objects
+        for (i = 0; i < data.entities1.length; i++) {
+          DisplayedEntities.push(new Entity(i, data.entities1[i], data.frequencies[i], 
+                                   data.aveSentiments[i]));
+        }
+
+        // Initialise the concurrency matrix:
+        for (i = 0; i < NUM_ENTITIES; i++) {
+          ConcurrencyMatrix.push(new Array());
+          for (j = 0; j < NUM_ENTITIES; j++) {
+            ConcurrencyMatrix[i][j] = 0;
+          }
+        }      
+
+        console.log("Concurrency matrix:");
+        for (i = 0; i < NUM_ENTITIES; i++) {
+          var row = "";
+          for (j = 0; j < NUM_ENTITIES; j++) {
+            row += ConcurrencyMatrix[i][j] + ", ";
+          }
+          console.log(row);
+        }
+
+        // Build the concurrency matrix:
+        var thisID;
+        var thisName;
+        var thisRank;
+        var prevID = 1;
+        var groupedEntities = [];
+        for (i = 0; i < data.responseIDs.length; i++) {
+          thisID = data.responseIDs[i];
+          for (j = 0; j < DisplayedEntities.length; j++) {
+            if (DisplayedEntities[j].name == data.entities2[i]) {
+              thisName = DisplayedEntities[j].rank;
+              thisRank = DisplayedEntities[j].rank;
+            }
+          }
+
+          if (thisID == prevID) {
+            groupedEntities.push({
+              rank: thisRank,
+              name: thisName,
+            });
+          } 
+          else {
+            for (j = 0; j < groupedEntities.length; j++) {
+              for (k = 0; k < groupedEntities.length; k++) {
+                if (groupedEntities[j].rank < groupedEntities[k].rank) {
+                  var row = groupedEntities[j].rank;
+                  var col = groupedEntities[k].rank;
+                  ConcurrencyMatrix[row][col]++;
+                }
+              }
+            }
+            groupedEntities = []; // clear the array 
+          }
+
+          prevID = thisID;        
+        }
+
+        console.log("Concurrency matrix:");
+        for (i = 0; i < NUM_ENTITIES; i++) {
+          var row = "";
+          for (j = 0; j < NUM_ENTITIES; j++) {
+            row += ConcurrencyMatrix[i][j] + ", ";
+          }
+          console.log(row);
+        }
+
+        fillEntityTable();
+        drawEntityDiagram();        
       },
       error: function (data) {
         console.log("Could not get data for entity table and diagram.");
       }
     });
+  }
+
+  function fillEntityTable() {
+
+    var html = "";
+    for(i = 0; i < NUM_ENTITIES; i++) {
+      html += "<tr>";
+      html += "<td>" + (DisplayedEntities[i].rank + 1) + "</td>";
+      html += "<td>" + DisplayedEntities[i].name + "</td>";
+      html += "<td>" + DisplayedEntities[i].freq + "</td>";
+      html += "<td>" + DisplayedEntities[i].aveSentiment + "</td>";
+      html += "</tr>";
+    }
+    document.getElementById('entityTableBody').innerHTML = html;
   }
 
   /* Returns an rgb(x,y,z) string based on factor from 0 to 1 of how far along the 
