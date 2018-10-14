@@ -19,7 +19,7 @@
 
   // Filter variables:
   var SurveyName;
-  var QuestionNum;
+  var QuestionId;
   var Gender;
   var AgeRange;
   var EmployStatus;
@@ -73,7 +73,7 @@
 
     // Event Listener for Fetch Results button:
     document.getElementById('fetchResults').addEventListener('click', function() {          
-      QuestionNum = document.getElementById("questionList").value;
+      QuestionId = document.getElementById("questionList").value;
       Gender = document.getElementById("gender").value;
       AgeRange = document.getElementById("ageRange").value;
       EmployStatus = document.getElementById("employStatus").value;
@@ -120,7 +120,7 @@
     $.ajax({
       url: "/load-results",   // i.e. [Nodejs app]/app_server/controllers/load-results.js
       data: { // data to send to load-results.js controller
-        "questionNum" : QuestionNum,
+        "questionValue" : QuestionId,
         "gender" : Gender,
         "ageRange" : AgeRange,
         "employStatus" : EmployStatus,
@@ -169,10 +169,11 @@
   function setFilterInputs() {   
     var html = "";
     for(var i = 0; i < QuestionArray.length; i++) {
-      html += "<option value='" + (i+1) + "'>" + QuestionArray[i] + "</option>";
+      html += "<option value='" + QuestionArray[i].question_id + "'>" + QuestionArray[i].question_name + "</option>";
+      
     }
     document.getElementById("questionList").innerHTML = html;
-    document.getElementById("questionList").value = QuestionNum;
+    
     document.getElementById("gender").value = Gender;
     document.getElementById("ageRange").value = AgeRange;
     document.getElementById("employStatus").value = EmployStatus;
@@ -400,7 +401,7 @@
         // i.e. [Nodejs app]/app_server/controllers/response-details.js
         data: { // data to send to controller
           score: ResponseScore,
-          "questionNum": QuestionNum,
+          "questionValue": QuestionId,
           "gender": Gender,
           "ageRange": AgeRange,
           "employStatus": EmployStatus,
@@ -493,7 +494,7 @@
       url: "/entity-table-diagram",   
       // i.e. [Nodejs app]/app_server/controllers/entity-table-diagram.js
       data: { // data to send to controller
-        "questionNum" : QuestionNum,
+        "questionValue" : QuestionId,
         "gender" : Gender,
         "ageRange" : AgeRange,
         "employStatus" : EmployStatus,
