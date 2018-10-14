@@ -12,7 +12,7 @@
   const GreyColor = [188, 191, 191];
   const GreenColor = [52, 143, 104];
 
-  const NUM_ENTITIES = 20; // Number of entities to display in Entity Table & Diagram
+  const NUM_ENTITIES = 30; // Number of entities to display in Entity Table & Diagram
 
   // *** TODO: Server should POST the logged in user's organisation name ***
   var Organisation = "Honeywell"; 
@@ -44,7 +44,7 @@
   var ResponseInfo;
 
   // Entity Listing/Diagram variables:
-  var EntityDisplayMode = "topFreq";
+  var EntityDisplayMode = "mostNeg";
   var DisplayedEntities = [];
   var ConcurrencyMatrix = [];
   var FocusEntity;
@@ -598,6 +598,46 @@
       html += "</tr>";
     }
     document.getElementById('entityTableBody').innerHTML = html;
+  }
+
+  function drawEntityDiagram() {
+
+    // find the heighest frequency of the displayed entities:
+    var maxFreq = 0;
+    for (i = 0; i < NUM_ENTITIES; i++) {
+      if (DisplayedEntities[i].freq > maxFreq) {
+        maxFreq = DisplayedEntities[i].freq;
+      }
+    }
+
+    var svgDOM = document.getElementById('entitySvg'); 
+    var SVG_WIDTH = 750; 
+    var SVG_HEIGHT = 750; 
+    var centre_x = SVG_WIDTH / 2;
+    var centre_y = SVG_HEIGHT / 2;
+    var orbitRadius = SVG_HEIGHT / 2 - 100;
+    var maxEntRadius = 0.5 * Math.PI * orbitRadius * 2 / NUM_ENTITIES;
+    var html = "";
+    
+    // Plot entity circles
+    for(i = 0; i < NUM_ENTITIES; i++) {
+      // polar angle coordinate of centre of entity from X axis at centre of orbit (deg):
+      var theta = 90 - (i * 360 / NUM_ENTITIES); 
+      var entCentre_x = centre_x + orbitRadius * Math.cos(theta * Math.PI / 180);
+      var entCentre_y = centre_y - orbitRadius * Math.sin(theta * Math.PI / 180);
+      var entRadius = maxEntRadius * (DisplayedEntities[i].freq / maxFreq);
+      var textAnchor_x = centre_x + (orbitRadius + entRadius + 7) * Math.cos(theta * Math.PI / 180);
+      var textAnchor_y = centre_y - (orbitRadius + entRadius + 7) * Math.sin(theta * Math.PI / 180);
+      var fillColourFactor = (DisplayedEntities[i].aveSentiment + 10) / 20;
+      
+      html += "<circle cx='" + entCentre_x + "' cy='" + entCentre_y + "' r='" + entRadius + "' + stroke='black' stroke-width='1' fill='" + getColor(fillColourFactor) + "' />";
+      html += "<text class='entLabel' x='" + textAnchor_x + "' y='" + textAnchor_y + "' transform='rotate(" + theta*-1 + "," + textAnchor_x + "," + textAnchor_y + ")' fill='black'>" + DisplayedEntities[i].name + "</text>"; 
+    }
+    svgDOM.innerHTML = html;
+
+    // Plot entity links:
+
+
   }
 
   /* Returns an rgb(x,y,z) string based on factor from 0 to 1 of how far along the 
