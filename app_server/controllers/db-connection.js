@@ -37,7 +37,7 @@ functions.connectToDB = function() {
     connection = mysql.createConnection({
       host     : 'localhost',
       user     : 'root',
-      password : 'cits1402',   
+      password : 'Cyr331705',   
       database : 'survey_data',
       multipleStatements: true
     });
