@@ -2,17 +2,63 @@ var dbConnection = require('./db-connection');
 
 // LOAD/UPDATE THE PAGE WITH FILTERS SPECIFIED:
 module.exports.loadResults = function (req, res) {
-
+  
   var connection = dbConnection.connectToDB();
+  var sqlquery = [];
+   sqlquery[0] = "SELECT * FROM `cits-3200.analytics.responses_dev` where timestamp = '2019-08-23' LIMIT 1;";
+  // where timestamp = '2019-08-23'
+  const projectid = 'cits-3200';
+  asyncQuery(sqlquery,projectid);
+  async function asyncQuery(sqlquery, projectid) {
+    // [START bigquery_query]
+    // Imports the Google Cloud client library
+    const BigQuery = require('@google-cloud/bigquery');
+    const bigquery = new BigQuery({
+      projectId: projectid,
+    });
+    /**
+     * TODO(developer): Uncomment the following lines before running the sample.
+     */
+    projectId = projectid;
+      sqlQuery = sqlquery;
+    
+    // Creates a client
+    
+  
+    // Query options list: https://cloud.google.com/bigquery/docs/reference/v2/jobs/query
+    const options = {
+      query: sqlQuery,
+      useLegacySql: false, // Use standard SQL syntax for queries.
+      
+    };
+    
+    // Runs the query as a job
+    const [job] = await bigquery.createQueryJob(options);
+    console.log(`Job ${job.id} started.`);
+  
+    // Get the job's status
+    const metadata = await job.getMetadata();
+  
+    // Check the job's status for errors
+    const errors = metadata[0].status.errors;
+    if (errors && errors.length > 0) {
+      throw errors;
+    }
+    console.log('Job ${job.id} completed.')
+  
+    const [rows] = await job.getQueryResults();
+    console.log('Rows:');
+    console.log(rows);
+    // [END bigquery_query]
+  }
 
-  connection.connect(function(err) {
-    if (err) throw err;
-    console.log("Connected to database!");
-  });
+
+ 
 
   // Filter variables, set to values sent to this controller from client:
-  var questionNum = req.body.questionNum;
+  var questionId = req.body.questionNum;
   var gender = req.body.gender;
+  
   var ageRange = req.body.ageRange;
   var employStatus = req.body.employStatus;
   var startDate = req.body.startDate;
@@ -38,34 +84,34 @@ module.exports.loadResults = function (req, res) {
     birthEnd = currentYear - parseInt(ageRangeArray[0]);
   }
   
-  var query = "";
+  var query = [];
 
   // Query 0: Total response count:
-  query += "SELECT COUNT(*) AS totalResponse FROM Response R NATURAL JOIN Submission S WHERE S.employment_status = '"+ employStatus +"' AND R.survey_id = 1 AND R.question_num = '" + questionNum + "' AND S.gender = '" + gender + "' AND S.date_submitted BETWEEN '"+ startDate + "' AND '" + endDate +"' AND S.year_of_birth BETWEEN '"+ birthStart + "' AND '"+ birthEnd +"'; ";
+  query[0]= "SELECT COUNT(*) AS totalResponse FROM `cits-3200.analytics.responses_dev` R  WHERE R.employment_status = '"+ employStatus +"' AND R.survey_id ='d34f3eae8e9a48b6bc8c930bc5084b87' AND R.question_id = '" + questionId + "' AND S.gender = '" + gender + "' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN '"+ birthStart + "' AND '"+ birthEnd +"'; ";
 
   // Query 1: Number of completed responses for this question:
-  query += "SELECT COUNT(*) AS completed FROM Response R NATURAL JOIN Submission S WHERE S.employment_status = '" + employStatus + "' AND R.survey_id = 1 AND R.question_num = '"+ questionNum +"' AND S.gender = '" + gender + "' AND R.char_count != 0 AND S.date_submitted BETWEEN '"+ startDate + "' AND '" + endDate +"' AND S.year_of_birth BETWEEN '"+ birthStart + "' AND '"+ birthEnd +"'; ";
+  query[1]= "SELECT COUNT(*) AS completed FROM `cits-3200.analytics.responses_dev` R  WHERE R.employment_status = '" + employStatus + "' AND R.survey_id ='d34f3eae8e9a48b6bc8c930bc5084b87' AND R.question_num = '"+ questionNum +"' AND R.gender = '" + gender + "' AND R.char_count != 0 AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN '"+ birthStart + "' AND '"+ birthEnd +"'; ";
 
   // Query 2: Average character count:
-  query +="SELECT AVG(char_count) AS AverageCount FROM Response R NATURAL JOIN Submission S WHERE S.employment_status = '"+ employStatus +"' AND R.question_num = '"+ questionNum +"' AND R.survey_id = 1 AND S.gender = '" + gender + "' AND S.date_submitted BETWEEN '"+ startDate + "' AND '" + endDate +"' AND S.year_of_birth BETWEEN '"+ birthStart + "' AND '"+ birthEnd +"' GROUP BY question_num;";
+  query[2]="SELECT AVG(char_count) AS AverageCount FROM `cits-3200.analytics.responses_dev` R  WHERE S.employment_status = '"+ employStatus +"' AND R.question_num = '"+ questionNum +"' AND R.survey_id ='d34f3eae8e9a48b6bc8c930bc5084b87' AND S.gender = '" + gender + "' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN '"+ birthStart + "' AND '"+ birthEnd +"' GROUP BY question_num;";
 
   // Query 3: Max character count
-  query += " SELECT MAX(char_count) AS maxCount FROM Response R NATURAL JOIN Submission S WHERE S.employment_status = '"+ employStatus +"' AND R.question_num = '"+ questionNum +"' AND R.survey_id = 1 AND S.gender = '" + gender + "' AND S.date_submitted BETWEEN '"+ startDate + "' AND '" + endDate +"' AND S.year_of_birth BETWEEN '"+ birthStart + "' AND '"+ birthEnd +"' GROUP BY question_num;";
+  query[3] = " SELECT MAX(char_count) AS maxCount FROM `cits-3200.analytics.responses_dev` R  WHERE S.employment_status = '"+ employStatus +"' AND R.question_num = '"+ questionNum +"' AND R.survey_id ='d34f3eae8e9a48b6bc8c930bc5084b87' AND S.gender = '" + gender + "' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN '"+ birthStart + "' AND '"+ birthEnd +"' GROUP BY question_num;";
 
   // Query 4: National average overall sentiment score for the question
-  query += "SELECT AVG(overall_sentiment) AS overallAverage FROM Response R NATURAL JOIN Submission S WHERE S.employment_status = '"+ employStatus +"' AND R.question_num = '"+ questionNum +"' AND R.survey_id = 1 AND S.gender = '" + gender + "' AND S.date_submitted BETWEEN '"+ startDate + "' AND '" + endDate +"' AND S.year_of_birth BETWEEN '"+ birthStart + "' AND '"+ birthEnd +"' GROUP BY question_num;";
+  query[4]= "SELECT AVG(overall_sentiment) AS overallAverage FROM `cits-3200.analytics.responses_dev` R  WHERE S.employment_status = '"+ employStatus +"' AND R.question_num = '"+ questionNum +"' AND R.survey_id ='d34f3eae8e9a48b6bc8c930bc5084b87' AND S.gender = '" + gender + "' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN '"+ birthStart + "' AND '"+ birthEnd +"' GROUP BY question_num;";
 
   // Query 5: Organisation's average overall sentiment score for the question
-  query += "SELECT AVG(overall_sentiment) AS organizationAverage FROM Response R NATURAL JOIN Submission S WHERE S.employment_status = '"+ employStatus +"' AND R.question_num = '"+ questionNum +"' AND R.survey_id = 1 AND S.gender = '" + gender + "' AND S.date_submitted BETWEEN '"+ startDate + "' AND '" + endDate +"' AND S.year_of_birth BETWEEN '"+ birthStart + "' AND '"+ birthEnd +"' GROUP BY question_num;";
+  query[5]= "SELECT AVG(overall_sentiment) AS organizationAverage FROM `cits-3200.analytics.responses_dev` R WHERE S.employment_status = '"+ employStatus +"' AND R.question_num = '"+ questionNum +"' AND R.survey_id ='d34f3eae8e9a48b6bc8c930bc5084b87' AND R.gender = '" + gender + "' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN '"+ birthStart + "' AND '"+ birthEnd +"' GROUP BY question_num;";
 
   // Query 6: First Date of responses for this question
-  query += "SELECT date_submitted AS firstDate FROM Submission S NATURAL JOIN Response R WHERE R.survey_id = 1 AND R.question_num = '" + questionNum + "' AND R.char_count != 0 AND S.date_submitted ORDER BY date_submitted ASC LIMIT 1;";
+  query[6]= "SELECT timestamp AS firstDate FROM `cits-3200.analytics.responses_dev` R  WHERE R.survey_id ='d34f3eae8e9a48b6bc8c930bc5084b87' AND R.question_num = '" + questionNum + "' AND R.char_count != 0 AND R.timestamp ORDER BY timestamp ASC LIMIT 1;";
 
   // Query 7: List of Questions for the Survey
-  query += "SELECT question FROM Question WHERE survey_id = 1;";
+  query[7] = "SELECT distinct question_name,question_id FROM `cits-3200.analytics.responses_dev` R WHERE R.survey_id = 'd34f3eae8e9a48b6bc8c930bc5084b87';";
 
   // Query 8: Frequency count array of sentiment scores -10 to 10 (for Histogram by Score)
-  query += "SELECT overall_sentiment, count(*) as frequency FROM Response R, Submission S WHERE S.employment_status = '"+ employStatus +"' AND R.submission_id = S.submission_id AND R.question_num = '"+ questionNum +"' AND R.survey_id = 1 AND S.gender = '" + gender + "' AND R.char_count != 0 AND S.date_submitted BETWEEN '"+ startDate + "' AND '" + endDate +"' AND S.year_of_birth BETWEEN '"+ birthStart + "' AND '"+ birthEnd +"' GROUP BY overall_sentiment;";
+  query[8] = "SELECT overall_sentiment, count(*) as frequency FROM `cits-3200.analytics.responses_dev` R  WHERE R.employment_status = '"+ employStatus +"'  AND R.question_num = '"+ questionNum +"' AND R.survey_id ='d34f3eae8e9a48b6bc8c930bc5084b87' AND R.gender = '" + gender + "' AND R.char_count != 0 AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN '"+ birthStart + "' AND '"+ birthEnd +"' GROUP BY overall_sentiment;";
 
   // Query 9: Response Details table
   // query += "SELECT date_submitted, response, overall_sentiment FROM Response R, Submission S WHERE R.submission_id=S.submission_id AND R.question_num = 1 AND R.survey_id=1 AND S.gender = 'male' AND R.char_count != 0 AND S.date_submitted BETWEEN '2016-01-20' AND '2018-04-21' order by overall_sentiment;";
@@ -143,9 +189,7 @@ module.exports.loadResults = function (req, res) {
 
     // Hard-coded values for response details display next to Histogram by Score
     // TODO: Update with actual dynamic data
-    var response_date = "06/07/2018";
-    var response_score = 9;
-    var response_text =  "Honeywell is perfectly positioned to enter the Industrial IoT space and transition from creating physical products to analytics, digital products and AI."; 
+    
 
     var results = { 
       questionArray: question_array,
@@ -169,10 +213,11 @@ module.exports.loadResults = function (req, res) {
       responseText: response_text,
     };
 
-    connection.end();
+   
     
     return res.send(results);
   });  
+  
   
 };
 
