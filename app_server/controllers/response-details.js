@@ -49,7 +49,7 @@ module.exports.getResponse = function (req, res) {
   if (employStatus == 'all') {
     query = query.replace(/S.employment_status = 'all' AND/g, '');
   }
-  var test;
+  
   connection.query(query, function (err, rows, fields) {
     if (err) throw err;
 

@@ -8,7 +8,7 @@ functions.connectToDB = function() {
    * 2 : Local Node.js --> Google Cloud SQL
    * 3 : Local Node.js --> Local MySQL
    */
-  var CONNECTION_MODE = 1;
+  var CONNECTION_MODE = 2;
 
   var connection; // MySQL Connection object
 
@@ -26,7 +26,7 @@ functions.connectToDB = function() {
   }
   else if (CONNECTION_MODE == 2) {
     connection = mysql.createConnection({
-      host     : '127.0.0.1',
+      host     : '35.197.174.139',
       user     : 'root',
       password : 'M2jquKgPuDsbM7kN',
       database : 'survey_data',
