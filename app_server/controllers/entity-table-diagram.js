@@ -56,13 +56,13 @@ module.exports.getResults = function (req, res) {
     var query2End = ") AS E2 ON E1.entity = E2.entity;";
   
     if (displayMode == "topFreq") {
-      query1End = "ORDER BY COUNT(*) DESC, entity LIMIT " + numEntities;
+      query1End = "ORDER BY COUNT(*) DESC, entity ASC LIMIT " + numEntities;
     }
     else if (displayMode == "mostPos") {
-      query1End = "ORDER BY AVG(sentiment) DESC, COUNT(*) DESC, entity LIMIT " + numEntities;
+      query1End = "ORDER BY AVG(sentiment) DESC, COUNT(*) DESC, entity ASC LIMIT " + numEntities;
     }
     else if (displayMode == "mostNeg") {
-      query1End = "ORDER BY AVG(sentiment) ASC, COUNT(*) DESC, entity LIMIT  " + numEntities;
+      query1End = "ORDER BY AVG(sentiment) ASC, COUNT(*) DESC, entity ASC LIMIT  " + numEntities;
     }
     queries = query1Start + query1End + ";\n" + query2Start + query1Start + query1End + query2End;
   }

@@ -44,7 +44,7 @@
   var ResponseInfo;
 
   // Entity Listing/Diagram variables:
-  var EntityDisplayMode = "mostNeg";
+  var EntityDisplayMode = "topFreq";
   var DisplayedEntities = [];
   var ConcurrencyMatrix = [];
   var FocusEntity;
@@ -510,8 +510,7 @@
 
         // Populate array of Entity objects
         for (i = 0; i < data.entities1.length; i++) {
-          DisplayedEntities.push(new Entity(i, data.entities1[i], data.frequencies[i], 
-                                   data.aveSentiments[i]));
+          DisplayedEntities.push(new Entity(i, data.entities1[i], data.frequencies[i], data.aveSentiments[i]));
         }
 
         // Initialise the concurrency matrix:
@@ -522,47 +521,32 @@
           }
         }      
 
-        console.log("Concurrency matrix:");
-        for (i = 0; i < NUM_ENTITIES; i++) {
-          var row = "";
-          for (j = 0; j < NUM_ENTITIES; j++) {
-            row += ConcurrencyMatrix[i][j] + ", ";
-          }
-          console.log(row);
-        }
-
         // Build the concurrency matrix:
-        var thisID;
-        var thisName;
-        var thisRank;
         var prevID = 1;
-        var groupedEntities = [];
+        var thisID;
+        var thisRank;
+        var groupedEntRanks = []; // ranks of group of entities with the same response id
         for (i = 0; i < data.responseIDs.length; i++) {
           thisID = data.responseIDs[i];
           for (j = 0; j < DisplayedEntities.length; j++) {
             if (DisplayedEntities[j].name == data.entities2[i]) {
-              thisName = DisplayedEntities[j].rank;
               thisRank = DisplayedEntities[j].rank;
             }
           }
 
           if (thisID == prevID) {
-            groupedEntities.push({
-              rank: thisRank,
-              name: thisName,
-            });
+            groupedEntRanks.push(thisRank);
           } 
           else {
-            for (j = 0; j < groupedEntities.length; j++) {
-              for (k = 0; k < groupedEntities.length; k++) {
-                if (groupedEntities[j].rank < groupedEntities[k].rank) {
-                  var row = groupedEntities[j].rank;
-                  var col = groupedEntities[k].rank;
-                  ConcurrencyMatrix[row][col]++;
+            for (j = 0; j < groupedEntRanks.length; j++) {
+              for (k = 0; k < groupedEntRanks.length; k++) {
+                if (groupedEntRanks[j] < groupedEntRanks[k]) {
+                  ConcurrencyMatrix[groupedEntRanks[j]][groupedEntRanks[k]]++;
                 }
               }
             }
-            groupedEntities = []; // clear the array 
+            groupedEntRanks = []; // clear the array 
+            groupedEntRanks.push(thisRank); // add current entity's rank
           }
 
           prevID = thisID;        
@@ -610,6 +594,16 @@
       }
     }
 
+    // find the heighest link frequency of the displayed entities:
+    var maxLinkFreq = 0;
+    for (i = 0; i < NUM_ENTITIES; i++) {
+      for (j = 0; j < NUM_ENTITIES; j++) {
+        if (ConcurrencyMatrix[i][j] > maxLinkFreq) {
+          maxLinkFreq = ConcurrencyMatrix[i][j];
+        }
+      }
+    }
+
     var svgDOM = document.getElementById('entitySvg'); 
     var SVG_WIDTH = 750; 
     var SVG_HEIGHT = 750; 
@@ -619,6 +613,22 @@
     var maxEntRadius = 0.5 * Math.PI * orbitRadius * 2 / NUM_ENTITIES;
     var html = "";
     
+    // Plot entity links:
+    for(i = 0; i < NUM_ENTITIES; i++) {
+      var startTheta = 90 - (i * 360 / NUM_ENTITIES); 
+      var startEntCentre_x = centre_x + orbitRadius * Math.cos(startTheta * Math.PI / 180);
+      var startEntCentre_y = centre_y - orbitRadius * Math.sin(startTheta * Math.PI / 180);
+      for(j = 0; j < NUM_ENTITIES; j++) {
+        if (ConcurrencyMatrix[i][j] > 0) {
+          var endTheta = 90 - (j * 360 / NUM_ENTITIES); 
+          var endEntCentre_x = centre_x + orbitRadius * Math.cos(endTheta * Math.PI / 180);
+          var endEntCentre_y = centre_y - orbitRadius * Math.sin(endTheta * Math.PI / 180);
+          var lineWeight = 6 * (ConcurrencyMatrix[i][j] / maxLinkFreq);
+          html += "<line x1='" + startEntCentre_x + "' y1='" + startEntCentre_y + "' x2='" + endEntCentre_x + "' y2='" + endEntCentre_y + "' style='stroke:rgb(50,50,50);stroke-width:" + lineWeight + "' />"; 
+        }
+      }
+    }
+
     // Plot entity circles
     for(i = 0; i < NUM_ENTITIES; i++) {
       // polar angle coordinate of centre of entity from X axis at centre of orbit (deg):
@@ -635,7 +645,7 @@
     }
     svgDOM.innerHTML = html;
 
-    // Plot entity links:
+
 
 
   }
