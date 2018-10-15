@@ -33,13 +33,17 @@ input, select, button {
   padding: 3px;
 }
 
-input[type=date] {
+input, button {
   font-family: 'Roboto Condensed', sans-serif; 
 }
 
 a {
   color: #00B7FF;
   text-decoration: none;
+}
+
+input[type='radio'] {
+  cursor: pointer;
 }
 
 .centred {
@@ -195,14 +199,18 @@ input#searchedEntity {
   margin: 0px 10px 0px 10px;
 }
 
-text.entLabel {
-  font-size: 10pt;
-  fill: grey;
+circle.entCircles {
+  cursor: pointer;
 }
 
-tspan.entName {
-  font-weight: bold;
+text.entLabel {
+  font-size: 12pt;
   fill: black;
+  font-weight: bold;
+}
+
+tspan.bold {
+  font-weight: bold;
 }
 
 svg#entitySvg {

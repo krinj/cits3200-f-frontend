@@ -50,11 +50,12 @@
   var FocusEntity;
 
   // Constructor for Entity objects
-  function Entity(rank, name, freq, aveSentiment) {
+  function Entity(rank, name, freq, aveSentiment, linkFreq) {
     this.rank = rank;
     this.name = name;
     this.freq = freq;
     this.aveSentiment = aveSentiment;
+    this.linkFreq = linkFreq;
   }
 
   window.onload = function() {
@@ -524,7 +525,7 @@
 
         // Populate array of Entity objects
         for (i = 0; i < data.entities1.length; i++) {
-          DisplayedEntities.push(new Entity(i, data.entities1[i], data.frequencies[i], Math.round(data.aveSentiments[i] * 10) / 10));
+          DisplayedEntities.push(new Entity(i, data.entities1[i], data.frequencies[i], Math.round(data.aveSentiments[i] * 10) / 10, null)); // data.linkFreqs[i]
         }
 
         // Initialise the concurrency matrix:
@@ -567,14 +568,14 @@
           prevID = thisID;        
         }
 
-        console.log("Concurrency matrix:");
-        for (i = 0; i < NUM_ENTITIES; i++) {
-          var row = "";
-          for (j = 0; j < NUM_ENTITIES; j++) {
-            row += ConcurrencyMatrix[i][j] + ", ";
-          }
-          console.log(row);
-        }
+        // console.log("Concurrency matrix:");
+        // for (i = 0; i < NUM_ENTITIES; i++) {
+        //   var row = "";
+        //   for (j = 0; j < NUM_ENTITIES; j++) {
+        //     row += ConcurrencyMatrix[i][j] + ", ";
+        //   }
+        //   console.log(row);
+        // }
 
         drawEntityDiagram();        
       },
@@ -611,24 +612,44 @@
     var SVG_HEIGHT = 800; 
     var centre_x = SVG_WIDTH / 2;
     var centre_y = SVG_HEIGHT / 2;
-    var orbitRadius = SVG_HEIGHT / 2 - 160;
+    var orbitRadius = SVG_HEIGHT / 2 - 140;
     var maxEntRadius = 0.5 * Math.PI * orbitRadius * 2 / NUM_ENTITIES;
+    var HOVER_BOX_WIDTH = 105;
+    var HOVER_BOX_HEIGHT = 45;
     var html = "";
     
+    var startTheta, startEntCentre_x, startEntCentre_y;
+    var endTheta, endEntCentre_x, endEntCentre_y;
+
     // Plot entity links:
-    for(i = 0; i < NUM_ENTITIES; i++) {
-      var startTheta = 90 - (i * 360 / NUM_ENTITIES); 
-      var startEntCentre_x = centre_x + orbitRadius * Math.cos(startTheta * Math.PI / 180);
-      var startEntCentre_y = centre_y - orbitRadius * Math.sin(startTheta * Math.PI / 180);
-      for(j = 0; j < NUM_ENTITIES; j++) {
-        if (ConcurrencyMatrix[i][j] > 0) {
-          var endTheta = 90 - (j * 360 / NUM_ENTITIES); 
-          var endEntCentre_x = centre_x + orbitRadius * Math.cos(endTheta * Math.PI / 180);
-          var endEntCentre_y = centre_y - orbitRadius * Math.sin(endTheta * Math.PI / 180);
-          var lineWeight = 6 * (ConcurrencyMatrix[i][j] / maxLinkFreq);
-          html += "<line x1='" + startEntCentre_x + "' y1='" + startEntCentre_y + "' x2='";
-          html += "" + endEntCentre_x + "' y2='" + endEntCentre_y;
-          html += "' style='stroke:rgb(50,50,50);stroke-width:" + lineWeight + "' />"; 
+    if (EntityDisplayMode == 'focus') {
+      startEntCentre_x = centre_x;
+      startEntCentre_y = centre_y;
+      for(i = 0; i < DisplayedEntities.length; i++) {
+        endTheta = 90 - (i * 360 / DisplayedEntities.length); 
+        endEntCentre_x = centre_x + orbitRadius * Math.cos(endTheta * Math.PI / 180);
+        endEntCentre_y = centre_y - orbitRadius * Math.sin(endTheta * Math.PI / 180);
+        var lineWeight = 6 * (DisplayedEntities[i].linkFreq / maxLinkFreq);
+        html += "<line x1='" + startEntCentre_x + "' y1='" + startEntCentre_y + "' x2='";
+        html += "" + endEntCentre_x + "' y2='" + endEntCentre_y;
+        html += "' style='stroke:rgb(50,50,50);stroke-width:" + lineWeight + "' />"; 
+      }
+    } 
+    else {      
+      for(i = 0; i < NUM_ENTITIES; i++) {
+        startTheta = 90 - (i * 360 / NUM_ENTITIES); 
+        startEntCentre_x = centre_x + orbitRadius * Math.cos(startTheta * Math.PI / 180);
+        startEntCentre_y = centre_y - orbitRadius * Math.sin(startTheta * Math.PI / 180);
+        for(j = 0; j < NUM_ENTITIES; j++) {
+          if (ConcurrencyMatrix[i][j] > 0) {
+            endTheta = 90 - (j * 360 / NUM_ENTITIES); 
+            endEntCentre_x = centre_x + orbitRadius * Math.cos(endTheta * Math.PI / 180);
+            endEntCentre_y = centre_y - orbitRadius * Math.sin(endTheta * Math.PI / 180);
+            var lineWeight = 6 * (ConcurrencyMatrix[i][j] / maxLinkFreq);
+            html += "<line x1='" + startEntCentre_x + "' y1='" + startEntCentre_y + "' x2='";
+            html += "" + endEntCentre_x + "' y2='" + endEntCentre_y;
+            html += "' style='stroke:rgb(50,50,50);stroke-width:" + lineWeight + "' />"; 
+          }
         }
       }
     }
@@ -643,24 +664,37 @@
       var textAnchor_x = centre_x + (orbitRadius + entRadius + 7) * Math.cos(theta * Math.PI / 180);
       var textAnchor_y = centre_y - (orbitRadius + entRadius + 7) * Math.sin(theta * Math.PI / 180);
       var fillColorFactor = (DisplayedEntities[i].aveSentiment + 10) / 20;
+      var hoverBoxCentre_x = centre_x + (orbitRadius - 2.5*maxEntRadius) * Math.cos(theta * Math.PI / 180);
+      var hoverBoxCentre_y = centre_y - (orbitRadius - 2.5*maxEntRadius) * Math.sin(theta * Math.PI / 180);
       var paddedAveSentiment = padPointZero(DisplayedEntities[i].aveSentiment);
+
       
-      html += "<circle class='entCircles' id='ec" + (i+1) + "' cx='" + entCentre_x + "' cy='" + entCentre_y + "' r='" + entRadius;
-      html += "' + stroke='black' stroke-width='1' fill='" + getColor(fillColorFactor);
-      html += "' />";
-      html += "<text class='entLabel' x='" + textAnchor_x + "' y='" + textAnchor_y;
-      html += "' transform='rotate(" + theta*-1 + "," + textAnchor_x + "," + textAnchor_y; 
-      html += ")'>" + (i+1) + ". <tspan class='entName'>" + DisplayedEntities[i].name;
-      html += "</tspan> (" + DisplayedEntities[i].freq + ", " + paddedAveSentiment;
-      html += ")</text>"; 
+      html += "<circle class='entCircles' id='ec" + i + "' cx='" + entCentre_x + "' cy='" + entCentre_y + "' r='" + entRadius + "' + stroke='black' stroke-width='1' fill='" + getColor(fillColorFactor) + "' />";
+      html += "<text class='entLabel' x='" + textAnchor_x + "' y='" + textAnchor_y + "' transform='rotate(" + theta*-1 + "," + textAnchor_x + "," + textAnchor_y + ")'>" + DisplayedEntities[i].name + "</text>"; 
+      html += "<rect id='' x='" + (hoverBoxCentre_x - HOVER_BOX_WIDTH/2)  + "' y='" + (hoverBoxCentre_y - HOVER_BOX_HEIGHT/2) + "' width='" + HOVER_BOX_WIDTH + "' height='" + HOVER_BOX_HEIGHT  + "' rx='5' ry = '5' fill='rgb(255,255,204)' stroke='gold' stroke-width='2'  visibility='hidden'>"; 
+      html += "<set attributeName='visibility' from='hidden' to='visible' begin='ec" + i + ".mouseover' end='ec" + i + ".mouseout'/>";
+      html += "</rect>";
+      html += "<text class='hoverText' x='" + (hoverBoxCentre_x - HOVER_BOX_WIDTH/2 + 5) + "' y='" + (hoverBoxCentre_y - HOVER_BOX_HEIGHT/2 + 15) + "' font-size='12' fill='black' visibility='hidden'>";
+      html += "<tspan dx='0' dy='0'>Rank: " +  (i+1) + "</tspan>";
+      html += "<tspan x='" + (hoverBoxCentre_x - HOVER_BOX_WIDTH/2 + 5) + "' dy='12'>Frequency: " +  DisplayedEntities[i].freq + "</tspan>";
+      html += "<tspan x='" + (hoverBoxCentre_x - HOVER_BOX_WIDTH/2 + 5) + "' dy='12'>Ave. Sentiment: " +  paddedAveSentiment + "</tspan>";
+      html += "<set attributeName='visibility' from='hidden' to='visible' begin='ec" + i + ".mouseover' end='ec" + i + ".mouseout'/>";
+      html += "</text>";
+
     }
     svgDOM.innerHTML = html;
 
-    // Add hover details for each entity circle
+    // On clicking an entity circle, switch to the focus diagram for that entity:
     $(".entCircles").each(function () {
-      var entity = this;
-      entCircles.addEventListener("hover", function() {
-        $('#EntitySvg').innerHTML += 
+      var entCircle = this;
+      entCircle.addEventListener("click", function() {
+        var rank = entCircle.id.slice(2);
+        for(i = 0; i < NUM_ENTITIES; i++) {
+          if (DisplayedEntities[i].rank == rank) {
+            FocusEntity = DisplayedEntities[i].name;
+            console.log(FocusEntity);
+          }
+        }
       });
     });
   }

@@ -79,6 +79,9 @@ module.exports.getResults = function (req, res) {
 
   connection.query(queries, function (err, rows, fields) {
     if (err) throw err;
+
+    // Arrays to store columns of query 0:
+    // var link_freqs = [];
     
     // Arrays to store columns of query 1:
     var entities_1 = [];
@@ -87,7 +90,7 @@ module.exports.getResults = function (req, res) {
 
     // Arrays to store columns of query 2:
     var response_ids = [];
-    var entities_2 = [];
+    var entities_2 = [];    
 
     for (i = 0; i < rows[0].length; i++) {
       entities_1.push(rows[0][i].entity);
@@ -105,7 +108,8 @@ module.exports.getResults = function (req, res) {
       frequencies: freqs,
       aveSentiments: ave_sentiments,
       responseIDs: response_ids,
-      entities2: entities_2
+      entities2: entities_2,
+      // linkFreqs: link_freqs
     };
 
     // console.log(results);
