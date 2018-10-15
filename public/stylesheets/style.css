@@ -195,30 +195,16 @@ input#searchedEntity {
   margin: 0px 10px 0px 10px;
 }
 
-#entityTableDiag {
-  display:flex
+text.entLabel {
+  font-size: 10pt;
+  fill: grey;
 }
 
-#entityTable {
-  width: 400px;
-}
-
-#entityDiag {
-  width: 800px;
-}
-
-table#entityTable th {
-  border: 1px solid grey;
-  padding: 3px;
-  background-color: rgb(182, 182, 182);
+tspan.entName {
   font-weight: bold;
+  fill: black;
 }
 
 svg#entitySvg {
-  border: 1px dashed grey;
-  margin: 0px 25px;
-}
-
-text.entLabel {
-  font-size: 10pt;
+  margin: 0px 200px;
 }

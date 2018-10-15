@@ -154,31 +154,20 @@ block content
 
       p.centred
         b Display Mode:
-        input(type="radio" class="dispModeRadio" name="displayMode" value="topFreq" checked) 
+        input(type="radio" class="dispModeRadio" name="dispModeRadio" value="topFreq" checked) 
         | Top Frequency Keywords 
-        input(type="radio" class="dispModeRadio" name="displayMode" value="mostPos") 
+        input(type="radio" class="dispModeRadio" name="dispModeRadio" value="mostPos") 
         | Most Positive Keywords
-        input(type="radio" class="dispModeRadio" name="displayMode" value="mostNeg") 
+        input(type="radio" class="dispModeRadio" name="dispModeRadio" value="mostNeg") 
         | Most Negative Keywords
-        input(type="radio" class="dispModeRadio" name="displayMode" value="focus") 
+        input(type="radio" class="dispModeRadio" name="dispModeRadio" value="focus") 
         | Keyword Focus
         input(type="text" id="searchedEntity" size=15 placeholder="Search by Entity")
         button(type="button" id="entitySearchButton") GO
-      
-      #entityTableDiag
-        #entityTable
-          h3 Keyword Listing
-          table#entityTable 
-            thead
-              tr
-                th Rank
-                th Keyword
-                th Frequency
-                th Ave. Sentiment Score
-            tbody#entityTableBody
-        #entityDiag
-          h3 Keyword Linkage Diagram
-          svg#entitySvg(width="750" height="750")
+       
+      h3 Keyword Linkage Diagram
+
+      svg#entitySvg(width="800" height="800")
 
   script(type="text/javascript" src="/javascripts/sentiment-analytics-cs.js") 
 

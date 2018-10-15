@@ -69,7 +69,7 @@
     EndDate = new Date(); // i.e. today
 
     loadResults();
-    getEntityTableDiagData();
+    getEntityDiagData();
 
     // Event Listener for Fetch Results button:
     document.getElementById('fetchResults').addEventListener('click', function() {          
@@ -96,6 +96,17 @@
       var slider = document.getElementById('dateSlider');
       slider.noUiSlider.set([startDateObj.getTime(), endDateObj.getTime()]);
     });
+
+    // Sets the entity display mode by clicking on the relevant radio button
+    $(document).on('click', '[name="dispModeRadio"]', function () {
+      console.log("changing display mode...");
+      if($(this).val() == "topFreq") EntityDisplayMode = "topFreq";
+      else if($(this).val() == "mostPos") EntityDisplayMode = "mostPos";
+      else if($(this).val() == "mostNeg") EntityDisplayMode = "mostNeg";
+      else EntityDisplayMode = "focus";
+      getEntityDiagData();
+    });
+
   };
 
   // Convert a JavaScript Date object to a string of form YYYY-MM-DD e.g. 2018-01-27
@@ -157,6 +168,7 @@
         renderHistogramByScore();
         fillSummaryTable();
         fillResponseDetails();
+        getEntityDiagData();
       },
       error: function (data) {
         console.log("Could not load results.");
@@ -486,9 +498,9 @@
     }
   }
 
-  // Render the Entity Table and Entity Linkage Diagram for a given set of filters,
-  // display mode and/or selected entity
-  function getEntityTableDiagData() {
+  // Render the Entity Linkage Diagram for a given set of filters, display mode and/or 
+  // selected entity
+  function getEntityDiagData() {
     $.ajax({
       url: "/entity-table-diagram",   
       // i.e. [Nodejs app]/app_server/controllers/entity-table-diagram.js
@@ -508,12 +520,15 @@
       success: function (data) { // data is the JSON object returned from SQL via controller
         // console.log("Entity data successfully received");
 
+        DisplayedEntities = []; // reset 
+
         // Populate array of Entity objects
         for (i = 0; i < data.entities1.length; i++) {
-          DisplayedEntities.push(new Entity(i, data.entities1[i], data.frequencies[i], data.aveSentiments[i]));
+          DisplayedEntities.push(new Entity(i, data.entities1[i], data.frequencies[i], Math.round(data.aveSentiments[i] * 10) / 10));
         }
 
         // Initialise the concurrency matrix:
+        ConcurrencyMatrix = [];
         for (i = 0; i < NUM_ENTITIES; i++) {
           ConcurrencyMatrix.push(new Array());
           for (j = 0; j < NUM_ENTITIES; j++) {
@@ -561,7 +576,6 @@
           console.log(row);
         }
 
-        fillEntityTable();
         drawEntityDiagram();        
       },
       error: function (data) {
@@ -570,21 +584,10 @@
     });
   }
 
-  function fillEntityTable() {
-
-    var html = "";
-    for(i = 0; i < NUM_ENTITIES; i++) {
-      html += "<tr>";
-      html += "<td>" + (DisplayedEntities[i].rank + 1) + "</td>";
-      html += "<td>" + DisplayedEntities[i].name + "</td>";
-      html += "<td>" + DisplayedEntities[i].freq + "</td>";
-      html += "<td>" + DisplayedEntities[i].aveSentiment + "</td>";
-      html += "</tr>";
-    }
-    document.getElementById('entityTableBody').innerHTML = html;
-  }
-
   function drawEntityDiagram() {
+
+    var svgDOM = document.getElementById('entitySvg'); 
+    svgDOM.innerHTML = "";
 
     // find the heighest frequency of the displayed entities:
     var maxFreq = 0;
@@ -604,12 +607,11 @@
       }
     }
 
-    var svgDOM = document.getElementById('entitySvg'); 
-    var SVG_WIDTH = 750; 
-    var SVG_HEIGHT = 750; 
+    var SVG_WIDTH = 800; 
+    var SVG_HEIGHT = 800; 
     var centre_x = SVG_WIDTH / 2;
     var centre_y = SVG_HEIGHT / 2;
-    var orbitRadius = SVG_HEIGHT / 2 - 100;
+    var orbitRadius = SVG_HEIGHT / 2 - 160;
     var maxEntRadius = 0.5 * Math.PI * orbitRadius * 2 / NUM_ENTITIES;
     var html = "";
     
@@ -624,7 +626,9 @@
           var endEntCentre_x = centre_x + orbitRadius * Math.cos(endTheta * Math.PI / 180);
           var endEntCentre_y = centre_y - orbitRadius * Math.sin(endTheta * Math.PI / 180);
           var lineWeight = 6 * (ConcurrencyMatrix[i][j] / maxLinkFreq);
-          html += "<line x1='" + startEntCentre_x + "' y1='" + startEntCentre_y + "' x2='" + endEntCentre_x + "' y2='" + endEntCentre_y + "' style='stroke:rgb(50,50,50);stroke-width:" + lineWeight + "' />"; 
+          html += "<line x1='" + startEntCentre_x + "' y1='" + startEntCentre_y + "' x2='";
+          html += "" + endEntCentre_x + "' y2='" + endEntCentre_y;
+          html += "' style='stroke:rgb(50,50,50);stroke-width:" + lineWeight + "' />"; 
         }
       }
     }
@@ -638,16 +642,35 @@
       var entRadius = maxEntRadius * (DisplayedEntities[i].freq / maxFreq);
       var textAnchor_x = centre_x + (orbitRadius + entRadius + 7) * Math.cos(theta * Math.PI / 180);
       var textAnchor_y = centre_y - (orbitRadius + entRadius + 7) * Math.sin(theta * Math.PI / 180);
-      var fillColourFactor = (DisplayedEntities[i].aveSentiment + 10) / 20;
+      var fillColorFactor = (DisplayedEntities[i].aveSentiment + 10) / 20;
+      var paddedAveSentiment = padPointZero(DisplayedEntities[i].aveSentiment);
       
-      html += "<circle cx='" + entCentre_x + "' cy='" + entCentre_y + "' r='" + entRadius + "' + stroke='black' stroke-width='1' fill='" + getColor(fillColourFactor) + "' />";
-      html += "<text class='entLabel' x='" + textAnchor_x + "' y='" + textAnchor_y + "' transform='rotate(" + theta*-1 + "," + textAnchor_x + "," + textAnchor_y + ")' fill='black'>" + DisplayedEntities[i].name + "</text>"; 
+      html += "<circle class='entCircles' id='ec" + (i+1) + "' cx='" + entCentre_x + "' cy='" + entCentre_y + "' r='" + entRadius;
+      html += "' + stroke='black' stroke-width='1' fill='" + getColor(fillColorFactor);
+      html += "' />";
+      html += "<text class='entLabel' x='" + textAnchor_x + "' y='" + textAnchor_y;
+      html += "' transform='rotate(" + theta*-1 + "," + textAnchor_x + "," + textAnchor_y; 
+      html += ")'>" + (i+1) + ". <tspan class='entName'>" + DisplayedEntities[i].name;
+      html += "</tspan> (" + DisplayedEntities[i].freq + ", " + paddedAveSentiment;
+      html += ")</text>"; 
     }
     svgDOM.innerHTML = html;
 
+    // Add hover details for each entity circle
+    $(".entCircles").each(function () {
+      var entity = this;
+      entCircles.addEventListener("hover", function() {
+        $('#EntitySvg').innerHTML += 
+      });
+    });
+  }
 
-
-
+  function padPointZero(fpNumber) {
+    var numAsString = "" + fpNumber;
+    if (!(/\./.test(numAsString))) { // if number has a decimal point
+      numAsString += ".0";
+    }
+    return numAsString;
   }
 
   /* Returns an rgb(x,y,z) string based on factor from 0 to 1 of how far along the 
