@@ -12,7 +12,7 @@
   const GreyColor = [188, 191, 191];
   const GreenColor = [52, 143, 104];
 
-  const NUM_ENTITIES = 30; // Number of entities to display in Entity Table & Diagram
+  const NUM_ENTITIES = 30; // (Max) number of entities to display in Entity Table & Diagram
 
   // *** TODO: Server should POST the logged in user's organisation name ***
   var Organisation = "Honeywell"; 
@@ -45,9 +45,11 @@
 
   // Entity Listing/Diagram variables:
   var EntityDisplayMode = "topFreq";
+  var NumDisplayedEnts; // can be less than NUM_ENTITIES in focus display mode
   var DisplayedEntities = [];
   var ConcurrencyMatrix = [];
-  var FocusEntity;
+  var LinkedEntities = [];  // set of entities linked to the focus entity
+  var FocusEntity = new Entity(null, null, null, null, null);
 
   // Constructor for Entity objects
   function Entity(rank, name, freq, aveSentiment, linkFreq) {
@@ -502,6 +504,7 @@
   // Render the Entity Linkage Diagram for a given set of filters, display mode and/or 
   // selected entity
   function getEntityDiagData() {
+
     $.ajax({
       url: "/entity-table-diagram",   
       // i.e. [Nodejs app]/app_server/controllers/entity-table-diagram.js
@@ -514,7 +517,7 @@
         "endDate" : toYYYY_MM_DD(EndDate),
         "displayMode" : EntityDisplayMode,
         "numEntities" : NUM_ENTITIES,
-        "focusEntity" : FocusEntity
+        "focusEntity" : FocusEntity.name
       },
       method: "POST",
       dataType: 'JSON',
@@ -522,56 +525,151 @@
         // console.log("Entity data successfully received");
 
         DisplayedEntities = []; // reset 
+        
+        if(EntityDisplayMode == "focus") {
+          
+          console.log('responseIDs.length: ' + data.responseIDs.length);
 
-        // Populate array of Entity objects
-        for (i = 0; i < data.entities1.length; i++) {
-          DisplayedEntities.push(new Entity(i, data.entities1[i], data.frequencies[i], Math.round(data.aveSentiments[i] * 10) / 10, null)); // data.linkFreqs[i]
-        }
-
-        // Initialise the concurrency matrix:
-        ConcurrencyMatrix = [];
-        for (i = 0; i < NUM_ENTITIES; i++) {
-          ConcurrencyMatrix.push(new Array());
-          for (j = 0; j < NUM_ENTITIES; j++) {
-            ConcurrencyMatrix[i][j] = 0;
-          }
-        }      
-
-        // Build the concurrency matrix:
-        var prevID = 1;
-        var thisID;
-        var thisRank;
-        var groupedEntRanks = []; // ranks of group of entities with the same response id
-        for (i = 0; i < data.responseIDs.length; i++) {
-          thisID = data.responseIDs[i];
-          for (j = 0; j < DisplayedEntities.length; j++) {
-            if (DisplayedEntities[j].name == data.entities2[i]) {
-              thisRank = DisplayedEntities[j].rank;
+          // Get attributes of focus entity:
+          for (i = 0; i < data.entities1.length; i++) {
+            if (data.entities1[i] == FocusEntity.name) {
+              FocusEntity.freq = data.frequencies[i];
+              FocusEntity.aveSentiment = Math.round(data.aveSentiments[i] * 10) / 10;
             }
           }
 
-          if (thisID == prevID) {
-            groupedEntRanks.push(thisRank);
-          } 
-          else {
-            for (j = 0; j < groupedEntRanks.length; j++) {
-              for (k = 0; k < groupedEntRanks.length; k++) {
-                if (groupedEntRanks[j] < groupedEntRanks[k]) {
-                  ConcurrencyMatrix[groupedEntRanks[j]][groupedEntRanks[k]]++;
+          // Build the LinkedEntities array of Entity objects:
+          LinkedEntities = []; // reset
+          var prevID = 1;
+          var thisID;
+          var thisRank;
+          var groupedEntNames = []; // names of group of entities with the same response id
+          var hasFocusEntity; // boolean for if group includes the focus entity
+          var entityInLinkedSet;
+          for (i = 0; i < data.responseIDs.length; i++) {
+            if(i%100 == 0) console.log("iteration: " + i);
+            thisID = data.responseIDs[i];
+            thisName = data.entities2[i];
+            if (thisName == FocusEntity.name) {
+              hasFocusEntity = true;
+            }
+  
+            if (thisID == prevID) {
+              groupedEntNames.push(thisName);
+            } 
+            else {
+              if (hasFocusEntity) {
+                entityInLinkedSet = false;
+                for (j = 0; j < groupedEntNames.length; j++) {
+                  if(LinkedEntities) {
+                    for (k = 0; k < LinkedEntities.length; k++) {
+                      // Update the link count of the entities in the group, 
+                      // if already in LinkedEntities:
+                      if(groupedEntNames[j] == LinkedEntities[k].name) {
+                        LinkedEntities[k].linkFreq++;
+                        entityInLinkedSet = true;
+                      }
+                    }
+                  }
+                  if(!entityInLinkedSet) {
+                    // If not in LinkedEntities, add this entity to LinkedEntities:
+                    var thisFreq;
+                    var thisAveSentiment;
+                    for (k = 0; k < data.entities1.length; k++) {
+                      if (data.entities1[k] == groupedEntNames[j]) {
+                        thisFreq = data.frequencies[i];
+                        thisAveSentiment = Math.round(data.aveSentiments[i] * 10) / 10;
+                      }
+                    }
+                    LinkedEntities.push(new Entity(null, groupedEntNames[j], thisFreq, thisAveSentiment, 1));
+                  }       
                 }
               }
+              groupedEntNames = []; // clear the array 
+            }  
+            prevID = thisID;        
+          }  
+
+          console.log("Sorting entities...");
+          
+          // Limit the set of displayed entities from the set of linked entities:
+          var tuples = []; // a set of [entityName, linkFreq] tuples for sorting
+          for(i = 0; i < LinkedEntities.length; i++) {
+            tuples.push([LinkedEntities[i].name, LinkedEntities[i].linkFreq]);
+          }
+          tuples.sort(compareLinkFreqs);
+
+          NumDisplayedEnts = Math.min(NUM_ENTITIES, LinkedEntities.length);
+          for (i = 0; i < NumDisplayedEnts; i++) {
+            var name = tuples[i][0];
+            var linkFreq = tuples[i][1];
+            var freq;
+            var aveSentiment;
+            for (j = 0; j < LinkedEntities.length; j++) {
+              if (LinkedEntities[j].name == name) {
+                freq = LinkedEntities[j].freq;
+                aveSentiment = LinkedEntities[j].aveSentiment;
+              }
             }
-            groupedEntRanks = []; // clear the array 
-            groupedEntRanks.push(thisRank); // add current entity's rank
+            console.log('linkFreq: ' + linkFreq);
+            console.log('freq: ' + freq);
+            DisplayedEntities.push(new Entity(i, name, freq, aveSentiment, linkFreq));
           }
 
-          prevID = thisID;        
         }
+        else {  // i.e. for all other entity display modes
 
+          // Populate array of Entity objects
+          for (i = 0; i < data.entities1.length; i++) {
+            DisplayedEntities.push(new Entity(i, data.entities1[i], data.frequencies[i], Math.round(data.aveSentiments[i] * 10) / 10, null)); 
+          }
+
+          NumDisplayedEnts = Math.min(NUM_ENTITIES, DisplayedEntities.length);
+
+          // (Re-)Initialise the concurrency matrix:
+          ConcurrencyMatrix = [];
+          for (i = 0; i < NumDisplayedEnts; i++) {
+            ConcurrencyMatrix.push(new Array());
+            for (j = 0; j < NumDisplayedEnts; j++) {
+              ConcurrencyMatrix[i][j] = 0;
+            }
+          }      
+          
+          // Build the concurrency matrix:
+          var prevID = 1;
+          var thisID;
+          var thisRank;
+          var groupedEntRanks = []; // ranks of group of entities with the same response id
+          for (i = 0; i < data.responseIDs.length; i++) {
+            thisID = data.responseIDs[i];
+            for (j = 0; j < DisplayedEntities.length; j++) {
+              if (DisplayedEntities[j].name == data.entities2[i]) {
+                thisRank = DisplayedEntities[j].rank;
+              }
+            }
+  
+            if (thisID == prevID) {
+              groupedEntRanks.push(thisRank);
+            } 
+            else {
+              for (j = 0; j < groupedEntRanks.length; j++) {
+                for (k = 0; k < groupedEntRanks.length; k++) {
+                  if (groupedEntRanks[j] < groupedEntRanks[k]) {
+                    ConcurrencyMatrix[groupedEntRanks[j]][groupedEntRanks[k]]++;
+                  }
+                }
+              }
+              groupedEntRanks = []; // clear the array 
+              groupedEntRanks.push(thisRank); // add current entity's rank
+            }
+  
+            prevID = thisID;        
+          }  
+        }
         // console.log("Concurrency matrix:");
-        // for (i = 0; i < NUM_ENTITIES; i++) {
+        // for (i = 0; i < NumDisplayedEnts; i++) {
         //   var row = "";
-        //   for (j = 0; j < NUM_ENTITIES; j++) {
+        //   for (j = 0; j < NumDisplayedEnts; j++) {
         //     row += ConcurrencyMatrix[i][j] + ", ";
         //   }
         //   console.log(row);
@@ -585,6 +683,19 @@
     });
   }
 
+  /* Comparator for sorting [entityName, linkFreq] tuples by linkFreq 
+   * (i.e. link frequency with focus entity) in descending order
+   * param a - [entityName, linkFreq] tuple
+   * param b - [entityName, linkFreq] tuple
+   * Returns - the difference D = (b's linkFreq) - (a's linkFreq):
+   *           if D > 0, sort b above a
+   *           if D = 0, no action
+   *           if D < 0, sort a above b
+   */
+  function compareLinkFreqs(a, b) {
+    return b[1] - a[1];
+  }   
+
   function drawEntityDiagram() {
 
     var svgDOM = document.getElementById('entitySvg'); 
@@ -592,28 +703,19 @@
 
     // find the heighest frequency of the displayed entities:
     var maxFreq = 0;
-    for (i = 0; i < NUM_ENTITIES; i++) {
+    for (i = 0; i < NumDisplayedEnts; i++) {
       if (DisplayedEntities[i].freq > maxFreq) {
         maxFreq = DisplayedEntities[i].freq;
       }
     }
-
-    // find the heighest link frequency of the displayed entities:
-    var maxLinkFreq = 0;
-    for (i = 0; i < NUM_ENTITIES; i++) {
-      for (j = 0; j < NUM_ENTITIES; j++) {
-        if (ConcurrencyMatrix[i][j] > maxLinkFreq) {
-          maxLinkFreq = ConcurrencyMatrix[i][j];
-        }
-      }
-    }
+    console.log('maxFreq: ' + maxFreq);
 
     var SVG_WIDTH = 800; 
     var SVG_HEIGHT = 800; 
     var centre_x = SVG_WIDTH / 2;
     var centre_y = SVG_HEIGHT / 2;
     var orbitRadius = SVG_HEIGHT / 2 - 140;
-    var maxEntRadius = 0.5 * Math.PI * orbitRadius * 2 / NUM_ENTITIES;
+    var maxEntRadius = 0.5 * Math.PI * orbitRadius * 2 / NumDisplayedEnts;
     var HOVER_BOX_WIDTH = 105;
     var HOVER_BOX_HEIGHT = 45;
     var html = "";
@@ -623,6 +725,15 @@
 
     // Plot entity links:
     if (EntityDisplayMode == 'focus') {
+
+      // find the highest link frequency of the displayed entities:
+      var maxLinkFreq = 0;
+      for (i = 0; i < NumDisplayedEnts; i++) {
+        if (DisplayedEntities[i].linkFreq > maxLinkFreq) {
+          maxLinkFreq = LinkedEntities[i].linkFreq;
+        }
+      }
+
       startEntCentre_x = centre_x;
       startEntCentre_y = centre_y;
       for(i = 0; i < DisplayedEntities.length; i++) {
@@ -635,14 +746,26 @@
         html += "' style='stroke:rgb(50,50,50);stroke-width:" + lineWeight + "' />"; 
       }
     } 
-    else {      
-      for(i = 0; i < NUM_ENTITIES; i++) {
-        startTheta = 90 - (i * 360 / NUM_ENTITIES); 
+    else { // for all other display modes
+
+      // find the highest link frequency of the displayed entities:
+      var maxLinkFreq = 0;
+      for (i = 0; i < NumDisplayedEnts; i++) {
+        for (j = 0; j < NumDisplayedEnts; j++) {
+          if (ConcurrencyMatrix[i][j] > maxLinkFreq) {
+            maxLinkFreq = ConcurrencyMatrix[i][j];
+          }
+        }
+      }
+
+      // Plot links:
+      for(i = 0; i < NumDisplayedEnts; i++) {
+        startTheta = 90 - (i * 360 / NumDisplayedEnts); 
         startEntCentre_x = centre_x + orbitRadius * Math.cos(startTheta * Math.PI / 180);
         startEntCentre_y = centre_y - orbitRadius * Math.sin(startTheta * Math.PI / 180);
-        for(j = 0; j < NUM_ENTITIES; j++) {
+        for(j = 0; j < NumDisplayedEnts; j++) {
           if (ConcurrencyMatrix[i][j] > 0) {
-            endTheta = 90 - (j * 360 / NUM_ENTITIES); 
+            endTheta = 90 - (j * 360 / NumDisplayedEnts); 
             endEntCentre_x = centre_x + orbitRadius * Math.cos(endTheta * Math.PI / 180);
             endEntCentre_y = centre_y - orbitRadius * Math.sin(endTheta * Math.PI / 180);
             var lineWeight = 6 * (ConcurrencyMatrix[i][j] / maxLinkFreq);
@@ -655,9 +778,9 @@
     }
 
     // Plot entity circles
-    for(i = 0; i < NUM_ENTITIES; i++) {
+    for(i = 0; i < NumDisplayedEnts; i++) {
       // polar angle coordinate of centre of entity from X axis at centre of orbit (deg):
-      var theta = 90 - (i * 360 / NUM_ENTITIES); 
+      var theta = 90 - (i * 360 / NumDisplayedEnts); 
       var entCentre_x = centre_x + orbitRadius * Math.cos(theta * Math.PI / 180);
       var entCentre_y = centre_y - orbitRadius * Math.sin(theta * Math.PI / 180);
       var entRadius = maxEntRadius * (DisplayedEntities[i].freq / maxFreq);
@@ -667,7 +790,6 @@
       var hoverBoxCentre_x = centre_x + (orbitRadius - 2.5*maxEntRadius) * Math.cos(theta * Math.PI / 180);
       var hoverBoxCentre_y = centre_y - (orbitRadius - 2.5*maxEntRadius) * Math.sin(theta * Math.PI / 180);
       var paddedAveSentiment = padPointZero(DisplayedEntities[i].aveSentiment);
-
       
       html += "<circle class='entCircles' id='ec" + i + "' cx='" + entCentre_x + "' cy='" + entCentre_y + "' r='" + entRadius + "' + stroke='black' stroke-width='1' fill='" + getColor(fillColorFactor) + "' />";
       html += "<text class='entLabel' x='" + textAnchor_x + "' y='" + textAnchor_y + "' transform='rotate(" + theta*-1 + "," + textAnchor_x + "," + textAnchor_y + ")'>" + DisplayedEntities[i].name + "</text>"; 
@@ -680,8 +802,15 @@
       html += "<tspan x='" + (hoverBoxCentre_x - HOVER_BOX_WIDTH/2 + 5) + "' dy='12'>Ave. Sentiment: " +  paddedAveSentiment + "</tspan>";
       html += "<set attributeName='visibility' from='hidden' to='visible' begin='ec" + i + ".mouseover' end='ec" + i + ".mouseout'/>";
       html += "</text>";
-
     }
+
+    if (EntityDisplayMode == "focus") {
+      // Draw focus entity circle and label 
+      var fillColorCoef = (FocusEntity.aveSentiment + 10) / 20;
+      html += "<circle class='entCircles' cx='" + centre_x + "' cy='" + centre_y + "' r='75' stroke='black' stroke-width='1' fill='" + getColor(fillColorCoef) + "' />";
+      html += "<text class='entLabel' x='" + (centre_x - 20) + "' y='" + centre_y + "'>" + FocusEntity.name + "</text>"; 
+    }
+
     svgDOM.innerHTML = html;
 
     // On clicking an entity circle, switch to the focus diagram for that entity:
@@ -689,10 +818,13 @@
       var entCircle = this;
       entCircle.addEventListener("click", function() {
         var rank = entCircle.id.slice(2);
-        for(i = 0; i < NUM_ENTITIES; i++) {
+        for(i = 0; i < NumDisplayedEnts; i++) {
           if (DisplayedEntities[i].rank == rank) {
-            FocusEntity = DisplayedEntities[i].name;
-            console.log(FocusEntity);
+            FocusEntity.name = DisplayedEntities[i].name;
+            console.log("FocusEntity name: " + FocusEntity.name);
+            EntityDisplayMode = "focus";
+            document.getElementById('focusRadio').checked = true;
+            getEntityDiagData();
           }
         }
       });

@@ -46,25 +46,28 @@ module.exports.getResults = function (req, res) {
   
   var queries = "";
 
-  if (displayMode == "focus") {
+  var query1Start = "SELECT entity, COUNT(*) AS freq, AVG(sentiment) AS aveSentiment ";
+  var queryMiddle = "FROM Submission S NATURAL JOIN Response R NATURAL JOIN Entity E WHERE entity IS NOT NULL AND organisation = '" + organisation + "' AND S.survey_id = " + surveyID + " AND question_num = " + questionNum + " AND S.gender = '" + gender + "' AND S.employment_status = '" + employStatus + "' AND S.date_submitted BETWEEN '" + startDate + "' AND '" + endDate + "' AND S.year_of_birth BETWEEN '" + birthStart + "' AND '" + birthEnd + "'";
 
+  if (displayMode == "focus") {
+    queries = query1Start + queryMiddle + " GROUP BY entity ORDER BY entity; ";
+    queries += "SELECT response_id AS responseID, entity " + queryMiddle + ";";
   } 
   else {
-    var query1Start = "SELECT entity, COUNT(*) AS freq, AVG(sentiment) AS aveSentiment FROM Submission S NATURAL JOIN Response R NATURAL JOIN Entity E WHERE entity IS NOT NULL AND organisation = '" + organisation + "' AND S.survey_id = " + surveyID + " AND question_num = " + questionNum + " AND S.gender = '" + gender + "' AND S.employment_status = '" + employStatus + "' AND S.date_submitted BETWEEN '" + startDate + "' AND '" + endDate + "' AND S.year_of_birth BETWEEN '" + birthStart + "' AND '" + birthEnd + "' GROUP BY entity ";
     var query1End = "";
     var query2Start = "SELECT E1.response_id AS responseID, E1.entity AS entity FROM Entity E1 INNER JOIN (";
     var query2End = ") AS E2 ON E1.entity = E2.entity;";
   
     if (displayMode == "topFreq") {
-      query1End = "ORDER BY COUNT(*) DESC, entity ASC LIMIT " + numEntities;
+      query1End = " GROUP BY entity ORDER BY COUNT(*) DESC, entity ASC LIMIT " + numEntities;
     }
     else if (displayMode == "mostPos") {
-      query1End = "ORDER BY AVG(sentiment) DESC, COUNT(*) DESC, entity ASC LIMIT " + numEntities;
+      query1End = "  GROUP BY entity ORDER BY AVG(sentiment) DESC, COUNT(*) DESC, entity ASC LIMIT " + numEntities;
     }
     else if (displayMode == "mostNeg") {
-      query1End = "ORDER BY AVG(sentiment) ASC, COUNT(*) DESC, entity ASC LIMIT  " + numEntities;
+      query1End = "  GROUP BY entity ORDER BY AVG(sentiment) ASC, COUNT(*) DESC, entity ASC LIMIT " + numEntities;
     }
-    queries = query1Start + query1End + ";\n" + query2Start + query1Start + query1End + query2End;
+    queries = query1Start + queryMiddle + query1End + ";\n" + query2Start + query1Start + queryMiddle + query1End + query2End;
   }
   
   if (gender == 'all') {
@@ -75,14 +78,9 @@ module.exports.getResults = function (req, res) {
     queries = queries.replace(/S.employment_status = 'all' AND/g, '');
   }
 
-  console.log("Queries:\n" + queries);
-
   connection.query(queries, function (err, rows, fields) {
     if (err) throw err;
 
-    // Arrays to store columns of query 0:
-    // var link_freqs = [];
-    
     // Arrays to store columns of query 1:
     var entities_1 = [];
     var freqs = [];
@@ -109,7 +107,6 @@ module.exports.getResults = function (req, res) {
       aveSentiments: ave_sentiments,
       responseIDs: response_ids,
       entities2: entities_2,
-      // linkFreqs: link_freqs
     };
 
     // console.log(results);
