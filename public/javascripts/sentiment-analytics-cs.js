@@ -35,6 +35,7 @@
   //timeLine
   var TimeSeriesX = [];
   var TimeSeriesY = [];
+  var TimeSeriesXformat = [];
 
   // Sentiment colour scale end a middle points:
   var RedColor = [204, 69, 40];
@@ -135,6 +136,11 @@
         TimeSeriesY = data.timeSeriesY;
 
 
+        for(i=0; i<TimeSeriesX.length; i++) {
+          TimeSeriesXformat.push(TimeSeriesX[i].slice(0,10));
+        };
+
+
 
 
         // If loading the page for the first time:
@@ -142,12 +148,13 @@
           setFilterInputs();
           renderDateSlider();
         }
-
+        renderSentiTimeSeries();
         renderAveSentimentDial();
         renderCompareSentimentChart();
         renderHistogramByScore();
         fillSummaryTable();
         fillResponseDetails();
+
       },
       error: function (data) {
         console.log("Could not fetch data.");
@@ -225,10 +232,12 @@
   }
 
   //sentiTimeSeries
+function renderSentiTimeSeries() {
+  alert(TimeSeriesY);
   var data = [
     {
-      x: [1,2,3,4,5],
-      y: [5,4,3,2,1],
+      x:TimeSeriesXformat,
+      y:TimeSeriesY,
       type: 'scatter'
     }
   ];
@@ -236,7 +245,7 @@
     title: 'Time Series with Rangeslider',
     xaxis: {
       autorange: true,
-      range: [TimeSeriesX[0], TimeSeriesX[TimeSeriesX.length - 1]],
+      range: [TimeSeriesXformat[0], TimeSeriesXformat[TimeSeriesX.length - 1]],
       rangeselector: {buttons: [
           {
             count: 1,
@@ -250,20 +259,27 @@
             step: 'month',
             stepmode: 'backward'
           },
+          {
+            count: 1,
+            label: '1y',
+            step: 'year',
+            stepmode: 'backward'
+          },
+
           {step: 'all'}
         ]},
-      rangeslider: {range: [TimeSeriesX[0], TimeSeriesX[TimeSeriesX.length - 1]]},
+      rangeslider: {range: [TimeSeriesXformat[0], TimeSeriesXformat[TimeSeriesX.length - 1]]},
       type: 'date'
     },
-    yaxis: {
-      autorange: true,
-      range: [Math.min.apply(null,TimeSeriesY), Math.max.apply(null,TimeSeriesY)],
-      type: 'linear'
-    }
+    //yaxis: {
+    //  autorange: true,
+    //  range: [Math.min.apply(null,TimeSeriesY), Math.max.apply(null,TimeSeriesY)],
+  //    type: 'linear'
+  //  }
   };
   var timeLine = document.getElementById('sentiTimeSeriesContainer');
   Plotly.newPlot(timeLine, data, layout);
-
+}
 
 
   function renderAveSentimentDial() {
