@@ -1,5 +1,5 @@
 /*
- * Client-Side (cs) script for the Sentiment Analytics webpage. 
+ * Client-Side (cs) script for the Sentiment Analytics webpage.
  */
 
 // JQUERY FUNCTIONS
@@ -25,13 +25,16 @@
   var FirstDate;
   var QuestionArray = [];
   var ScoreFreqArray = [];
-  
+
   var responseScore;
-  
+
   var indexOfResponse = 0;
   var checkflag = false;
   var ResponseInfo;
 
+  //timeLine
+  var TimeSeriesX = [];
+  var TimeSeriesY = [];
 
   // Sentiment colour scale end a middle points:
   var RedColor = [204, 69, 40];
@@ -49,22 +52,22 @@
     // TODO: run a separate query when page loads
     EndDate = new Date(); // i.e. today
 
-    loadResults(QuestionNum, Gender, AgeRange, EmployStatus, 
+    loadResults(QuestionNum, Gender, AgeRange, EmployStatus,
                 toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
 
     // Event Listener for Fetch Results button:
-    document.getElementById('fetchResults').addEventListener('click', function() {          
+    document.getElementById('fetchResults').addEventListener('click', function() {
       QuestionNum = document.getElementById("questionList").value;
       Gender = document.getElementById("gender").value;
       AgeRange = document.getElementById("ageRange").value;
       EmployStatus = document.getElementById("employStatus").value;
       StartDate = new Date(document.getElementById("startDateBox").valueAsDate);
       EndDate = new Date(document.getElementById("endDateBox").valueAsDate);
-      loadResults(QuestionNum, Gender, AgeRange, EmployStatus, 
-                  toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));   
+      loadResults(QuestionNum, Gender, AgeRange, EmployStatus,
+                  toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
     });
 
-    // When resetting filters, reset start date and end date to overall range start and range end: 
+    // When resetting filters, reset start date and end date to overall range start and range end:
     document.getElementById('resetFilters').addEventListener('click', function() {
       document.getElementById("gender").value = 'all';
       document.getElementById("ageRange").value = 'all';
@@ -72,7 +75,7 @@
       document.getElementById('startDateBox').valueAsDate = FirstDate;
       document.getElementById('endDateBox').valueAsDate = new Date();
 
-      // Reset the handles on the date slider: 
+      // Reset the handles on the date slider:
       var startDateObj = FirstDate;
       var endDateObj = new Date();
       var slider = document.getElementById('dateSlider');
@@ -128,6 +131,12 @@
         ResponseScore = data.responseScore;
         ResponseText = data.responseText;
 
+        TimeSeriesX = data.timeSeriesX;
+        TimeSeriesY = data.timeSeriesY;
+
+
+
+
         // If loading the page for the first time:
         if(document.getElementById("questionList").innerHTML == "") {
           setFilterInputs();
@@ -144,11 +153,11 @@
         console.log("Could not fetch data.");
       }
     });
-  }    
+  }
 
   // Set the filter DOM inputs to the values returned from the loadResults method
   // (which have been saved to global variables)
-  function setFilterInputs() {   
+  function setFilterInputs() {
     var html = "";
     for(var i = 0; i < QuestionArray.length; i++) {
       html += "<option value='" + (i+1) + "'>" + QuestionArray[i] + "</option>";
@@ -166,11 +175,11 @@
     var firstMonth = FirstDate.getMonth();
     var firstYear = FirstDate.getFullYear();
     document.getElementById('firstDateSpan').innerHTML = padZero(firstDay) + '/' + padZero(firstMonth + 1) + "/" + firstYear;
-    
+
     var today = new Date();
     document.getElementById("todaysDate").innerHTML = padZero(today.getDate()) + "/" + padZero((today.getMonth() + 1)) + "/" + today.getFullYear();
 
-    // Overall date range for slider 
+    // Overall date range for slider
     // (remains fixed even if filter range sliders/boxes is changed by the user)
     var rangeStart = FirstDate;
     var rangeEnd = today;
@@ -190,10 +199,10 @@
           min: rangeStart_ms,
           max: rangeEnd_ms
       },
-    
+
       // Steps of one day
       step: 1 * 24 * 60 * 60 * 1000,
-    
+
       // Two more timestamps indicate the handle starting positions.
       start: [startDate_ms, endDate_ms]
     });
@@ -215,10 +224,52 @@
     document.getElementById("maxCharCount").innerHTML = MaxCharCount;
   }
 
+  //sentiTimeSeries
+  var data = [
+    {
+      x: [1,2,3,4,5],
+      y: [5,4,3,2,1],
+      type: 'scatter'
+    }
+  ];
+  var layout = {
+    title: 'Time Series with Rangeslider',
+    xaxis: {
+      autorange: true,
+      range: [TimeSeriesX[0], TimeSeriesX[TimeSeriesX.length - 1]],
+      rangeselector: {buttons: [
+          {
+            count: 1,
+            label: '1m',
+            step: 'month',
+            stepmode: 'backward'
+          },
+          {
+            count: 6,
+            label: '6m',
+            step: 'month',
+            stepmode: 'backward'
+          },
+          {step: 'all'}
+        ]},
+      rangeslider: {range: [TimeSeriesX[0], TimeSeriesX[TimeSeriesX.length - 1]]},
+      type: 'date'
+    },
+    yaxis: {
+      autorange: true,
+      range: [Math.min.apply(null,TimeSeriesY), Math.max.apply(null,TimeSeriesY)],
+      type: 'linear'
+    }
+  };
+  var timeLine = document.getElementById('sentiTimeSeriesContainer');
+  Plotly.newPlot(timeLine, data, layout);
+
+
+
   function renderAveSentimentDial() {
 
-    var canvasWidth = 500;   
-    var canvasHeight = 280;   
+    var canvasWidth = 500;
+    var canvasHeight = 280;
     var needleRadius = 180;
 
     var canvasContainerDOM = document.getElementById("dialCanvasContainer");
@@ -227,8 +278,8 @@
     canvasContainerDOM.innerHTML = html; // (re-) insert the canvas into the DOM
     var canvasDOM = document.getElementById("dialCanvas");
     var ctx = canvasDOM.getContext("2d");
-    var img = document.getElementById("dialImg");   
-    
+    var img = document.getElementById("dialImg");
+
     var angle = ((10 - OrgAveSentiment) * Math.PI) / 20;
     var needleBaseX = canvasWidth / 2 - 8;
     var needleBaseY = canvasHeight - 30;
@@ -238,7 +289,7 @@
     ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight - 20);
     ctx.beginPath();
     ctx.moveTo(needleBaseX, needleBaseY);
-    ctx.lineTo(needleTipX, needleTipY);      
+    ctx.lineTo(needleTipX, needleTipY);
     ctx.scale(5,5);
     ctx.strokeStyle='red';
     ctx.stroke();
@@ -247,20 +298,20 @@
   }
 
   function renderCompareSentimentChart() {
-    
-    // (Re-)create canvas DOM element 
+
+    // (Re-)create canvas DOM element
     // (otherwise duplicate canvases will form on fetching new results)
     var canvasContainerDOM = document.getElementById("compareAveSentContainer");
     var html = "<canvas id='compareAveSentCanvas'>";
     html += "Your browser does not support the HTML5 canvas tag. </canvas>";
     canvasContainerDOM.innerHTML = html; // (re-) insert the canvas into the DOM
     var canvasDOM = document.getElementById("compareAveSentCanvas");
-    
+
     var industryAve = OrgAveSentiment * 0.8; // use until industry field added to DB
-    
+
     var myChart = canvasDOM.getContext('2d');
     var compareSentChart = new Chart(myChart, {
-      type: 'bar', 
+      type: 'bar',
       data: {
         labels: ['Your Organization', 'Industry Average', 'National Average'],
         datasets: [{
@@ -322,7 +373,7 @@
     var fillColor = [];
     var tiers = 20;
 
-    // Populate data and bar colours 
+    // Populate data and bar colours
     for (var i = 0; i < tiers + 1; i++)
     {
       xData.push(i - tiers/2);
@@ -336,7 +387,7 @@
         {
           fill: true,
           backgroundColor: fillColor,
-          data: yData, 
+          data: yData,
         }
       ]
     };
@@ -378,7 +429,7 @@
       var activeElement = histogramChart.getElementAtEvent(event)[0];
       responseScore = histogramChart.data.labels[activeElement._index];
       $.ajax({
-        url: "/response-details", 
+        url: "/response-details",
         // i.e. [Nodejs app]/app_server/controllers/response-details.js
         data: { // data to send to controller
           score: responseScore,
@@ -467,14 +518,14 @@
     document.getElementById('responseIndex').innerHTML ="Response: " + responseIndex + " of " + ResponseInfo.length;
   }
 
-  /* Returns an rgb(x,y,z) string based on factor from 0 to 1 of how far along the 
+  /* Returns an rgb(x,y,z) string based on factor from 0 to 1 of how far along the
    * specified colour spectrum the output colour should be.
-   */ 
+   */
   function getColor(factor) {
     var rgbStart = RedColor;
     var rgbMiddle = GreyColor;
     var rgbEnd = GreenColor;
-    var r, g, b; 
+    var r, g, b;
     if (factor <= 0.5) {
       r = lerp(rgbStart[0], rgbMiddle[0], factor * 2);
       g = lerp(rgbStart[1], rgbMiddle[1], factor * 2);
@@ -493,4 +544,4 @@
     return a + delta * factor;
   }
 
-})(jQuery);      
+})(jQuery);

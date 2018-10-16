@@ -71,12 +71,17 @@ block content
             span#todaysDate
         tr
           td.centred(colspan='4' style='font-size:10pt') Specify the start and end dates to filter the results. You can either use the slider handles or specify exact dates in the 'Start' and 'End' input boxes above. 
-      br
+      br    
       p.centred
         button#fetchResults(type="button") FETCH RESULTS
         | &emsp;
         button#resetFilters(type="button") RESET FILTERS
   
+  
+  .section#timeLine
+    .centredBody
+      #sentiTimeSeriesContainer
+        
   .section#summary
     .centredBody
       h2 RESPONSE SUMMARY
@@ -149,4 +154,3 @@ block content
             p#responseText
 
   script(type="text/javascript" src="/javascripts/sentiment-analytics-cs.js") 
-
