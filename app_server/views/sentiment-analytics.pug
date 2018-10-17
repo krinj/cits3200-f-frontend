@@ -164,10 +164,25 @@ block content
         | Keyword Focus
         input(type="text" id="searchedEntity" size=15 placeholder="Search by Entity")
         button(type="button" id="entitySearchButton") GO
-       
-      h3 Keyword Linkage Diagram
 
-      svg#entitySvg(width="800" height="800")
+      #entityTableDiag
+        #entityTable
+          h3 Keyword Listing
+          table#entityTable 
+            col#etcol1
+            col#etcol2
+            col#etcol3
+            col#etcol4
+            thead
+              tr
+                th Rank
+                th Keyword
+                th Frequency
+                th Average Sentiment Score
+            tbody#entityTableBody
+        #entityDiag
+          h3 Keyword Linkage Diagram
+          svg#entitySvg(width="800" height="800") 
 
   script(type="text/javascript" src="/javascripts/sentiment-analytics-cs.js") 
 

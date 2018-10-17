@@ -199,6 +199,44 @@ input#searchedEntity {
   margin: 0px 10px 0px 10px;
 }
 
+#entityTableDiag {
+  display:flex
+}
+
+#entityTable {
+  width: 300px;
+}
+
+#entityDiag {
+  width: 800px;
+  margin-left:100px;
+}
+
+table#entityTable {
+  border-spacing: 0;
+  border-collapse: collapse;
+}
+
+table#entityTable th, table#entityTable td {
+  border: 1px solid grey;
+  margin: -1;
+  padding: 3px;
+  font-size: 10pt;
+}
+
+table#entityTable th {
+  background-color: rgb(182, 182, 182);
+  font-weight: bold;
+}
+
+col#etcol3 {
+  width: 68px;
+}
+
+col#etcol4 {
+  width: 40px;
+}
+
 circle.entCircles {
   cursor: pointer;
 }
@@ -211,8 +249,4 @@ text.entLabel {
 
 tspan.bold {
   font-weight: bold;
-}
-
-svg#entitySvg {
-  margin: 0px 200px;
 }

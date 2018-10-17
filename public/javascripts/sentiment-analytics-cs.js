@@ -675,6 +675,7 @@
         //   console.log(row);
         // }
 
+        fillEntityTable();
         drawEntityDiagram();        
       },
       error: function (data) {
@@ -695,6 +696,20 @@
   function compareLinkFreqs(a, b) {
     return b[1] - a[1];
   }   
+
+  function fillEntityTable() {
+
+    var html = "";
+    for(i = 0; i < NUM_ENTITIES; i++) {
+      html += "<tr>";
+      html += "<td>" + (DisplayedEntities[i].rank + 1) + "</td>";
+      html += "<td>" + DisplayedEntities[i].name + "</td>";
+      html += "<td class='centred'>" + DisplayedEntities[i].freq + "</td>";
+      html += "<td class='centred'>" + padPointZero(DisplayedEntities[i].aveSentiment) + "</td>";
+      html += "</tr>";
+    }
+    document.getElementById('entityTableBody').innerHTML = html;
+  }
 
   function drawEntityDiagram() {
 
