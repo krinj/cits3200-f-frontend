@@ -33,9 +33,12 @@
   var ResponseInfo;
 
   //timeLine
+  var TimeSeries;
   var TimeSeriesX = [];
   var TimeSeriesY = [];
   var TimeSeriesXformat = [];
+
+  var TimeSeriesResult = [];
 
   // Sentiment colour scale end a middle points:
   var RedColor = [204, 69, 40];
@@ -54,16 +57,47 @@
     EndDate = new Date(); // i.e. today
 
     loadResults(QuestionNum, Gender, AgeRange, EmployStatus,
-                toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
+               toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
+
+
+    document.getElementById("questionList").addEventListener('changed',function(){
+      QuestionNum = document.getElementById("questionList").value;
+      updateTimeSeries(QuestionNum, Gender, AgeRange, EmployStatus,
+                 toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
+      });
+    document.getElementById("gender").addEventListener('changed',function(){
+      Gender = document.getElementById("gender").value;
+      updateTimeSeries(QuestionNum, Gender, AgeRange, EmployStatus,
+                 toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
+    });
+    document.getElementById("ageRange").addEventListener('changed',function(){
+      Gender = document.getElementById("ageRange").value;
+      updateTimeSeries(QuestionNum, Gender, AgeRange, EmployStatus,
+                 toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
+    });
+    document.getElementById("employStatus").addEventListener('change',function(){
+      Gender = document.getElementById("employStatus").value;
+      updateTimeSeries(QuestionNum, Gender, AgeRange, EmployStatus,
+                 toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
+    });
+    document.getElementById("startDateBox").addEventListener('change',function(){
+      Gender = document.getElementById("startDateBox").value;
+      updateTimeSeries(QuestionNum, Gender, AgeRange, EmployStatus,
+                 toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
+    });
+    document.getElementById("gender").addEventListener('change',function(){
+      Gender = document.getElementById("gender").value;
+      updateTimeSeries(QuestionNum, Gender, AgeRange, EmployStatus,
+                 toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
+    });
+    document.getElementById("endDateBox").addEventListener('change',function(){
+      EndDate = new Date(document.getElementById("endDateBox").valueAsDate);
+      updateTimeSeries(QuestionNum, Gender, AgeRange, EmployStatus,
+                 toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
+    });
 
     // Event Listener for Fetch Results button:
     document.getElementById('fetchResults').addEventListener('click', function() {
-      QuestionNum = document.getElementById("questionList").value;
-      Gender = document.getElementById("gender").value;
-      AgeRange = document.getElementById("ageRange").value;
-      EmployStatus = document.getElementById("employStatus").value;
-      StartDate = new Date(document.getElementById("startDateBox").valueAsDate);
-      EndDate = new Date(document.getElementById("endDateBox").valueAsDate);
       loadResults(QuestionNum, Gender, AgeRange, EmployStatus,
                   toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
     });
@@ -131,16 +165,13 @@
         ResponseDate = data.responseDate;
         ResponseScore = data.responseScore;
         ResponseText = data.responseText;
+        TimeSeries = data.timeSeries;
+        //timeSeries
 
-        TimeSeriesX = data.timeSeriesX;
-        TimeSeriesY = data.timeSeriesY;
-
-
-        for(i=0; i<TimeSeriesX.length; i++) {
-          TimeSeriesXformat.push(TimeSeriesX[i].slice(0,10));
-        };
-
-
+        for (i=0; i<TimeSeries.length; i++){
+          TimeSeriesX.push(TimeSeries[i].ds.slice(0,10));
+          TimeSeriesY.push(TimeSeries[i].avgOs);
+        }
 
 
         // If loading the page for the first time:
@@ -162,6 +193,40 @@
     });
   }
 
+
+//updateTimeSeries
+  function updateTimeSeries(questionNum, gender, ageRange, employStatus, startYYYY_MM_DD, endYYYY_MM_DD) {
+    $.ajax({
+      url: "/time-series",   // i.e. [Nodejs app]/app_server/controllers/time-series.js
+      data: { // data to send to load-results.js controller
+        "questionNum" : questionNum,
+        "gender" : gender,
+        "ageRange" : ageRange,
+        "employStatus" : employStatus,
+        "startDate" : startYYYY_MM_DD,
+        "endDate" : endYYYY_MM_DD
+      },
+      method: "POST",
+      dataType: 'JSON',
+      success: function (data) { // data is the JSON object returned from SQL via controller
+        // for(property in data) {
+        //   console.log("" + property + ": " + data[property]);
+        // }
+        TimeSeries = data.timeSeries;
+        //timeSeries
+        for (i=0; i<TimeSeries.length; i++){
+          TimeSeriesX.push(TimeSeries[i].ds.slice(0,10));
+          TimeseriesY.push(TimeSeries[i].avgOs);
+        }
+      },
+      error: function (data) {
+        console.log("Could not fetch data.");
+      }
+    });
+  }
+
+
+
   // Set the filter DOM inputs to the values returned from the loadResults method
   // (which have been saved to global variables)
   function setFilterInputs() {
@@ -175,6 +240,7 @@
     document.getElementById("ageRange").value = AgeRange;
     document.getElementById("employStatus").value = EmployStatus;
   }
+
 
   function renderDateSlider() {
 
@@ -233,11 +299,13 @@
 
   //sentiTimeSeries
 function renderSentiTimeSeries() {
-  alert(TimeSeriesY);
+  //alert(TimeSeriesY);
+
   var data = [
     {
-      x:TimeSeriesXformat,
-      y:TimeSeriesY,
+      x: TimeSeriesX,
+      //alert(x);
+      y: TimeSeriesY,
       type: 'scatter'
     }
   ];
@@ -245,7 +313,12 @@ function renderSentiTimeSeries() {
     title: 'Time Series with Rangeslider',
     xaxis: {
       autorange: true,
-      range: [TimeSeriesXformat[0], TimeSeriesXformat[TimeSeriesX.length - 1]],
+      range: [TimeSeriesX[0], TimeSeriesX[TimeSeriesX.length - 1]],
+
+    legend: {
+      color: 'red'
+    },
+
       rangeselector: {buttons: [
           {
             count: 1,
@@ -268,14 +341,15 @@ function renderSentiTimeSeries() {
 
           {step: 'all'}
         ]},
+
       rangeslider: {range: [TimeSeriesXformat[0], TimeSeriesXformat[TimeSeriesX.length - 1]]},
       type: 'date'
     },
-    //yaxis: {
-    //  autorange: true,
-    //  range: [Math.min.apply(null,TimeSeriesY), Math.max.apply(null,TimeSeriesY)],
-  //    type: 'linear'
-  //  }
+    yaxis: {
+      autorange: false,
+      range: [-10, 10],
+      type: 'linear'
+    }
   };
   var timeLine = document.getElementById('sentiTimeSeriesContainer');
   Plotly.newPlot(timeLine, data, layout);
@@ -448,7 +522,7 @@ function renderSentiTimeSeries() {
         url: "/response-details",
         // i.e. [Nodejs app]/app_server/controllers/response-details.js
         data: { // data to send to controller
-          score: responseScore,
+          //score: responseScore,
           "questionNum": QuestionNum,
           "gender": Gender,
           "ageRange": AgeRange,

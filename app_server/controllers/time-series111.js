@@ -1,5 +1,4 @@
-var dbConnection = require('./db-connection');
-
+/*
 // Load/update the histogram response details based on user interaction:
 module.exports.getResponse = function (req, res) {
 
@@ -7,7 +6,7 @@ module.exports.getResponse = function (req, res) {
 
   connection.connect(function(err) {
     if (err) throw err;
-    console.log("Connected to Response database!");
+    console.log("Connected to database!");
   });
 
   // Filter variables, set to values sent to this controller from client:
@@ -40,7 +39,7 @@ module.exports.getResponse = function (req, res) {
   }
 
   var query = "";
-  query += "SELECT response AS responseDetail, date_submitted AS submitDate from Response R NATURAL JOIN Submission S WHERE R.overall_sentiment = '" + score + "' AND S.employment_status = '" + employStatus + "' AND R.question_num = '" + questionNum + "' AND R.survey_id = 1 AND S.gender = '" + gender + "' AND S.date_submitted BETWEEN '" + startDate + "' AND '" + endDate + "' AND S.year_of_birth BETWEEN '" + birthStart + "' AND '"+ birthEnd + "' ;";
+  query += "SELECT date_submitted as ds, AVG(overall_sentiment) as avgOs FROM Submission S, Response R WHERE S.employment_status = '"+ employStatus +"' AND R.submission_id = S.submission_id AND R.question_num = '"+ questionNum +"' AND R.survey_id = 1 AND S.gender = '" + gender + "' AND R.char_count != 0 AND S.date_submitted BETWEEN '"+ startDate + "' AND '" + endDate +"' AND S.year_of_birth BETWEEN '"+ birthStart + "' AND '"+ birthEnd +"'  GROUP BY date_submitted ORDER BY date_submitted;";
 
   if (gender == 'all') {
     query = query.replace(/S.gender = 'all' AND/g, '');
@@ -53,11 +52,22 @@ module.exports.getResponse = function (req, res) {
   connection.query(query, function (err, rows, fields) {
     if (err) throw err;
 
-    console.log(rows);
-    var result = rows;
+    //timeSeries
+    var time_series_y = [];
+    var time_series_x = [];
+    var time_series = rows;
+
+    for (i=0; i<time_series.length; i++){
+      time_series_x.push(time_series[i].ds);
+      time_series_y.push(time_series[i].avgOs);
+    }
+
+    console.log(time_series_x);
 
     var results = {
-      responseResult: result
+      timeSeries: time_series,
+      timeSeriesY: time_series_y,
+      timeSeriesX: time_series_x,
     };
 
     connection.end();
@@ -66,3 +76,4 @@ module.exports.getResponse = function (req, res) {
   });
 
 };
+*/

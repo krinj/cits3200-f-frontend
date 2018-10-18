@@ -7,7 +7,7 @@ module.exports.getResponse = function (req, res) {
 
   connection.connect(function(err) {
     if (err) throw err;
-    console.log("Connected to Response database!");
+    console.log("Connected to database time-series!");
   });
 
   // Filter variables, set to values sent to this controller from client:
@@ -17,7 +17,6 @@ module.exports.getResponse = function (req, res) {
   var employStatus = req.body.employStatus;
   var startDate = req.body.startDate;
   var endDate = req.body.endDate;
-  var score = req.body.score;
 
   // Determine the start and end years of birth for different age ranges:
   var birthStart;
@@ -40,7 +39,8 @@ module.exports.getResponse = function (req, res) {
   }
 
   var query = "";
-  query += "SELECT response AS responseDetail, date_submitted AS submitDate from Response R NATURAL JOIN Submission S WHERE R.overall_sentiment = '" + score + "' AND S.employment_status = '" + employStatus + "' AND R.question_num = '" + questionNum + "' AND R.survey_id = 1 AND S.gender = '" + gender + "' AND S.date_submitted BETWEEN '" + startDate + "' AND '" + endDate + "' AND S.year_of_birth BETWEEN '" + birthStart + "' AND '"+ birthEnd + "' ;";
+  query += "SELECT date_submitted as ds, AVG(overall_sentiment) as avgOs FROM Submission S, Response R WHERE S.employment_status = '"+ employStatus +"' AND R.submission_id = S.submission_id AND R.question_num = '"+ questionNum +"' AND R.survey_id = 1 AND S.gender = '" + gender + "' AND R.char_count != 0 AND S.date_submitted BETWEEN '"+ startDate + "' AND '" + endDate +"' AND S.year_of_birth BETWEEN '"+ birthStart + "' AND '"+ birthEnd +"'  Group BY date_submitted order by date_submitted;";
+
 
   if (gender == 'all') {
     query = query.replace(/S.gender = 'all' AND/g, '');
@@ -52,14 +52,13 @@ module.exports.getResponse = function (req, res) {
 
   connection.query(query, function (err, rows, fields) {
     if (err) throw err;
-
-    console.log(rows);
-    var result = rows;
+    //timeSeries
+    var time_series = rows;
+    console.log(time_series);
 
     var results = {
-      responseResult: result
+      timeSeries: time_series,
     };
-
     connection.end();
 
     return res.send(results);

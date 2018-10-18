@@ -67,7 +67,8 @@ module.exports.loadResults = function (req, res) {
   // Query 8: Frequency count array of sentiment scores -10 to 10 (for Histogram by Score)
   query += "SELECT overall_sentiment, count(*) as frequency FROM Response R, Submission S WHERE S.employment_status = '"+ employStatus +"' AND R.submission_id = S.submission_id AND R.question_num = '"+ questionNum +"' AND R.survey_id = 1 AND S.gender = '" + gender + "' AND R.char_count != 0 AND S.date_submitted BETWEEN '"+ startDate + "' AND '" + endDate +"' AND S.year_of_birth BETWEEN '"+ birthStart + "' AND '"+ birthEnd +"' GROUP BY overall_sentiment;";
 
-  query += "select date_submitted as ds, AVG(overall_sentiment) as avgOs from Submission S NATURAL JOIN Response R Group BY date_submitted order by date_submitted;";
+  query += "SELECT date_submitted as ds, AVG(overall_sentiment) as avgOs FROM Submission S, Response R WHERE S.employment_status = '"+ employStatus +"' AND R.submission_id = S.submission_id AND R.question_num = '"+ questionNum +"' AND R.survey_id = 1 AND S.gender = '" + gender + "' AND R.char_count != 0 AND S.date_submitted BETWEEN '"+ startDate + "' AND '" + endDate +"' AND S.year_of_birth BETWEEN '"+ birthStart + "' AND '"+ birthEnd +"'  Group BY date_submitted order by date_submitted;";
+/*  query += "SELECT date_submitted as ds, AVG(overall_sentiment) as avgOs FROM Submission S, Response R WHERE S.employment_status = '"+ employStatus +"' AND R.submission_id = S.submission_id AND R.question_num = '"+ questionNum +"' AND R.survey_id = 1 AND S.gender = '" + gender + "' AND R.char_count != 0 AND S.date_submitted BETWEEN '"+ startDate + "' AND '" + endDate +"' AND S.year_of_birth BETWEEN '"+ birthStart + "' AND '"+ birthEnd +"'  Group BY date_submitted order by date_submitted;"; */
   // Query 9: Response Details table
   // query += "SELECT date_submitted, response, overall_sentiment FROM Response R, Submission S WHERE R.submission_id=S.submission_id AND R.question_num = 1 AND R.survey_id=1 AND S.gender = 'male' AND R.char_count != 0 AND S.date_submitted BETWEEN '2016-01-20' AND '2018-04-21' order by overall_sentiment;";
 
@@ -126,6 +127,7 @@ module.exports.loadResults = function (req, res) {
       var index = 0;
       var arrayIndex = 0;
       var responses = rows[8];
+      //console.log(responses);
       for (i = -10; i < 11; i++) {
         if (i != responses[index].overall_sentiment) {
           score_freq_array[arrayIndex] = 0;
@@ -141,16 +143,11 @@ module.exports.loadResults = function (req, res) {
         }
       }
     }
-//timeSeries
-    var time_series_y = [];
-    var time_series_x = [];
     var time_series = rows[9];
-    for (i=0; i<time_series.length; i++){
-    time_series_x.push(time_series[i].ds);
-    time_series_y.push(time_series[i].avgOs);
-  }
-    //console.log(time_series[0].ds.slice(0,10));
 
+    //console.log(rows[8]);
+    //console.log(time_series[0].ds.slice(0,10));
+    //console.log(rows[9]);
     // Hard-coded values for response details display next to Histogram by Score
     // TODO: Update with actual dynamic data
     var response_date = "06/07/2018";
@@ -178,8 +175,7 @@ module.exports.loadResults = function (req, res) {
 		  responseScore: response_score,
       responseText: response_text,
       timeSeries: time_series,
-      timeSeriesY: time_series_y,
-      timeSeriesX: time_series_x,
+
     };
 
     connection.end();
