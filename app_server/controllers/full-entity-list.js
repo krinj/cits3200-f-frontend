@@ -11,7 +11,6 @@ module.exports.getList= function (req, res) {
   });
 
   // Filter variables, set to values sent to this controller from client:
-
   var organisation = 'Honeywell' // req.body.organisation;
   var surveyID = 1; // req.body.surveyID;
   var questionNum = req.body.questionNum;
@@ -20,7 +19,6 @@ module.exports.getList= function (req, res) {
   var employStatus = req.body.employStatus;
   var startDate = req.body.startDate;
   var endDate = req.body.endDate;
-
 
   // Determine the start and end years of birth for different age ranges:
   var birthStart;
@@ -51,8 +49,6 @@ module.exports.getList= function (req, res) {
   if (employStatus == 'all') {
     query = query.replace(/S.employment_status = 'all' AND/g, '');
   }
-
-  console.log(query);
 
   connection.query(query, function (err, rows, fields) {
     if (err) throw err;

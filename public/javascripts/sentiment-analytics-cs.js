@@ -666,7 +666,6 @@
           }
 
           NumDisplayedEnts = Math.min(NUM_ENTITIES, DisplayedEntities.length);
-          console.log('NumDisplayedEnts: ' + NumDisplayedEnts);
 
           // (Re-)Initialise the concurrency matrix:
           ConcurrencyMatrix = [];
@@ -689,14 +688,12 @@
                 thisRank = DisplayedEntities[j].rank;
               }
             }
-            // console.log(" rank: " + thisRank + ' thisId: ' + thisID + " name: " + thisName);
             
             // If have come to the end of rows with the same id:
             if (thisID != prevID) {
               if (groupedEntRanks.length > 0) {
                 // Examine each entity against each other entity in the group 
                 for (j = 0; j < groupedEntRanks.length; j++) {
-                  // console.log('groupedEntRanks[' + j + ']: ' + groupedEntRanks[j]);
                   for (k = 0; k < groupedEntRanks.length; k++) {
                     if (groupedEntRanks[j] < groupedEntRanks[k]) {
                       ConcurrencyMatrix[groupedEntRanks[j]][groupedEntRanks[k]]++;
@@ -718,15 +715,6 @@
 
             prevID = thisID;        
           }
-
-          var conRow = "";
-          for (i = 0; i < NumDisplayedEnts; i++) {
-            for (j = 0; j < NumDisplayedEnts; j++) {
-              conRow += ConcurrencyMatrix[i][j] + " ";
-            }
-            console.log(conRow);
-            conRow = "";
-          }  
         }
 
 
@@ -788,7 +776,6 @@
         maxFreq = DisplayedEntities[i].freq;
       }
     }
-    console.log("maxFreq: " + maxFreq);
 
     var SVG_WIDTH = 800; 
     var SVG_HEIGHT = 800; 
