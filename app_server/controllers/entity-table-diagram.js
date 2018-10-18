@@ -22,7 +22,6 @@ module.exports.getResults = function (req, res) {
   var endDate = req.body.endDate;
   var displayMode = req.body.displayMode;
   var numEntities = req.body.numEntities;
-  var focusEntity = req.body.focusEntity;
 
   // Determine the start and end years of birth for different age ranges:
   var birthStart;
@@ -42,33 +41,27 @@ module.exports.getResults = function (req, res) {
     var ageRangeArray = ageRangeSlice.split('_');
     birthStart = currentYear - parseInt(ageRangeArray[1]);
     birthEnd = currentYear - parseInt(ageRangeArray[0]);
-  }
-  
-  var queries = "";
+  }  
 
   var query1Start = "SELECT entity, COUNT(*) AS freq, AVG(sentiment) AS aveSentiment ";
-  var queryMiddle = "FROM Submission S NATURAL JOIN Response R NATURAL JOIN Entity E WHERE entity IS NOT NULL AND organisation = '" + organisation + "' AND S.survey_id = " + surveyID + " AND question_num = " + questionNum + " AND S.gender = '" + gender + "' AND S.employment_status = '" + employStatus + "' AND S.date_submitted BETWEEN '" + startDate + "' AND '" + endDate + "' AND S.year_of_birth BETWEEN '" + birthStart + "' AND '" + birthEnd + "'";
-
+  var query1Middle = "FROM Submission S NATURAL JOIN Response R NATURAL JOIN Entity E WHERE entity IS NOT NULL AND organisation = '" + organisation + "' AND S.survey_id = " + surveyID + " AND question_num = " + questionNum + " AND S.gender = '" + gender + "' AND S.employment_status = '" + employStatus + "' AND S.date_submitted BETWEEN '" + startDate + "' AND '" + endDate + "' AND S.year_of_birth BETWEEN '" + birthStart + "' AND '" + birthEnd + "'";
+  var query1End;
   if (displayMode == "focus") {
-    queries = query1Start + queryMiddle + " GROUP BY entity ORDER BY entity; ";
-    queries += "SELECT response_id AS responseID, entity " + queryMiddle + ";";
+    query1End = " GROUP BY entity ORDER BY entity";
   } 
-  else {
-    var query1End = "";
-    var query2Start = "SELECT E1.response_id AS responseID, E1.entity AS entity FROM Entity E1 INNER JOIN (";
-    var query2End = ") AS E2 ON E1.entity = E2.entity;";
-  
-    if (displayMode == "topFreq") {
-      query1End = " GROUP BY entity ORDER BY COUNT(*) DESC, entity ASC LIMIT " + numEntities;
-    }
-    else if (displayMode == "mostPos") {
-      query1End = "  GROUP BY entity ORDER BY AVG(sentiment) DESC, COUNT(*) DESC, entity ASC LIMIT " + numEntities;
-    }
-    else if (displayMode == "mostNeg") {
-      query1End = "  GROUP BY entity ORDER BY AVG(sentiment) ASC, COUNT(*) DESC, entity ASC LIMIT " + numEntities;
-    }
-    queries = query1Start + queryMiddle + query1End + ";\n" + query2Start + query1Start + queryMiddle + query1End + query2End;
+  else if (displayMode == "topFreq") {
+    query1End = " GROUP BY entity ORDER BY COUNT(*) DESC, entity ASC LIMIT " + numEntities;
   }
+  else if (displayMode == "mostPos") {
+    query1End = " GROUP BY entity ORDER BY AVG(sentiment) DESC, COUNT(*) DESC, entity ASC LIMIT " + numEntities;
+  }
+  else if (displayMode == "mostNeg") {
+    query1End = " GROUP BY entity ORDER BY AVG(sentiment) ASC, COUNT(*) DESC, entity ASC LIMIT " + numEntities;
+  }
+
+  var query1 = query1Start + query1Middle + query1End + ";\n";
+  var query2 = "SELECT R.response_id AS responseID, entity " + query1Middle + ";"
+  var queries = query1 + query2;
   
   if (gender == 'all') {
     queries = queries.replace(/S.gender = 'all' AND/g, '');

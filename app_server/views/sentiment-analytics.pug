@@ -154,15 +154,20 @@ block content
 
       p.centred
         b Display Mode:
-        input(type="radio" class="dispModeRadio" name="dispModeRadio" value="topFreq" checked) 
-        | Top Frequency Keywords 
-        input(type="radio" class="dispModeRadio" name="dispModeRadio" value="mostPos") 
-        | Most Positive Keywords
-        input(type="radio" class="dispModeRadio" name="dispModeRadio" value="mostNeg") 
-        | Most Negative Keywords
-        input(type="radio" class="dispModeRadio" name="dispModeRadio" value="focus" id='focusRadio') 
-        | Keyword Focus
-        input(type="text" id="searchedEntity" size=15 placeholder="Search by Entity")
+        label.displayMode#topFreqLabel
+          input(type="radio" class="dispModeRadio" name="dispModeRadio" value="topFreq" checked) 
+          | Top Frequency Keywords 
+        label.displayMode#mostPosLabel
+          input(type="radio" class="dispModeRadio" name="dispModeRadio" value="mostPos") 
+          | Most Positive Keywords
+        label.displayMode#mostNegLabel
+          input(type="radio" class="dispModeRadio" name="dispModeRadio" value="mostNeg") 
+          | Most Negative Keywords
+        label.displayMode#focusLabel
+          input(type="radio" class="dispModeRadio" name="dispModeRadio" value="focus" id='focusRadio')
+          | Keyword Focus
+        input(type="text" list="fullEntityList" id="searchedEntity" size=15)
+        datalist#fullEntityList
         button(type="button" id="entitySearchButton") GO
 
       #entityTableDiag
@@ -177,7 +182,9 @@ block content
               tr
                 th Rank
                 th Keyword
-                th Frequency
+                th
+                  span#linkSpan
+                  | Frequency
                 th Average Sentiment Score
             tbody#entityTableBody
         #entityDiag

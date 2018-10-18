@@ -30,11 +30,8 @@ label {
 
 input, select, button {
   font-size: 11pt;
-  padding: 3px;
-}
-
-input, button {
   font-family: 'Roboto Condensed', sans-serif; 
+  padding: 3px;
 }
 
 a {
@@ -191,6 +188,11 @@ strong#responseIndex {
   background-color: rgb(230,230,230);
 }
 
+label.displayMode {
+  cursor: pointer;
+  font-weight: 400;
+}
+
 input.dispModeRadio {
   margin: 0px 10px 0px 20px;
 }
@@ -209,7 +211,7 @@ input#searchedEntity {
 
 #entityDiag {
   width: 800px;
-  margin-left:100px;
+  margin-left:50px;
 }
 
 table#entityTable {
@@ -229,12 +231,20 @@ table#entityTable th {
   font-weight: bold;
 }
 
+col#etcol1 {
+  width: 40px;
+}
+
+col#etcol2 {
+  max-width: 140px;
+}
+
 col#etcol3 {
-  width: 68px;
+  width: 65px;
 }
 
 col#etcol4 {
-  width: 40px;
+  width: 55px;
 }
 
 circle.entCircles {
@@ -242,9 +252,10 @@ circle.entCircles {
 }
 
 text.entLabel {
-  font-size: 12pt;
-  fill: black;
+  font-family: 'Ubuntu Mono', monospace;
+  font-size: 11pt;
   font-weight: bold;
+  fill: black;
 }
 
 tspan.bold {

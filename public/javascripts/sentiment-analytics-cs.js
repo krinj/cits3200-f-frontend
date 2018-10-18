@@ -72,7 +72,7 @@
     EndDate = new Date(); // i.e. today
 
     loadResults();
-    getEntityDiagData();
+    getEntityTableDiagData();
 
     // Event Listener for Fetch Results button:
     document.getElementById('fetchResults').addEventListener('click', function() {          
@@ -102,12 +102,11 @@
 
     // Sets the entity display mode by clicking on the relevant radio button
     $(document).on('click', '[name="dispModeRadio"]', function () {
-      console.log("changing display mode...");
       if($(this).val() == "topFreq") EntityDisplayMode = "topFreq";
       else if($(this).val() == "mostPos") EntityDisplayMode = "mostPos";
       else if($(this).val() == "mostNeg") EntityDisplayMode = "mostNeg";
       else EntityDisplayMode = "focus";
-      getEntityDiagData();
+      getEntityTableDiagData();
     });
 
   };
@@ -171,7 +170,8 @@
         renderHistogramByScore();
         fillSummaryTable();
         fillResponseDetails();
-        getEntityDiagData();
+        fillEntitySearchList();
+        getEntityTableDiagData();
       },
       error: function (data) {
         console.log("Could not load results.");
@@ -433,7 +433,7 @@
           fillResponseDetails();
         },
         error: function (data) {
-          console.log("Could not fetch data.");
+          console.log("Could not fetch response details for histogram.");
         }
 
       });
@@ -501,9 +501,46 @@
     }
   }
 
-  // Render the Entity Linkage Diagram for a given set of filters, display mode and/or 
-  // selected entity
-  function getEntityDiagData() {
+  // Populate the entity list for search
+  function fillEntitySearchList() {
+    $.ajax({
+      url: "/full-entity-list",   
+      // i.e. [Nodejs app]/app_server/controllers/full-entity-list.js
+      data: { // data to send to controller
+        "questionNum" : QuestionNum,
+        "gender" : Gender,
+        "ageRange" : AgeRange,
+        "employStatus" : EmployStatus,
+        "startDate" : toYYYY_MM_DD(StartDate),
+        "endDate" : toYYYY_MM_DD(EndDate),
+      },
+      method: "POST",
+      dataType: 'JSON',
+      success: function (entities) {
+        // Populate the entity list for search:
+        var html = "";
+        for (i = 0; i < entities.length; i++) {
+          html += "<option value='" + entities[i] + "'>";
+        }
+        document.getElementById("fullEntityList").innerHTML = html;
+
+        // Add event listener to search 'Go' button:
+        document.getElementById('entitySearchButton').addEventListener('click', function() {  
+          FocusEntity.name = document.getElementById("searchedEntity").value;
+          EntityDisplayMode = "focus";
+          document.getElementById('focusRadio').checked = true;
+          getEntityTableDiagData();
+        });
+      },
+      error: function (entities) {
+        console.log("Could not get full entity list.");
+      }
+    });
+  }
+
+  // Render the Entity Table and Linkage Diagram for a given set of filters, display mode 
+  // and/or selected entity
+  function getEntityTableDiagData() {
 
     $.ajax({
       url: "/entity-table-diagram",   
@@ -517,18 +554,14 @@
         "endDate" : toYYYY_MM_DD(EndDate),
         "displayMode" : EntityDisplayMode,
         "numEntities" : NUM_ENTITIES,
-        "focusEntity" : FocusEntity.name
       },
       method: "POST",
       dataType: 'JSON',
       success: function (data) { // data is the JSON object returned from SQL via controller
-        // console.log("Entity data successfully received");
 
         DisplayedEntities = []; // reset 
         
         if(EntityDisplayMode == "focus") {
-          
-          console.log('responseIDs.length: ' + data.responseIDs.length);
 
           // Get attributes of focus entity:
           for (i = 0; i < data.entities1.length; i++) {
@@ -540,45 +573,43 @@
 
           // Build the LinkedEntities array of Entity objects:
           LinkedEntities = []; // reset
-          var prevID = 1;
-          var thisID;
-          var thisRank;
+          var prevID;
           var groupedEntNames = []; // names of group of entities with the same response id
-          var hasFocusEntity; // boolean for if group includes the focus entity
-          var entityInLinkedSet;
-          for (i = 0; i < data.responseIDs.length; i++) {
-            if(i%100 == 0) console.log("iteration: " + i);
-            thisID = data.responseIDs[i];
-            thisName = data.entities2[i];
-            if (thisName == FocusEntity.name) {
-              hasFocusEntity = true;
-            }
-  
-            if (thisID == prevID) {
-              groupedEntNames.push(thisName);
-            } 
-            else {
+          var hasFocusEntity = false; // boolean for if group includes the focus entity
+          for (i = 0; i < data.responseIDs.length; i++) { // iterate down response-entity table
+            var thisID = data.responseIDs[i];
+            var thisName = data.entities2[i];
+
+            // If have come to the end of rows with the same id:
+            if (thisID != prevID) {
               if (hasFocusEntity) {
-                entityInLinkedSet = false;
                 for (j = 0; j < groupedEntNames.length; j++) {
-                  if(LinkedEntities) {
+                  
+                  // Update the link count of the entity in the group, 
+                  // if already in LinkedEntities:
+                  var entityInLinkedSet = false;
+                  if(LinkedEntities) { // if there is at least 1 entity in Linked set
                     for (k = 0; k < LinkedEntities.length; k++) {
-                      // Update the link count of the entities in the group, 
-                      // if already in LinkedEntities:
                       if(groupedEntNames[j] == LinkedEntities[k].name) {
                         LinkedEntities[k].linkFreq++;
                         entityInLinkedSet = true;
                       }
                     }
                   }
-                  if(!entityInLinkedSet) {
-                    // If not in LinkedEntities, add this entity to LinkedEntities:
+
+                  // If not in LinkedEntities, and not the focus entity, 
+                  // add this entity to LinkedEntities:
+                  if(!entityInLinkedSet && groupedEntNames[j] != FocusEntity.name) {
                     var thisFreq;
                     var thisAveSentiment;
                     for (k = 0; k < data.entities1.length; k++) {
                       if (data.entities1[k] == groupedEntNames[j]) {
-                        thisFreq = data.frequencies[i];
-                        thisAveSentiment = Math.round(data.aveSentiments[i] * 10) / 10;
+                        thisFreq = data.frequencies[k];                  
+                        if (isNaN(data.aveSentiments[k])) {
+                          thisAveSentiment = 0;
+                        } else {
+                          thisAveSentiment = Math.round(data.aveSentiments[k] * 10) / 10;
+                        }
                       }
                     }
                     LinkedEntities.push(new Entity(null, groupedEntNames[j], thisFreq, thisAveSentiment, 1));
@@ -586,19 +617,30 @@
                 }
               }
               groupedEntNames = []; // clear the array 
-            }  
-            prevID = thisID;        
-          }  
+              hasFocusEntity = false;
+            } 
 
-          console.log("Sorting entities...");
+            if (thisName == FocusEntity.name) {
+              hasFocusEntity = true; 
+            } else {
+              var alreadyInGroup = false;
+              for (j = 0; j < groupedEntNames.length; j++) {
+                if (groupedEntNames[j] == thisName) alreadyInGroup = true;
+              }
+              if (!alreadyInGroup) groupedEntNames.push(thisName);
+            }
+
+            prevID = thisID; // prepare for next row / iteration of table     
+          }  
           
-          // Limit the set of displayed entities from the set of linked entities:
+          // Sort the linked entities by link frequency:
           var tuples = []; // a set of [entityName, linkFreq] tuples for sorting
           for(i = 0; i < LinkedEntities.length; i++) {
             tuples.push([LinkedEntities[i].name, LinkedEntities[i].linkFreq]);
           }
           tuples.sort(compareLinkFreqs);
-
+          
+          // Only display the linked entities with the highest link frequencies: 
           NumDisplayedEnts = Math.min(NUM_ENTITIES, LinkedEntities.length);
           for (i = 0; i < NumDisplayedEnts; i++) {
             var name = tuples[i][0];
@@ -611,20 +653,20 @@
                 aveSentiment = LinkedEntities[j].aveSentiment;
               }
             }
-            console.log('linkFreq: ' + linkFreq);
-            console.log('freq: ' + freq);
             DisplayedEntities.push(new Entity(i, name, freq, aveSentiment, linkFreq));
           }
-
         }
+
         else {  // i.e. for all other entity display modes
 
           // Populate array of Entity objects
           for (i = 0; i < data.entities1.length; i++) {
-            DisplayedEntities.push(new Entity(i, data.entities1[i], data.frequencies[i], Math.round(data.aveSentiments[i] * 10) / 10, null)); 
+            var aveSent = (isNaN(data.aveSentiments[i])) ? 0 : data.aveSentiments[i];
+            DisplayedEntities.push(new Entity(i, data.entities1[i], data.frequencies[i], Math.round(aveSent * 10) / 10, null)); 
           }
 
           NumDisplayedEnts = Math.min(NUM_ENTITIES, DisplayedEntities.length);
+          console.log('NumDisplayedEnts: ' + NumDisplayedEnts);
 
           // (Re-)Initialise the concurrency matrix:
           ConcurrencyMatrix = [];
@@ -636,44 +678,57 @@
           }      
           
           // Build the concurrency matrix:
-          var prevID = 1;
-          var thisID;
-          var thisRank;
+          var prevID = -1;
           var groupedEntRanks = []; // ranks of group of entities with the same response id
-          for (i = 0; i < data.responseIDs.length; i++) {
-            thisID = data.responseIDs[i];
+          for (i = 0; i < data.responseIDs.length; i++) {  
+            var thisID = data.responseIDs[i];
+            var thisName = data.entities2[i];
+            var thisRank = -1;
             for (j = 0; j < DisplayedEntities.length; j++) {
-              if (DisplayedEntities[j].name == data.entities2[i]) {
+              if (DisplayedEntities[j].name == thisName) {
                 thisRank = DisplayedEntities[j].rank;
               }
             }
-  
-            if (thisID == prevID) {
-              groupedEntRanks.push(thisRank);
-            } 
-            else {
-              for (j = 0; j < groupedEntRanks.length; j++) {
-                for (k = 0; k < groupedEntRanks.length; k++) {
-                  if (groupedEntRanks[j] < groupedEntRanks[k]) {
-                    ConcurrencyMatrix[groupedEntRanks[j]][groupedEntRanks[k]]++;
+            // console.log(" rank: " + thisRank + ' thisId: ' + thisID + " name: " + thisName);
+            
+            // If have come to the end of rows with the same id:
+            if (thisID != prevID) {
+              if (groupedEntRanks.length > 0) {
+                // Examine each entity against each other entity in the group 
+                for (j = 0; j < groupedEntRanks.length; j++) {
+                  // console.log('groupedEntRanks[' + j + ']: ' + groupedEntRanks[j]);
+                  for (k = 0; k < groupedEntRanks.length; k++) {
+                    if (groupedEntRanks[j] < groupedEntRanks[k]) {
+                      ConcurrencyMatrix[groupedEntRanks[j]][groupedEntRanks[k]]++;
+                    }
                   }
                 }
               }
-              groupedEntRanks = []; // clear the array 
-              groupedEntRanks.push(thisRank); // add current entity's rank
+              groupedEntRanks = []; // clear the array            
+            }    
+            
+            // Check whether entity is already in group 
+            // (i.e. same word appearing twice in a particular response)
+            // if not, add its rank to the group
+            var alreadyInGroup = false;
+            for (j = 0; j < groupedEntRanks.length; j++) {
+              if (groupedEntRanks[j] == thisRank) alreadyInGroup = true;
             }
-  
+            if (!alreadyInGroup && thisRank >= 0) groupedEntRanks.push(thisRank);
+
             prevID = thisID;        
+          }
+
+          var conRow = "";
+          for (i = 0; i < NumDisplayedEnts; i++) {
+            for (j = 0; j < NumDisplayedEnts; j++) {
+              conRow += ConcurrencyMatrix[i][j] + " ";
+            }
+            console.log(conRow);
+            conRow = "";
           }  
         }
-        // console.log("Concurrency matrix:");
-        // for (i = 0; i < NumDisplayedEnts; i++) {
-        //   var row = "";
-        //   for (j = 0; j < NumDisplayedEnts; j++) {
-        //     row += ConcurrencyMatrix[i][j] + ", ";
-        //   }
-        //   console.log(row);
-        // }
+
 
         fillEntityTable();
         drawEntityDiagram();        
@@ -699,12 +754,22 @@
 
   function fillEntityTable() {
 
+    if (EntityDisplayMode == "focus") {
+      document.getElementById("linkSpan").innerText = "Link ";
+    } else {
+      document.getElementById("linkSpan").innerText = "";
+    }
+
     var html = "";
-    for(i = 0; i < NUM_ENTITIES; i++) {
+    for(i = 0; i < NumDisplayedEnts; i++) {
       html += "<tr>";
-      html += "<td>" + (DisplayedEntities[i].rank + 1) + "</td>";
+      html += "<td class='centred'>" + (DisplayedEntities[i].rank + 1) + "</td>";
       html += "<td>" + DisplayedEntities[i].name + "</td>";
-      html += "<td class='centred'>" + DisplayedEntities[i].freq + "</td>";
+      if (EntityDisplayMode == "focus") {
+        html += "<td class='centred'>" + DisplayedEntities[i].linkFreq + "</td>";  
+      } else {
+        html += "<td class='centred'>" + DisplayedEntities[i].freq + "</td>";
+      }
       html += "<td class='centred'>" + padPointZero(DisplayedEntities[i].aveSentiment) + "</td>";
       html += "</tr>";
     }
@@ -723,14 +788,16 @@
         maxFreq = DisplayedEntities[i].freq;
       }
     }
-    console.log('maxFreq: ' + maxFreq);
+    console.log("maxFreq: " + maxFreq);
 
     var SVG_WIDTH = 800; 
     var SVG_HEIGHT = 800; 
     var centre_x = SVG_WIDTH / 2;
     var centre_y = SVG_HEIGHT / 2;
-    var orbitRadius = SVG_HEIGHT / 2 - 140;
-    var maxEntRadius = 0.5 * Math.PI * orbitRadius * 2 / NumDisplayedEnts;
+    var orbitRadius = SVG_HEIGHT / 2 - 150;
+    var maxEntRadius = 0.5 * Math.PI * orbitRadius * 2 / NUM_ENTITIES;
+    var MIN_ENT_RADIUS = 4;
+    var ENT_LABEL_FONTSIZE = 11; // font size in pixels/points of entity label text
     var HOVER_BOX_WIDTH = 105;
     var HOVER_BOX_HEIGHT = 45;
     var html = "";
@@ -755,7 +822,12 @@
         endTheta = 90 - (i * 360 / DisplayedEntities.length); 
         endEntCentre_x = centre_x + orbitRadius * Math.cos(endTheta * Math.PI / 180);
         endEntCentre_y = centre_y - orbitRadius * Math.sin(endTheta * Math.PI / 180);
-        var lineWeight = 6 * (DisplayedEntities[i].linkFreq / maxLinkFreq);
+        var lineWeight;
+        if (maxLinkFreq <= 6) {
+          lineWeight = DisplayedEntities[i].linkFreq; 
+        } else {
+          lineWeight = 6 * (DisplayedEntities[i].linkFreq / maxLinkFreq);
+        }
         html += "<line x1='" + startEntCentre_x + "' y1='" + startEntCentre_y + "' x2='";
         html += "" + endEntCentre_x + "' y2='" + endEntCentre_y;
         html += "' style='stroke:rgb(50,50,50);stroke-width:" + lineWeight + "' />"; 
@@ -798,22 +870,38 @@
       var theta = 90 - (i * 360 / NumDisplayedEnts); 
       var entCentre_x = centre_x + orbitRadius * Math.cos(theta * Math.PI / 180);
       var entCentre_y = centre_y - orbitRadius * Math.sin(theta * Math.PI / 180);
-      var entRadius = maxEntRadius * (DisplayedEntities[i].freq / maxFreq);
-      var textAnchor_x = centre_x + (orbitRadius + entRadius + 7) * Math.cos(theta * Math.PI / 180);
-      var textAnchor_y = centre_y - (orbitRadius + entRadius + 7) * Math.sin(theta * Math.PI / 180);
+      var entRadius = MIN_ENT_RADIUS + (maxEntRadius - MIN_ENT_RADIUS) * (DisplayedEntities[i].freq / maxFreq);
       var fillColorFactor = (DisplayedEntities[i].aveSentiment + 10) / 20;
+      var textAnchor_x;
+      var textAnchor_y;
+      var textRotation;
+      if (theta >= -90) { // for 12 to 6 o'clock entities,
+        textAnchor_x = centre_x + (orbitRadius + entRadius + 7) * Math.cos((theta - 1) * Math.PI / 180);
+        textAnchor_y = centre_y - (orbitRadius + entRadius + 7) * Math.sin((theta - 1) * Math.PI / 180);
+        textRotation = theta *-1;
+      } else { // for 6 to 12 o'clock entities, rotate text around
+        var textWidth = DisplayedEntities[i].name.length * ENT_LABEL_FONTSIZE / 1.4; 
+        // (Ubuntu Mono has a 1.4:1 height:width per character)
+        textAnchor_x = centre_x + (orbitRadius + entRadius + 7 + textWidth) * Math.cos((theta + 1) * Math.PI / 180);
+        textAnchor_y = centre_y - (orbitRadius + entRadius + 7 + textWidth) * Math.sin((theta + 1) * Math.PI / 180);
+        textRotation = 180 - theta;
+      }
       var hoverBoxCentre_x = centre_x + (orbitRadius - 2.5*maxEntRadius) * Math.cos(theta * Math.PI / 180);
       var hoverBoxCentre_y = centre_y - (orbitRadius - 2.5*maxEntRadius) * Math.sin(theta * Math.PI / 180);
       var paddedAveSentiment = padPointZero(DisplayedEntities[i].aveSentiment);
       
       html += "<circle class='entCircles' id='ec" + i + "' cx='" + entCentre_x + "' cy='" + entCentre_y + "' r='" + entRadius + "' + stroke='black' stroke-width='1' fill='" + getColor(fillColorFactor) + "' />";
-      html += "<text class='entLabel' x='" + textAnchor_x + "' y='" + textAnchor_y + "' transform='rotate(" + theta*-1 + "," + textAnchor_x + "," + textAnchor_y + ")'>" + DisplayedEntities[i].name + "</text>"; 
+      html += "<text class='entLabel' x='" + textAnchor_x + "' y='" + textAnchor_y + "' transform='rotate(" + textRotation + "," + textAnchor_x + "," + textAnchor_y + ")'>" + DisplayedEntities[i].name + "</text>"; 
       html += "<rect id='' x='" + (hoverBoxCentre_x - HOVER_BOX_WIDTH/2)  + "' y='" + (hoverBoxCentre_y - HOVER_BOX_HEIGHT/2) + "' width='" + HOVER_BOX_WIDTH + "' height='" + HOVER_BOX_HEIGHT  + "' rx='5' ry = '5' fill='rgb(255,255,204)' stroke='gold' stroke-width='2'  visibility='hidden'>"; 
       html += "<set attributeName='visibility' from='hidden' to='visible' begin='ec" + i + ".mouseover' end='ec" + i + ".mouseout'/>";
       html += "</rect>";
       html += "<text class='hoverText' x='" + (hoverBoxCentre_x - HOVER_BOX_WIDTH/2 + 5) + "' y='" + (hoverBoxCentre_y - HOVER_BOX_HEIGHT/2 + 15) + "' font-size='12' fill='black' visibility='hidden'>";
       html += "<tspan dx='0' dy='0'>Rank: " +  (i+1) + "</tspan>";
-      html += "<tspan x='" + (hoverBoxCentre_x - HOVER_BOX_WIDTH/2 + 5) + "' dy='12'>Frequency: " +  DisplayedEntities[i].freq + "</tspan>";
+      if (EntityDisplayMode == "focus") {
+        html += "<tspan x='" + (hoverBoxCentre_x - HOVER_BOX_WIDTH/2 + 5) + "' dy='12'>Link Freq.: " +  DisplayedEntities[i].linkFreq + "</tspan>";
+      } else {
+        html += "<tspan x='" + (hoverBoxCentre_x - HOVER_BOX_WIDTH/2 + 5) + "' dy='12'>Frequency: " +  DisplayedEntities[i].freq + "</tspan>";
+      }
       html += "<tspan x='" + (hoverBoxCentre_x - HOVER_BOX_WIDTH/2 + 5) + "' dy='12'>Ave. Sentiment: " +  paddedAveSentiment + "</tspan>";
       html += "<set attributeName='visibility' from='hidden' to='visible' begin='ec" + i + ".mouseover' end='ec" + i + ".mouseout'/>";
       html += "</text>";
@@ -822,8 +910,10 @@
     if (EntityDisplayMode == "focus") {
       // Draw focus entity circle and label 
       var fillColorCoef = (FocusEntity.aveSentiment + 10) / 20;
-      html += "<circle class='entCircles' cx='" + centre_x + "' cy='" + centre_y + "' r='75' stroke='black' stroke-width='1' fill='" + getColor(fillColorCoef) + "' />";
-      html += "<text class='entLabel' x='" + (centre_x - 20) + "' y='" + centre_y + "'>" + FocusEntity.name + "</text>"; 
+      var textWidth = FocusEntity.name.length * ENT_LABEL_FONTSIZE / 1.4;
+      var focusEntDiam = textWidth + 20;
+      html += "<circle cx='" + centre_x + "' cy='" + centre_y + "' r='" + focusEntDiam/2 + "' stroke='black' stroke-width='1' fill='" + getColor(fillColorCoef) + "' />";
+      html += "<text class='entLabel' x='" + (centre_x - textWidth/2) + "' y='" + (centre_y + ENT_LABEL_FONTSIZE/2 - 3) + "'>" + FocusEntity.name + "</text>"; 
     }
 
     svgDOM.innerHTML = html;
@@ -836,10 +926,10 @@
         for(i = 0; i < NumDisplayedEnts; i++) {
           if (DisplayedEntities[i].rank == rank) {
             FocusEntity.name = DisplayedEntities[i].name;
-            console.log("FocusEntity name: " + FocusEntity.name);
             EntityDisplayMode = "focus";
             document.getElementById('focusRadio').checked = true;
-            getEntityDiagData();
+            document.getElementById('searchedEntity').value = FocusEntity.name;
+            getEntityTableDiagData();
           }
         }
       });
