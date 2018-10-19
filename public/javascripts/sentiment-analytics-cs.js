@@ -783,7 +783,7 @@
     var centre_y = SVG_HEIGHT / 2;
     var orbitRadius = SVG_HEIGHT / 2 - 150;
     var maxEntRadius = 0.5 * Math.PI * orbitRadius * 2 / NUM_ENTITIES;
-    var MIN_ENT_RADIUS = 4;
+    var MIN_ENT_RADIUS = 5;
     var ENT_LABEL_FONTSIZE = 11; // font size in pixels/points of entity label text
     var HOVER_BOX_WIDTH = 105;
     var HOVER_BOX_HEIGHT = 45;
