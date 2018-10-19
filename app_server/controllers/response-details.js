@@ -53,7 +53,6 @@ module.exports.getResponse = function (req, res) {
   connection.query(query, function (err, rows, fields) {
     if (err) throw err;
 
-    console.log(rows);
     var result = rows;
 
     var results = {

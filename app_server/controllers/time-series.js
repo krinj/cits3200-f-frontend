@@ -54,7 +54,7 @@ module.exports.getResponse = function (req, res) {
     if (err) throw err;
     //timeSeries
     var time_series = rows;
-    console.log(time_series);
+    //console.log(time_series);
 
     var results = {
       timeSeries: time_series,

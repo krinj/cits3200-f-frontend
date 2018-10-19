@@ -36,9 +36,10 @@
   var TimeSeries;
   var TimeSeriesX = [];
   var TimeSeriesY = [];
-  var TimeSeriesXformat = [];
+  var WeekAveX = [];
+  var WeekAveY = [];
 
-  var TimeSeriesResult = [];
+  var NationalAverage = [];
 
   // Sentiment colour scale end a middle points:
   var RedColor = [204, 69, 40];
@@ -59,39 +60,43 @@
     loadResults(QuestionNum, Gender, AgeRange, EmployStatus,
                toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
 
+    updateTimeSeries(QuestionNum, Gender, AgeRange, EmployStatus,
+               toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
 
-    document.getElementById("questionList").addEventListener('changed',function(){
+
+    document.getElementById("questionList").addEventListener('change',function(){
       QuestionNum = document.getElementById("questionList").value;
+      cleanTimeSeries();
       updateTimeSeries(QuestionNum, Gender, AgeRange, EmployStatus,
                  toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
       });
-    document.getElementById("gender").addEventListener('changed',function(){
+    document.getElementById("gender").addEventListener('change',function(){
       Gender = document.getElementById("gender").value;
+      cleanTimeSeries();
       updateTimeSeries(QuestionNum, Gender, AgeRange, EmployStatus,
                  toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
     });
-    document.getElementById("ageRange").addEventListener('changed',function(){
-      Gender = document.getElementById("ageRange").value;
+    document.getElementById("ageRange").addEventListener('change',function(){
+      AgeRange = document.getElementById("ageRange").value;
+      cleanTimeSeries();
       updateTimeSeries(QuestionNum, Gender, AgeRange, EmployStatus,
                  toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
     });
     document.getElementById("employStatus").addEventListener('change',function(){
-      Gender = document.getElementById("employStatus").value;
+      EmployStatus = document.getElementById("employStatus").value;
+      cleanTimeSeries();
       updateTimeSeries(QuestionNum, Gender, AgeRange, EmployStatus,
                  toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
     });
     document.getElementById("startDateBox").addEventListener('change',function(){
-      Gender = document.getElementById("startDateBox").value;
-      updateTimeSeries(QuestionNum, Gender, AgeRange, EmployStatus,
-                 toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
-    });
-    document.getElementById("gender").addEventListener('change',function(){
-      Gender = document.getElementById("gender").value;
+      StartDate = document.getElementById("startDateBox").value;
+      cleanTimeSeries();
       updateTimeSeries(QuestionNum, Gender, AgeRange, EmployStatus,
                  toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
     });
     document.getElementById("endDateBox").addEventListener('change',function(){
       EndDate = new Date(document.getElementById("endDateBox").valueAsDate);
+      cleanTimeSeries();
       updateTimeSeries(QuestionNum, Gender, AgeRange, EmployStatus,
                  toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
     });
@@ -165,13 +170,13 @@
         ResponseDate = data.responseDate;
         ResponseScore = data.responseScore;
         ResponseText = data.responseText;
-        TimeSeries = data.timeSeries;
+      /*  TimeSeries = data.timeSeries;
         //timeSeries
 
         for (i=0; i<TimeSeries.length; i++){
           TimeSeriesX.push(TimeSeries[i].ds.slice(0,10));
           TimeSeriesY.push(TimeSeries[i].avgOs);
-        }
+        } */
 
 
         // If loading the page for the first time:
@@ -179,7 +184,7 @@
           setFilterInputs();
           renderDateSlider();
         }
-        renderSentiTimeSeries();
+        //renderSentiTimeSeries();
         renderAveSentimentDial();
         renderCompareSentimentChart();
         renderHistogramByScore();
@@ -212,17 +217,36 @@
         // for(property in data) {
         //   console.log("" + property + ": " + data[property]);
         // }
+        //console.log(data.timeSeries);
         TimeSeries = data.timeSeries;
         //timeSeries
         for (i=0; i<TimeSeries.length; i++){
           TimeSeriesX.push(TimeSeries[i].ds.slice(0,10));
-          TimeseriesY.push(TimeSeries[i].avgOs);
+          TimeSeriesY.push(TimeSeries[i].avgOs);
         }
+        //console.log("10 处以 5",10/5);
+        for(i=0;i<TimeSeries.length;i+=4){
+          WeekAveY.push((TimeSeriesY[i]+TimeSeriesY[i+1]+TimeSeriesY[i+2]+TimeSeriesY[i+3])/4);
+          WeekAveX.push(TimeSeriesX[i]);
+        }
+
+        for(i=0; i<WeekAveX.length; i++) {
+          NationalAverage.push(NationalAveSentiment);
+        }
+        //console.log(WeekAveY);
+        renderSentiTimeSeries();
       },
       error: function (data) {
         console.log("Could not fetch data.");
       }
     });
+  }
+
+  function cleanTimeSeries() {
+    TimeSeriesX = [];
+    TimeSeriesY = [];
+    WeekAveX = [];
+    WeekAveY = [];
   }
 
 
@@ -298,27 +322,44 @@
   }
 
   //sentiTimeSeries
-function renderSentiTimeSeries() {
-  //alert(TimeSeriesY);
 
-  var data = [
-    {
-      x: TimeSeriesX,
-      //alert(x);
-      y: TimeSeriesY,
-      type: 'scatter'
+  function renderSentiTimeSeries() {
+
+  //var dayByDay = {
+  //  mode: "lines",
+  //  name: 'average sentiment score',
+  //  x: TimeSeriesX,
+  //  y: TimeSeriesY,
+  //  line: {color: '#17BECF'}
+  //}
+
+  var trace1 = {
+    mode: "lines",
+    name: 'National Average Score',
+    x: WeekAveX,
+    y: NationalAverage,
+    line: {
+      dash: 'dot',
+      width: 2,
+      color: 'red'
     }
-  ];
+  }
+
+  var weekly = {
+    mode: "lines",
+    name: 'Weekly Average Score',
+    x: WeekAveX,
+    y: WeekAveY,
+    line: {color: '#17BECF'}
+  }
+
+  var data = [trace1,weekly];
+
   var layout = {
-    title: 'Time Series with Rangeslider',
+    title: 'Time Series',
     xaxis: {
       autorange: true,
-      range: [TimeSeriesX[0], TimeSeriesX[TimeSeriesX.length - 1]],
-
-    legend: {
-      color: 'red'
-    },
-
+      range: [WeekAveX[0], WeekAveX[WeekAveX.length - 1]],
       rangeselector: {buttons: [
           {
             count: 1,
@@ -332,28 +373,23 @@ function renderSentiTimeSeries() {
             step: 'month',
             stepmode: 'backward'
           },
-          {
-            count: 1,
-            label: '1y',
-            step: 'year',
-            stepmode: 'backward'
-          },
-
           {step: 'all'}
         ]},
-
-      rangeslider: {range: [TimeSeriesXformat[0], TimeSeriesXformat[TimeSeriesX.length - 1]]},
+        
+      rangeslider: {range: [WeekAveX[0], WeekAveX[WeekAveX.length - 1]]},
+      color: 'black',
       type: 'date'
     },
     yaxis: {
-      autorange: false,
-      range: [-10, 10],
+      autorange: true,
+      range: [-10,10],
       type: 'linear'
     }
   };
   var timeLine = document.getElementById('sentiTimeSeriesContainer');
   Plotly.newPlot(timeLine, data, layout);
-}
+  }
+
 
 
   function renderAveSentimentDial() {

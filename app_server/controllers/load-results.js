@@ -67,7 +67,8 @@ module.exports.loadResults = function (req, res) {
   // Query 8: Frequency count array of sentiment scores -10 to 10 (for Histogram by Score)
   query += "SELECT overall_sentiment, count(*) as frequency FROM Response R, Submission S WHERE S.employment_status = '"+ employStatus +"' AND R.submission_id = S.submission_id AND R.question_num = '"+ questionNum +"' AND R.survey_id = 1 AND S.gender = '" + gender + "' AND R.char_count != 0 AND S.date_submitted BETWEEN '"+ startDate + "' AND '" + endDate +"' AND S.year_of_birth BETWEEN '"+ birthStart + "' AND '"+ birthEnd +"' GROUP BY overall_sentiment;";
 
-  query += "SELECT date_submitted as ds, AVG(overall_sentiment) as avgOs FROM Submission S, Response R WHERE S.employment_status = '"+ employStatus +"' AND R.submission_id = S.submission_id AND R.question_num = '"+ questionNum +"' AND R.survey_id = 1 AND S.gender = '" + gender + "' AND R.char_count != 0 AND S.date_submitted BETWEEN '"+ startDate + "' AND '" + endDate +"' AND S.year_of_birth BETWEEN '"+ birthStart + "' AND '"+ birthEnd +"'  Group BY date_submitted order by date_submitted;";
+  /*query += "SELECT date_submitted as ds, AVG(overall_sentiment) as avgOs FROM Submission S, Response R WHERE S.employment_status = '"+ employStatus +"' AND R.submission_id = S.submission_id AND R.question_num = '"+ questionNum +"' AND R.survey_id = 1 AND S.gender = '" + gender + "' AND R.char_count != 0 AND S.date_submitted BETWEEN '"+ startDate + "' AND '" + endDate +"' AND S.year_of_birth BETWEEN '"+ birthStart + "' AND '"+ birthEnd +"'  Group BY date_submitted order by date_submitted;";*
+
 /*  query += "SELECT date_submitted as ds, AVG(overall_sentiment) as avgOs FROM Submission S, Response R WHERE S.employment_status = '"+ employStatus +"' AND R.submission_id = S.submission_id AND R.question_num = '"+ questionNum +"' AND R.survey_id = 1 AND S.gender = '" + gender + "' AND R.char_count != 0 AND S.date_submitted BETWEEN '"+ startDate + "' AND '" + endDate +"' AND S.year_of_birth BETWEEN '"+ birthStart + "' AND '"+ birthEnd +"'  Group BY date_submitted order by date_submitted;"; */
   // Query 9: Response Details table
   // query += "SELECT date_submitted, response, overall_sentiment FROM Response R, Submission S WHERE R.submission_id=S.submission_id AND R.question_num = 1 AND R.survey_id=1 AND S.gender = 'male' AND R.char_count != 0 AND S.date_submitted BETWEEN '2016-01-20' AND '2018-04-21' order by overall_sentiment;";
@@ -143,7 +144,7 @@ module.exports.loadResults = function (req, res) {
         }
       }
     }
-    var time_series = rows[9];
+    //var time_series = rows[9];
 
     //console.log(rows[8]);
     //console.log(time_series[0].ds.slice(0,10));
@@ -174,7 +175,7 @@ module.exports.loadResults = function (req, res) {
 		  responseDate: response_date,
 		  responseScore: response_score,
       responseText: response_text,
-      timeSeries: time_series,
+      //timeSeries: time_series,
 
     };
 
