@@ -135,18 +135,61 @@ block content
               strong Score: 
               span#responseScoreSpan 
             p 
-              button#firstButton(type = "button") First
+              button.responseCtrl#firstButton(type="button") First
               | &thinsp;
-              button#previousButton(type="button") Prev.
+              button.responseCtrl#previousButton(type="button") Prev.
               
               strong#responseIndex
               
-              button#nextButton(type="button") Next
+              button.responseCtrl#nextButton(type="button") Next
               | &thinsp;
-              button#lastButton(type="button") Last
+              button.responseCtrl#lastButton(type="button") Last
             p 
               strong Response:
             p#responseText
+  
+  .section#EntityAnalytics
+    .centredBody
+      h2 KEYWORDS/ENTITIES IN RESPONSES
+
+      p.centred
+        b Display Mode:
+        label.displayMode#topFreqLabel
+          input(type="radio" class="dispModeRadio" name="dispModeRadio" value="topFreq" checked) 
+          | Top Frequency Keywords 
+        label.displayMode#mostPosLabel
+          input(type="radio" class="dispModeRadio" name="dispModeRadio" value="mostPos") 
+          | Most Positive Keywords
+        label.displayMode#mostNegLabel
+          input(type="radio" class="dispModeRadio" name="dispModeRadio" value="mostNeg") 
+          | Most Negative Keywords
+        label.displayMode#focusLabel
+          input(type="radio" class="dispModeRadio" name="dispModeRadio" value="focus" id='focusRadio')
+          | Keyword Focus
+        input(type="text" list="fullEntityList" id="searchedEntity" size=15)
+        datalist#fullEntityList
+        button(type="button" id="entitySearchButton") GO
+
+      #entityTableDiag
+        #entityTable
+          h3 Keyword Listing
+          table#entityTable 
+            col#etcol1
+            col#etcol2
+            col#etcol3
+            col#etcol4
+            thead
+              tr
+                th Rank
+                th Keyword
+                th
+                  span#linkSpan
+                  | Frequency
+                th Average Sentiment Score
+            tbody#entityTableBody
+        #entityDiag
+          h3 Keyword Linkage Diagram
+          svg#entitySvg(width="800" height="800") 
 
   script(type="text/javascript" src="/javascripts/sentiment-analytics-cs.js") 
 
