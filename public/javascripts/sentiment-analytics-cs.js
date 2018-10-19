@@ -895,7 +895,7 @@
     }
 
     if (EntityDisplayMode == "focus") {
-      // Draw focus entity circle and label 
+      // Draw focus entity circle and label:
       var fillColorCoef = (FocusEntity.aveSentiment + 10) / 20;
       var textWidth = FocusEntity.name.length * ENT_LABEL_FONTSIZE / 1.4;
       var focusEntDiam = textWidth + 20;
@@ -903,6 +903,7 @@
       html += "<text class='entLabel' x='" + (centre_x - textWidth/2) + "' y='" + (centre_y + ENT_LABEL_FONTSIZE/2 - 3) + "'>" + FocusEntity.name + "</text>"; 
     }
 
+    // Add all of the above svg elements within the parent svg element:
     svgDOM.innerHTML = html;
 
     // On clicking an entity circle, switch to the focus diagram for that entity:
@@ -923,6 +924,8 @@
     });
   }
 
+  // Helper function to pad a floating point number with ".0" if it is has no 
+  // fractional part:
   function padPointZero(fpNumber) {
     var numAsString = "" + fpNumber;
     if (!(/\./.test(numAsString))) { // if number has a decimal point
