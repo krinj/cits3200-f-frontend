@@ -145,23 +145,20 @@ canvas#dialCanvas {
 #histogramContainer #right {
   margin-left: 10px;
   width: 32%;
-  right: 0;
-  
+  right: 0;  
 }
+
 #selected-response {
-  overflow: scroll;
+  /* overflow: scroll; */
 }
 
 #histogramContainer #selected-response {
-  border: 2px solid black;
-  background-color: #fee598;
   height: 320px;
   padding: 10px;
 }
 
 #histogramContainer #explanation-box {
-  background-color: #eee;
-  border: 1px dashed black;
+  border: 1px dashed grey;
   height: 80px;
   padding: 10px;
   margin: auto auto 10px;
