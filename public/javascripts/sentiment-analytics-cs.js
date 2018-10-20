@@ -38,9 +38,6 @@
   var ScoreFreqArray = [];  
   
   // Time Series variables:
-  var TimeSeries;
-  var TimeSeriesX = [];
-  var TimeSeriesY = [];
   var WeekAveX = [];
   var WeekAveY = [];
   var NationalAverage = [];
@@ -97,31 +94,37 @@
     document.getElementById("questionList").addEventListener('change', function () {
       QuestionNum = document.getElementById("questionList").value;      
       getTimeSeriesData("focus");
+      getTimeSeriesData("full");
     });
 
     document.getElementById("gender").addEventListener('change', function () {
       Gender = document.getElementById("gender").value;      
       getTimeSeriesData("focus");
+      getTimeSeriesData("full");
     });
 
     document.getElementById("ageRange").addEventListener('change', function () {
       AgeRange = document.getElementById("ageRange").value;      
       getTimeSeriesData("focus");
+      getTimeSeriesData("full");
     });
 
     document.getElementById("employStatus").addEventListener('change', function () {
       EmployStatus = document.getElementById("employStatus").value;      
       getTimeSeriesData("focus");
+      getTimeSeriesData("full");
     });
 
     document.getElementById("startDateBox").addEventListener('change', function () {
       StartDate = new Date(document.getElementById("startDateBox").valueAsDate);    
       getTimeSeriesData("focus");
+      getTimeSeriesData("full");
     });
 
     document.getElementById("endDateBox").addEventListener('change', function () {
       EndDate = new Date(document.getElementById("endDateBox").valueAsDate);
       getTimeSeriesData("focus");
+      getTimeSeriesData("full");
     });
 
     // Event Listener for Fetch Results button:
@@ -252,7 +255,7 @@
 
     var slider = document.getElementById('dateSlider');
     noUiSlider.create(slider, {
-      // Create two timestamps to define a range.
+      connect: [false, true, false], // shades regions between handles
       range: {
           min: rangeStart_ms,
           max: rangeEnd_ms
@@ -272,6 +275,10 @@
 
     slider.noUiSlider.on('update', function (values, handle) {
         dateValues[handle].valueAsDate = new Date(+values[handle]);
+        StartDate = new Date(document.getElementById("startDateBox").valueAsDate);
+        EndDate = new Date(document.getElementById("endDateBox").valueAsDate);  
+        getTimeSeriesData("focus");
+        getTimeSeriesData("full");
     });
   }
 
@@ -324,11 +331,8 @@
           timeSeriesY.push(timeSeries[i].avgOs);
         }
         for (i = 0; i < timeSeries.length; i += 4) {
-          WeekAveY.push((timeSeriesY[i] + timeSeriesY[i + 1] + timeSeriesY[i + 2] + timeSeriesY[i + 3]) / 4);
+          WeekAveY.push(Math.round(((timeSeriesY[i] + timeSeriesY[i + 1] + timeSeriesY[i + 2] + timeSeriesY[i + 3]) / 4)*10)/10);
           WeekAveX.push(timeSeriesX[i]);
-        }
-        for (i = 0; i < WeekAveX.length; i++) {
-          NationalAverage.push(NationalAveSentiment);
         }
 
         if (series == "full") {
@@ -343,65 +347,207 @@
     });
   }  
 
-  // Render the sentiment time series
-  function renderSentiTimeSeries() {
+  function renderFocusTimeSeries() {
 
-    var natAve = {
-      mode: "lines",
-      name: 'National Average Score',
-      x: WeekAveX,
-      y: NationalAverage,
-      line: {
-        dash: 'dot',
-        width: 2,
-        color: 'red'
-      }
+    var yourOrgData = [];
+    for (i = 0; i < WeekAveX.length; i++) {
+      yourOrgData.push({
+        x: WeekAveX[i],
+        y: WeekAveY[i],
+      });
+    }
+    
+    var yourOrgSeries = {
+      label: 'Your Organisation',
+      borderColor: 'gold',
+      borderWidth: 2,
+      pointRadius: 2,
+      pointBorderColor: 'gold',
+      pointBackgroundColor: 'gold',
+      fill: false,
+      data: yourOrgData
     };
+    
+    // (Re-)create canvas DOM element
+    // (otherwise duplicate canvases will form on fetching new results)
+    var canvasContDOM = document.getElementById("focusTimeSeriesCont");
+    var html = "<canvas id='focusTimeSeriesCanvas'>";
+    html += "Your browser does not support the HTML5 canvas tag. </canvas>";
+    canvasContDOM.innerHTML = html; // (re-) insert the canvas into the DOM
+    var canvasDOM = document.getElementById("focusTimeSeriesCanvas");
 
-    var weekly = {
-      mode: "lines",
-      name: 'Weekly Average Score',
-      x: WeekAveX,
-      y: WeekAveY,
-      line: { color: 'gold' }
-    };
-
-    var data = [natAve, weekly];
-
-    var layout = {
-      xaxis: {
-        autorange: true,
-        range: [WeekAveX[0], WeekAveX[WeekAveX.length - 1]],
-        rangeselector: {
-          buttons: [
-            {
-              count: 1,
-              label: '1m',
-              step: 'month',
-              stepmode: 'backward'
+    var context = canvasDOM.getContext('2d');
+    var chart = new Chart(context, {
+      type: 'line',
+      data: { datasets: [yourOrgSeries] },
+      options: {
+        maintainAspectRatio: false,
+        scales: {
+          xAxes: [{
+            type: 'time',
+            time: {
+              displayFormats: {
+                quarter: 'MMM YYYY'
+              },
+              min: StartDate,
+              max: EndDate,              
             },
-            {
-              count: 6,
-              label: '6m',
-              step: 'month',
-              stepmode: 'backward'
+          }],
+          yAxes: [{
+            ticks: {
+              min: -10,
+              max: 10,
+              stepSize: 5
             },
-            { step: 'all' }
-          ]
+          }],
         },
-
-        rangeslider: { range: [WeekAveX[0], WeekAveX[WeekAveX.length - 1]] },
-        color: 'black',
-        type: 'date'
-      },
-      yaxis: {
-        autorange: false,
-        range: [-10, 10],
-        type: 'linear'
+        title: {
+          display: false
+        },
+        legend: {
+          display: false,
+        },
+        layout: {
+          padding: {
+            left: 0,
+            right: 0,
+            bottom: 0,
+            top: 0
+          }
+        },
+        tooltips: {
+          enabled: true
+        }
       }
+    });
+  }
+
+  function renderFullTimeSeries() {
+
+    var yourOrgData = [];
+    for (i = 0; i < WeekAveX.length; i++) {
+      yourOrgData.push({
+        x: WeekAveX[i],
+        y: WeekAveY[i],
+      });
+    }
+    
+    var yourOrgSeries = {
+      label: 'Your Organisation',
+      borderColor: 'gold',
+      borderWidth: 1,
+      pointRadius: 0,
+      fill: false,
+      data: yourOrgData
     };
-    var timeLine = document.getElementById('sentiTimeSeriesContainer');
-    Plotly.newPlot(timeLine, data, layout);
+
+    var leftTopExclusionData = [];
+    var leftBotExclusionData = [];
+    var rightTopExclusionData = [];
+    var rightBotExclusionData = [];
+    for (i = 0; i < WeekAveX.length; i++) {
+      var thisTime = new Date(WeekAveX[i]).getTime();  
+      if (thisTime < StartDate.getTime()) {
+        leftTopExclusionData.push({
+          x: WeekAveX[i],
+          y: 10,
+        });
+        leftBotExclusionData.push({
+          x: WeekAveX[i],
+          y: -10,
+        });
+      }
+      else if (thisTime > EndDate.getTime()) {
+        rightTopExclusionData.push({
+          x: WeekAveX[i],
+          y: 10,
+        });
+        rightBotExclusionData.push({
+          x: WeekAveX[i],
+          y: -10,
+        });
+      }
+    }    
+
+    var leftTopExclusionSeries = {
+      borderColor: "gray",
+      borderWidth: 1,
+      pointRadius: 0,
+      data: leftTopExclusionData
+    };
+    var leftBotExclusionSeries = {
+      borderColor: "gray",
+      borderWidth: 1,
+      pointRadius: 0,
+      data: leftBotExclusionData
+    };
+    var rightTopExclusionSeries = {
+      borderColor: "gray",
+      borderWidth: 1,
+      pointRadius: 0,
+      data: rightTopExclusionData
+    };
+    var rightBotExclusionSeries = {
+      borderColor: "gray",
+      borderWidth: 1,
+      pointRadius: 0,
+      data: rightBotExclusionData
+    };
+
+   
+    // (Re-)create canvas DOM element
+    // (otherwise duplicate canvases will form on fetching new results)
+    var canvasContDOM = document.getElementById("fullTimeSeriesCont");
+    var html = "<canvas id='fullTimeSeriesCanvas'>";
+    html += "Your browser does not support the HTML5 canvas tag. </canvas>";
+    canvasContDOM.innerHTML = html; // (re-) insert the canvas into the DOM
+    var canvasDOM = document.getElementById("fullTimeSeriesCanvas");
+
+    var context = canvasDOM.getContext('2d');
+    var chart = new Chart(context, {
+      type: 'line',
+      data: { datasets: [yourOrgSeries, leftTopExclusionSeries, leftBotExclusionSeries, rightTopExclusionSeries, rightBotExclusionSeries] },
+      options: {
+        maintainAspectRatio: false,
+        scales: {
+          xAxes: [{
+            type: 'time',
+            time: {
+              displayFormats: {
+                quarter: 'MMM YYYY'
+              },
+              min: FirstDate,
+              max: new Date(),              
+            },
+          }],
+          yAxes: [{
+            ticks: {
+              min: -10,
+              max: 10,
+              stepSize: 10
+            },
+          }],
+        },
+        title: {
+          display: false
+        },
+        legend: {
+          display: false,
+        },
+        layout: {
+          padding: {
+            left: 0,
+            right: 0,
+            bottom: 0,
+            top: 5
+          }
+        },
+        tooltips: { enabled: true },
+        animation: { duration: 0 },
+        hover: {animationDuration: 0 },
+        responsiveAnimationDuration: 0, 
+      }
+    });
   }
 
   function renderAveSentimentDial() {
