@@ -1,5 +1,5 @@
 /*
- * Client-Side (cs) script for the Sentiment Analytics webpage. 
+ * Client-Side (cs) script for the Sentiment Analytics webpage.
  */
 
 // JQUERY FUNCTIONS
@@ -36,6 +36,14 @@
   var FirstDate;
   var QuestionArray = [];
   var ScoreFreqArray = [];  
+  
+  // Time Series variables:
+  var TimeSeries;
+  var TimeSeriesX = [];
+  var TimeSeriesY = [];
+  var WeekAveX = [];
+  var WeekAveY = [];
+  var NationalAverage = [];
 
   // Histogram selected response variables:
   var ResponseScore;
@@ -72,20 +80,68 @@
     EndDate = new Date(); // i.e. today
 
     loadResults();
+    cleanTimeSeries();
+    updateTimeSeries(QuestionNum, Gender, AgeRange, EmployStatus, toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
+
+    // Set full survey history date range limits 
+    var firstDay = FirstDate.getDate();
+    var firstMonth = FirstDate.getMonth();
+    var firstYear = FirstDate.getFullYear();
+    document.getElementById('firstDateSpan').innerHTML = padZero(firstDay) + '/' + padZero(firstMonth + 1) + "/" + firstYear;
+    var today = new Date();
+    document.getElementById("todaysDate").innerHTML = padZero(today.getDate()) + "/" + padZero((today.getMonth() + 1)) + "/" + today.getFullYear();
+  
+    fillEntitySearchList();
     getEntityTableDiagData();
 
-    // Event Listener for Fetch Results button:
-    document.getElementById('fetchResults').addEventListener('click', function() {          
+    /************************** ESTABLISH EVENT LISTENERS ****************************/
+
+    document.getElementById("questionList").addEventListener('change', function () {
       QuestionNum = document.getElementById("questionList").value;
-      Gender = document.getElementById("gender").value;
-      AgeRange = document.getElementById("ageRange").value;
-      EmployStatus = document.getElementById("employStatus").value;
-      StartDate = new Date(document.getElementById("startDateBox").valueAsDate);
-      EndDate = new Date(document.getElementById("endDateBox").valueAsDate);
-      loadResults();   
+      cleanTimeSeries();
+      updateTimeSeries(QuestionNum, Gender, AgeRange, EmployStatus,
+        toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
     });
 
-    // When resetting filters, reset start date and end date to overall range start and range end: 
+    document.getElementById("gender").addEventListener('change', function () {
+      Gender = document.getElementById("gender").value;
+      cleanTimeSeries();
+      updateTimeSeries(QuestionNum, Gender, AgeRange, EmployStatus,
+        toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
+    });
+
+    document.getElementById("ageRange").addEventListener('change', function () {
+      AgeRange = document.getElementById("ageRange").value;
+      cleanTimeSeries();
+      updateTimeSeries(QuestionNum, Gender, AgeRange, EmployStatus,
+        toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
+    });
+
+    document.getElementById("employStatus").addEventListener('change', function () {
+      EmployStatus = document.getElementById("employStatus").value;
+      cleanTimeSeries();
+      updateTimeSeries(QuestionNum, Gender, AgeRange, EmployStatus,
+        toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
+    });
+
+    document.getElementById("startDateBox").addEventListener('change', function () {
+      StartDate = document.getElementById("startDateBox").value;
+      cleanTimeSeries();
+      updateTimeSeries(QuestionNum, Gender, AgeRange, EmployStatus,
+        toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
+    });
+
+    document.getElementById("endDateBox").addEventListener('change', function () {
+      EndDate = new Date(document.getElementById("endDateBox").valueAsDate);
+    });
+
+    // Event Listener for Fetch Results button:
+    document.getElementById('fetchResults').addEventListener('click', function () {
+      loadResults(QuestionNum, Gender, AgeRange, EmployStatus,
+        toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
+    });
+
+    // When resetting filters, reset start date and end date to overall range start and range end:
     document.getElementById('resetFilters').addEventListener('click', function() {
       document.getElementById("gender").value = 'all';
       document.getElementById("ageRange").value = 'all';
@@ -93,7 +149,7 @@
       document.getElementById('startDateBox').valueAsDate = FirstDate;
       document.getElementById('endDateBox').valueAsDate = new Date();
 
-      // Reset the handles on the date slider: 
+      // Reset the handles on the date slider:
       var startDateObj = FirstDate;
       var endDateObj = new Date();
       var slider = document.getElementById('dateSlider');
@@ -158,29 +214,88 @@
         ResponseDate = data.responseDate;
         ResponseScore = data.responseScore;
         ResponseText = data.responseText;
+      /*  TimeSeries = data.timeSeries;
+        //timeSeries
+
+        for (i=0; i<TimeSeries.length; i++){
+          TimeSeriesX.push(TimeSeries[i].ds.slice(0,10));
+          TimeSeriesY.push(TimeSeries[i].avgOs);
+        } */
+
 
         // If loading the page for the first time:
         if(document.getElementById("questionList").innerHTML == "") {
           setFilterInputs();
         }
-
+        cleanTimeSeries();
+        updateTimeSeries(QuestionNum, Gender, AgeRange, EmployStatus, toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
         renderAveSentimentDial();
         renderCompareSentimentChart();
         renderHistogramByScore();
         fillSummaryTable();
         fillResponseDetails();
-        fillEntitySearchList();
         getEntityTableDiagData();
+
       },
       error: function (data) {
-        console.log("Could not load results.");
+        console.log("Could not fetch data.");
       }
     });
-  }    
+  }
+
+  // Update the time series
+  function updateTimeSeries(questionNum, gender, ageRange, employStatus, startYYYY_MM_DD, endYYYY_MM_DD) {
+    $.ajax({
+      url: "/time-series",   // i.e. [Nodejs app]/app_server/controllers/time-series.js
+      data: { // data to send to load-results.js controller
+        "questionNum": questionNum,
+        "gender": gender,
+        "ageRange": ageRange,
+        "employStatus": employStatus,
+        "startDate": startYYYY_MM_DD,
+        "endDate": endYYYY_MM_DD
+      },
+      method: "POST",
+      dataType: 'JSON',
+      success: function (data) { // data is the JSON object returned from SQL via controller
+        // for(property in data) {
+        //   console.log("" + property + ": " + data[property]);
+        // }
+        //console.log(data.timeSeries);
+        TimeSeries = data.timeSeries;
+        //timeSeries
+        for (i = 0; i < TimeSeries.length; i++) {
+          TimeSeriesX.push(TimeSeries[i].ds.slice(0, 10));
+          TimeSeriesY.push(TimeSeries[i].avgOs);
+        }
+        //console.log("10 处以 5",10/5);
+        for (i = 0; i < TimeSeries.length; i += 4) {
+          WeekAveY.push((TimeSeriesY[i] + TimeSeriesY[i + 1] + TimeSeriesY[i + 2] + TimeSeriesY[i + 3]) / 4);
+          WeekAveX.push(TimeSeriesX[i]);
+        }
+
+        for (i = 0; i < WeekAveX.length; i++) {
+          NationalAverage.push(NationalAveSentiment);
+        }
+        //console.log(WeekAveY);
+        renderSentiTimeSeries();
+      },
+      error: function (data) {
+        console.log("Could not fetch time series data.");
+      }
+    });
+  }
+
+  function cleanTimeSeries() {
+    TimeSeriesX = [];
+    TimeSeriesY = [];
+    WeekAveX = [];
+    WeekAveY = [];
+  }
 
   // Set the filter DOM inputs to the values returned from the loadResults method
   // (which have been saved to global variables)
-  function setFilterInputs() {   
+  function setFilterInputs() {
     var html = "";
     for(var i = 0; i < QuestionArray.length; i++) {
       html += "<option value='" + (i+1) + "'>" + QuestionArray[i] + "</option>";
@@ -194,15 +309,7 @@
 
   function renderDateSlider() {
 
-    var firstDay = FirstDate.getDate();
-    var firstMonth = FirstDate.getMonth();
-    var firstYear = FirstDate.getFullYear();
-    document.getElementById('firstDateSpan').innerHTML = padZero(firstDay) + '/' + padZero(firstMonth + 1) + "/" + firstYear;
-    
-    var today = new Date();
-    document.getElementById("todaysDate").innerHTML = padZero(today.getDate()) + "/" + padZero((today.getMonth() + 1)) + "/" + today.getFullYear();
-
-    // Overall date range for slider 
+    // Overall date range for slider
     // (remains fixed even if filter range sliders/boxes is changed by the user)
     var rangeStart = FirstDate;
     var rangeEnd = today;
@@ -222,10 +329,10 @@
           min: rangeStart_ms,
           max: rangeEnd_ms
       },
-    
+
       // Steps of one day
       step: 1 * 24 * 60 * 60 * 1000,
-    
+
       // Two more timestamps indicate the handle starting positions.
       start: [startDate_ms, endDate_ms]
     });
@@ -247,6 +354,76 @@
     document.getElementById("maxCharCount").innerHTML = MaxCharCount;
   }
 
+  // Render the sentiment time series
+  function renderSentiTimeSeries() {
+
+    //var dayByDay = {
+    //  mode: "lines",
+    //  name: 'average sentiment score',
+    //  x: TimeSeriesX,
+    //  y: TimeSeriesY,
+    //  line: {color: '#17BECF'}
+    //}
+
+    var trace1 = {
+      mode: "lines",
+      name: 'National Average Score',
+      x: WeekAveX,
+      y: NationalAverage,
+      line: {
+        dash: 'dot',
+        width: 2,
+        color: 'red'
+      }
+    };
+
+    var weekly = {
+      mode: "lines",
+      name: 'Weekly Average Score',
+      x: WeekAveX,
+      y: WeekAveY,
+      line: { color: '#17BECF' }
+    };
+
+    var data = [trace1, weekly];
+
+    var layout = {
+      title: 'Time Series',
+      xaxis: {
+        autorange: true,
+        range: [WeekAveX[0], WeekAveX[WeekAveX.length - 1]],
+        rangeselector: {
+          buttons: [
+            {
+              count: 1,
+              label: '1m',
+              step: 'month',
+              stepmode: 'backward'
+            },
+            {
+              count: 6,
+              label: '6m',
+              step: 'month',
+              stepmode: 'backward'
+            },
+            { step: 'all' }
+          ]
+        },
+
+        rangeslider: { range: [WeekAveX[0], WeekAveX[WeekAveX.length - 1]] },
+        color: 'black',
+        type: 'date'
+      },
+      yaxis: {
+        autorange: true,
+        range: [-10, 10],
+        type: 'linear'
+      }
+    };
+    var timeLine = document.getElementById('sentiTimeSeriesContainer');
+    Plotly.newPlot(timeLine, data, layout);
+  }
+
   function renderAveSentimentDial() {
 
     var canvasWidth = 300;   
@@ -259,8 +436,8 @@
     canvasContainerDOM.innerHTML = html; // (re-) insert the canvas into the DOM
     var canvasDOM = document.getElementById("dialCanvas");
     var ctx = canvasDOM.getContext("2d");
-    var img = document.getElementById("dialImg");   
-    
+    var img = document.getElementById("dialImg");
+
     var angle = ((10 - OrgAveSentiment) * Math.PI) / 20;
     var needleBaseX = canvasWidth / 2 - 8;
     var needleBaseY = canvasHeight - 3;
@@ -270,7 +447,7 @@
     ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
     ctx.beginPath();
     ctx.moveTo(needleBaseX, needleBaseY);
-    ctx.lineTo(needleTipX, needleTipY);      
+    ctx.lineTo(needleTipX, needleTipY);
     ctx.scale(5,5);
     ctx.strokeStyle='red';
     ctx.stroke();
@@ -279,20 +456,20 @@
   }
 
   function renderCompareSentimentChart() {
-    
-    // (Re-)create canvas DOM element 
+
+    // (Re-)create canvas DOM element
     // (otherwise duplicate canvases will form on fetching new results)
     var canvasContainerDOM = document.getElementById("compareAveSentContainer");
     var html = "<canvas id='compareAveSentCanvas'>";
     html += "Your browser does not support the HTML5 canvas tag. </canvas>";
     canvasContainerDOM.innerHTML = html; // (re-) insert the canvas into the DOM
     var canvasDOM = document.getElementById("compareAveSentCanvas");
-    
+
     var industryAve = OrgAveSentiment * 0.8; // use until industry field added to DB
-    
+
     var myChart = canvasDOM.getContext('2d');
     var compareSentChart = new Chart(myChart, {
-      type: 'bar', 
+      type: 'bar',
       data: {
         labels: ['Your Organization', 'Industry Average', 'National Average'],
         datasets: [{
@@ -354,7 +531,7 @@
     var fillColor = [];
     var tiers = 20;
 
-    // Populate data and bar colours 
+    // Populate data and bar colours
     for (var i = 0; i < tiers + 1; i++)
     {
       xData.push(i - tiers/2);
@@ -368,7 +545,7 @@
         {
           fill: true,
           backgroundColor: fillColor,
-          data: yData, 
+          data: yData,
         }
       ]
     };
@@ -410,10 +587,10 @@
       var activeElement = histogramChart.getElementAtEvent(event)[0];
       ResponseScore = histogramChart.data.labels[activeElement._index];
       $.ajax({
-        url: "/response-details", 
+        url: "/response-details",
         // i.e. [Nodejs app]/app_server/controllers/response-details.js
         data: { // data to send to controller
-          score: ResponseScore,
+          "score": ResponseScore,
           "questionNum": QuestionNum,
           "gender": Gender,
           "ageRange": AgeRange,
@@ -716,7 +893,6 @@
           }
         }
 
-
         fillEntityTable();
         drawEntityDiagram();        
       },
@@ -933,14 +1109,14 @@
     return numAsString;
   }
 
-  /* Returns an rgb(x,y,z) string based on factor from 0 to 1 of how far along the 
+  /* Returns an rgb(x,y,z) string based on factor from 0 to 1 of how far along the
    * specified colour spectrum the output colour should be.
-   */ 
+   */
   function getColor(factor) {
     var rgbStart = RedColor;
     var rgbMiddle = GreyColor;
     var rgbEnd = GreenColor;
-    var r, g, b; 
+    var r, g, b;
     if (factor <= 0.5) {
       r = lerp(rgbStart[0], rgbMiddle[0], factor * 2);
       g = lerp(rgbStart[1], rgbMiddle[1], factor * 2);
@@ -959,4 +1135,4 @@
     return a + delta * factor;
   }
 
-})(jQuery);      
+})(jQuery);

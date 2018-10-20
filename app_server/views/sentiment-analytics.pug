@@ -4,12 +4,10 @@ html
     title #{title} | LFP Sentiment Analytics
 
     link(rel='stylesheet', href='/stylesheets/style.css')
-    link(rel='stylesheet', href='/stylesheets/nouislider.min.css')
     link(href="https://fonts.googleapis.com/css?family=Roboto+Condensed", rel="stylesheet")
     link(href="https://fonts.googleapis.com/css?family=Ubuntu+Mono" rel="stylesheet") 
     
     script(type="text/javascript" src="/javascripts/Chart.min.js")
-    script(type="text/javascript" src="/javascripts/nouislider.min.js")
     script(type="text/javascript" src="/javascripts/jquery-3.3.1.min.js")
 
   body
@@ -78,7 +76,7 @@ html
           h3 Overall Sentiment Over Time
           p The following is a smoothed plot of the daily average overall sentiment for responses for the question selected, with the above filters applied. The lower graph shows the time series over all time for this survey; click into it or drag the handles to define the sub-range presented in the main graph above (this also changes the filter dates above). 
 
-          #timeseriesContainer
+          #sentiTimeSeriesContainer       
 
           table
             tr
