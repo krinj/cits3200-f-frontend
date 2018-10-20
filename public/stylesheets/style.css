@@ -1,22 +1,18 @@
-body {
-  background-color: rgba(31, 31, 31);
-  padding: 0;
-  margin: 0;
-  font-family: 'Roboto Condensed', sans-serif;
-}
+/************ GENERIC SELECTORS *************/
 
 h1 {
-  font-size: 30pt;
+  font-size: 20pt;
   text-align: center;
+  margin: 10px 0px 0px 0px;
 }
 
 h2 {
-  font-size: 20pt;
+  font-size: 16pt;
   text-align: center;
 }
 
 h3 {
-  font-size: 16pt;
+  font-size: 12pt;
   text-align: center;
 }
 
@@ -28,10 +24,35 @@ label {
   font-weight: 600;
 }
 
-input, select, button {
+input, select {
   font-size: 11pt;
   font-family: 'Roboto Condensed', sans-serif; 
   padding: 3px;
+  margin: 5px;
+  border: 1px solid rgb(204, 204, 204);
+  border-radius: 4px;
+  box-shadow: 1px 1px 1px darkgrey;
+}
+
+input[type='radio'] {
+  cursor: pointer;
+}
+
+button {
+  font-size: 11pt;
+  font-family: 'Roboto Condensed', sans-serif; 
+  padding: 5px;
+  margin: 5px;
+  border: 1px solid rgb(204, 204, 204);
+  border-radius: 4px;
+  box-shadow: 2px 2px 2px darkgrey;
+  background-color: darkgreen;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color:  rgb(0, 204, 0);
 }
 
 a {
@@ -39,19 +60,34 @@ a {
   text-decoration: none;
 }
 
-input[type='radio'] {
-  cursor: pointer;
+.section {
+  overflow: hidden;
+  padding: 5px 20px;
+}
+
+.centredBody {
+  max-width: 1200px;
+  margin: 0px auto;
+  padding: 0px;
 }
 
 .centred {
   text-align: center;
 }
 
-#logoDiv {
-  height: 80px;
-  width: 200px;
+/************ SELECTORS JUST FOR FRAMING (TO DELETE) *************/
+
+body {
   padding: 0;
   margin: 0;
+  font-family: 'Roboto Condensed', sans-serif;
+  background-color: black;
+}
+
+#logoDiv {
+  float: left;
+  height: 80px;
+  width: 200px;
   background-color: white;
 }
 
@@ -61,64 +97,114 @@ img#LFPlogo {
   left: 5px;
 }
 
-#main {
+#frame {
   position: absolute;
   left: 200px;
-  top: 80px;
   right: 0px;
-  padding: 0px;
-  background-color: white;
+  background-color: white
 }
 
-.section {
-  overflow: hidden;
-  padding: 10px 0px 20px 0px;
-}
-
-.centredBody {
-  max-width: 1200px;
-  margin: auto;
-  padding: 10px;
-}
-
-#dateSlider {
-  width: 700px;
-  margin: 0px 20px
-}
-
-#sliderAxis {
-  height: 20px;
+#topBlackPanel {
+  height: 80px;
   width: 100%;
-  margin: 0;
-  padding: 0;
+  position: sticky;
+  top: 0px;
+  z-index: 1;
+  background-color: black;
 }
 
-#summary {
-  background-color: rgb(230,230,230);
+/*********** FILTER SECTION *************/
+
+.section#filters {
+  background: rgb(236, 239, 241);
+  box-shadow: 0px 3px 3px rgb(107, 107, 107);  
+  position: sticky;
+  top: 80px;
+  z-index: 1;
 }
 
-#summary table {
-  width: 60%;
-  margin: auto;
+#filterContainer {
+  padding: 5px 0px 0px 0px;
+  display: flex;
 }
 
-#summary th {
-  width: 25%;
-  text-align: center;
+#filterHeading {
+  margin: 0px;
+  padding: 5px 0px 0px 0px;
+  width: 100px;
 }
 
-#summary td {
-  font-size: 18pt;
-  text-align: center;
+#filterHeading h2 {
+  margin: 0px;
+  text-align: left;
+  line-height: 30px;
+}
+
+#filterBody {
+  margin: 0px;
+  padding: 5px 0px 0px 0px;
+  width: 950px;
+}
+
+#filterBody select, #filterBody input {
+  margin: 0px 10px 0px 5px;
+}
+
+p.filterLine {
+  margin: 0px 0px 8px 0px;
+  font-size: 11pt;
+}
+
+#filterButtons {
+  margin-left: 10px;
+  text-align: right;
+  width: 130px;
+
+}
+
+button#resetFilters {
+  background-color: rgb(80, 80, 80);
+  margin: 0px 5px 5px 0px;
+}
+
+button#resetFilters:hover {
+  background-color: rgb(151, 149, 149);
+}
+
+p#dateNote {
+  float:right;
+  margin: 10px 20px 0px 0px;
+  font-size: 9pt;
+}
+
+/*********** TIME SERIES *************/
+
+#timeseriesContainer {
+  width: 100%;
+  height: 250px;
+  border: 1px dashed rgb(220, 220, 220);
+}
+
+/*********** SENTIMENT DIAL & COMPARE SENTIMENT CHART *************/
+
+#dialAndCompareChart {
+  display: flex;
 }
 
 #aveOverallSentiment {
   width:50%;
-  float: left;
+}
+
+#dialColumn {
+  float: left;  
 }
 
 #compareAveSentiment {
   width:50%;
+}
+
+#compareAveSentContainer {
+  width: 70%;
   float: left;
 }
 
@@ -128,8 +214,10 @@ canvas#dialCanvasContainer {
 }
 
 canvas#dialCanvas {
-  margin: 0px 10px 0px 50px;
+  margin: 10px 0px 0px 0px;
 }
+
+/*********** HISTOGRAM *************/
 
 #histogramContainer {
   display: flex; /* or inline-flex */
@@ -157,9 +245,9 @@ canvas#dialCanvas {
   padding: 10px;
 }
 
-#histogramContainer #explanation-box {
+#explanation-box {
   border: 1px dashed grey;
-  height: 80px;
+  height: 30px;
   padding: 10px;
   margin: auto auto 10px;
 }
@@ -181,9 +269,28 @@ strong#responseIndex {
   margin: 0px 5px;
 }
 
-.section#EntityAnalytics {
-  background-color: rgb(230,230,230);
+/*********** SUMMARY STATISTICS *************/
+
+#summary {
+  background-color: rgb(236, 239, 241);
 }
+
+#summary table {
+  width: 60%;
+  margin: auto;
+}
+
+#summary th {
+  width: 25%;
+  text-align: center;
+}
+
+#summary td {
+  font-size: 18pt;
+  text-align: center;
+}
+
+/*********** ENTITY SECTION *************/
 
 label.displayMode {
   cursor: pointer;

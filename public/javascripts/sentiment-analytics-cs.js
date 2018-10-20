@@ -162,7 +162,6 @@
         // If loading the page for the first time:
         if(document.getElementById("questionList").innerHTML == "") {
           setFilterInputs();
-          renderDateSlider();
         }
 
         renderAveSentimentDial();
@@ -250,9 +249,9 @@
 
   function renderAveSentimentDial() {
 
-    var canvasWidth = 500;   
-    var canvasHeight = 280;   
-    var needleRadius = 180;
+    var canvasWidth = 300;   
+    var canvasHeight = 158;   
+    var needleRadius = 108;
 
     var canvasContainerDOM = document.getElementById("dialCanvasContainer");
     var html = "<canvas id='dialCanvas' width='" + canvasWidth + "' height='" + canvasHeight + "' >";
@@ -264,11 +263,11 @@
     
     var angle = ((10 - OrgAveSentiment) * Math.PI) / 20;
     var needleBaseX = canvasWidth / 2 - 8;
-    var needleBaseY = canvasHeight - 30;
+    var needleBaseY = canvasHeight - 3;
     var needleTipX = needleBaseX + needleRadius * Math.cos(angle);
     var needleTipY = needleBaseY - needleRadius * Math.sin(angle);
 
-    ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight - 20);
+    ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
     ctx.beginPath();
     ctx.moveTo(needleBaseX, needleBaseY);
     ctx.lineTo(needleTipX, needleTipY);      
