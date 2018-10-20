@@ -76,69 +76,57 @@
     AgeRange = 'all';
     EmployStatus = 'all';
     StartDate = new Date(2016,0,17); // first date for Glassdoor Honeywell data
-    // TODO: run a separate query when page loads
+    //***** TODO: run a separate query when page loads
     EndDate = new Date(); // i.e. today
 
-    loadResults();
-    cleanTimeSeries();
-    updateTimeSeries(QuestionNum, Gender, AgeRange, EmployStatus, toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
+    // Initialise the elements in the DOM accordingly:
+    document.getElementById("questionList").value = QuestionNum;
+    document.getElementById("gender").value = Gender;
+    document.getElementById("ageRange").value = AgeRange;
+    document.getElementById("employStatus").value = EmployStatus;
+    document.getElementById("startDateBox").valueAsDate = StartDate;
+    document.getElementById("endDateBox").valueAsDate = EndDate;
 
-    // Set full survey history date range limits 
-    var firstDay = FirstDate.getDate();
-    var firstMonth = FirstDate.getMonth();
-    var firstYear = FirstDate.getFullYear();
-    document.getElementById('firstDateSpan').innerHTML = padZero(firstDay) + '/' + padZero(firstMonth + 1) + "/" + firstYear;
-    var today = new Date();
-    document.getElementById("todaysDate").innerHTML = padZero(today.getDate()) + "/" + padZero((today.getMonth() + 1)) + "/" + today.getFullYear();
-  
+    loadResults();
+    // updatePlotlyTimeSeries();  
     fillEntitySearchList();
     getEntityTableDiagData();
 
     /************************** ESTABLISH EVENT LISTENERS ****************************/
 
     document.getElementById("questionList").addEventListener('change', function () {
-      QuestionNum = document.getElementById("questionList").value;
-      cleanTimeSeries();
-      updateTimeSeries(QuestionNum, Gender, AgeRange, EmployStatus,
-        toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
+      QuestionNum = document.getElementById("questionList").value;      
+      getTimeSeriesData("focus");
     });
 
     document.getElementById("gender").addEventListener('change', function () {
-      Gender = document.getElementById("gender").value;
-      cleanTimeSeries();
-      updateTimeSeries(QuestionNum, Gender, AgeRange, EmployStatus,
-        toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
+      Gender = document.getElementById("gender").value;      
+      getTimeSeriesData("focus");
     });
 
     document.getElementById("ageRange").addEventListener('change', function () {
-      AgeRange = document.getElementById("ageRange").value;
-      cleanTimeSeries();
-      updateTimeSeries(QuestionNum, Gender, AgeRange, EmployStatus,
-        toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
+      AgeRange = document.getElementById("ageRange").value;      
+      getTimeSeriesData("focus");
     });
 
     document.getElementById("employStatus").addEventListener('change', function () {
-      EmployStatus = document.getElementById("employStatus").value;
-      cleanTimeSeries();
-      updateTimeSeries(QuestionNum, Gender, AgeRange, EmployStatus,
-        toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
+      EmployStatus = document.getElementById("employStatus").value;      
+      getTimeSeriesData("focus");
     });
 
     document.getElementById("startDateBox").addEventListener('change', function () {
-      StartDate = document.getElementById("startDateBox").value;
-      cleanTimeSeries();
-      updateTimeSeries(QuestionNum, Gender, AgeRange, EmployStatus,
-        toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
+      StartDate = new Date(document.getElementById("startDateBox").valueAsDate);    
+      getTimeSeriesData("focus");
     });
 
     document.getElementById("endDateBox").addEventListener('change', function () {
       EndDate = new Date(document.getElementById("endDateBox").valueAsDate);
+      getTimeSeriesData("focus");
     });
 
     // Event Listener for Fetch Results button:
     document.getElementById('fetchResults').addEventListener('click', function () {
-      loadResults(QuestionNum, Gender, AgeRange, EmployStatus,
-        toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
+      loadResults();
     });
 
     // When resetting filters, reset start date and end date to overall range start and range end:
@@ -199,9 +187,6 @@
       method: "POST",
       dataType: 'JSON',
       success: function (data) { // data is the JSON object returned from SQL via controller
-        // for(property in data) {
-        //   console.log("" + property + ": " + data[property]);
-        // }
         NumResponses = data.numResponses;
         PercentCompleted = data.percentCompleted;
         AveCharCount = data.aveCharCount;
@@ -214,21 +199,17 @@
         ResponseDate = data.responseDate;
         ResponseScore = data.responseScore;
         ResponseText = data.responseText;
-      /*  TimeSeries = data.timeSeries;
-        //timeSeries
-
-        for (i=0; i<TimeSeries.length; i++){
-          TimeSeriesX.push(TimeSeries[i].ds.slice(0,10));
-          TimeSeriesY.push(TimeSeries[i].avgOs);
-        } */
-
 
         // If loading the page for the first time:
         if(document.getElementById("questionList").innerHTML == "") {
-          setFilterInputs();
+          fillQuestionsList();
+          setOverallDates();
+          renderDateSlider();
+          getTimeSeriesData("full");
         }
-        cleanTimeSeries();
-        updateTimeSeries(QuestionNum, Gender, AgeRange, EmployStatus, toYYYY_MM_DD(StartDate), toYYYY_MM_DD(EndDate));
+
+        getTimeSeriesData("focus");
+        // updatePlotlyTimeSeries();
         renderAveSentimentDial();
         renderCompareSentimentChart();
         renderHistogramByScore();
@@ -243,74 +224,21 @@
     });
   }
 
-  // Update the time series
-  function updateTimeSeries(questionNum, gender, ageRange, employStatus, startYYYY_MM_DD, endYYYY_MM_DD) {
-    $.ajax({
-      url: "/time-series",   // i.e. [Nodejs app]/app_server/controllers/time-series.js
-      data: { // data to send to load-results.js controller
-        "questionNum": questionNum,
-        "gender": gender,
-        "ageRange": ageRange,
-        "employStatus": employStatus,
-        "startDate": startYYYY_MM_DD,
-        "endDate": endYYYY_MM_DD
-      },
-      method: "POST",
-      dataType: 'JSON',
-      success: function (data) { // data is the JSON object returned from SQL via controller
-        // for(property in data) {
-        //   console.log("" + property + ": " + data[property]);
-        // }
-        //console.log(data.timeSeries);
-        TimeSeries = data.timeSeries;
-        //timeSeries
-        for (i = 0; i < TimeSeries.length; i++) {
-          TimeSeriesX.push(TimeSeries[i].ds.slice(0, 10));
-          TimeSeriesY.push(TimeSeries[i].avgOs);
-        }
-        //console.log("10 处以 5",10/5);
-        for (i = 0; i < TimeSeries.length; i += 4) {
-          WeekAveY.push((TimeSeriesY[i] + TimeSeriesY[i + 1] + TimeSeriesY[i + 2] + TimeSeriesY[i + 3]) / 4);
-          WeekAveX.push(TimeSeriesX[i]);
-        }
-
-        for (i = 0; i < WeekAveX.length; i++) {
-          NationalAverage.push(NationalAveSentiment);
-        }
-        //console.log(WeekAveY);
-        renderSentiTimeSeries();
-      },
-      error: function (data) {
-        console.log("Could not fetch time series data.");
-      }
-    });
-  }
-
-  function cleanTimeSeries() {
-    TimeSeriesX = [];
-    TimeSeriesY = [];
-    WeekAveX = [];
-    WeekAveY = [];
-  }
-
   // Set the filter DOM inputs to the values returned from the loadResults method
   // (which have been saved to global variables)
-  function setFilterInputs() {
+  function fillQuestionsList() {
     var html = "";
     for(var i = 0; i < QuestionArray.length; i++) {
       html += "<option value='" + (i+1) + "'>" + QuestionArray[i] + "</option>";
     }
-    document.getElementById("questionList").innerHTML = html;
-    document.getElementById("questionList").value = QuestionNum;
-    document.getElementById("gender").value = Gender;
-    document.getElementById("ageRange").value = AgeRange;
-    document.getElementById("employStatus").value = EmployStatus;
+    document.getElementById("questionList").innerHTML = html;    
   }
 
   function renderDateSlider() {
 
     // Overall date range for slider
     // (remains fixed even if filter range sliders/boxes is changed by the user)
+    var today = new Date();
     var rangeStart = FirstDate;
     var rangeEnd = today;
 
@@ -347,25 +275,78 @@
     });
   }
 
-  function fillSummaryTable() {
-    document.getElementById("numResponses").innerHTML = NumResponses;
-    document.getElementById("percentCompleted").innerHTML = PercentCompleted;
-    document.getElementById("aveCharCount").innerHTML = AveCharCount;
-    document.getElementById("maxCharCount").innerHTML = MaxCharCount;
+  // Set full survey history date range limits 
+  function setOverallDates() {    
+    var firstDay = FirstDate.getDate();
+    var firstMonth = FirstDate.getMonth();
+    var firstYear = FirstDate.getFullYear();
+    document.getElementById('firstDateSpan').innerHTML = padZero(firstDay) + '/' + padZero(firstMonth + 1) + "/" + firstYear;
+    var today = new Date();
+    document.getElementById("todaysDate").innerHTML = padZero(today.getDate()) + "/" + padZero((today.getMonth() + 1)) + "/" + today.getFullYear();
   }
+
+  // Get time series data, for either the full or focus time series
+  // param series - either "full" or "focused"
+  function getTimeSeriesData(series) {
+
+    var start, end;
+    if (series == "full") {
+      start = FirstDate;
+      end = new Date();
+    } else {
+      start = StartDate;
+      end = EndDate;
+    }
+
+    $.ajax({
+      url: "/time-series",   // i.e. [Nodejs app]/app_server/controllers/full-time-series.js
+      data: { // data to send to controller
+        "questionNum" : QuestionNum,
+        "gender" : Gender,
+        "ageRange" : AgeRange,
+        "employStatus" : EmployStatus,
+        "startDate" : toYYYY_MM_DD(start),
+        "endDate" : toYYYY_MM_DD(end)
+      },
+      method: "POST",
+      dataType: 'JSON',
+      success: function (data) { // data is the JSON object returned from SQL via controller
+
+        // Initialise/clear data:
+        var timeSeriesX = [];
+        var timeSeriesY = [];
+        WeekAveX = [];
+        WeekAveY = [];
+
+        var timeSeries = data.timeSeries;
+        for (i = 0; i < timeSeries.length; i++) {
+          timeSeriesX.push(timeSeries[i].ds.slice(0, 10));
+          timeSeriesY.push(timeSeries[i].avgOs);
+        }
+        for (i = 0; i < timeSeries.length; i += 4) {
+          WeekAveY.push((timeSeriesY[i] + timeSeriesY[i + 1] + timeSeriesY[i + 2] + timeSeriesY[i + 3]) / 4);
+          WeekAveX.push(timeSeriesX[i]);
+        }
+        for (i = 0; i < WeekAveX.length; i++) {
+          NationalAverage.push(NationalAveSentiment);
+        }
+
+        if (series == "full") {
+          renderFullTimeSeries();
+        } else {
+          renderFocusTimeSeries();
+        }        
+      },
+      error: function (data) {
+        console.log("Could not fetch full time series data.");
+      }
+    });
+  }  
 
   // Render the sentiment time series
   function renderSentiTimeSeries() {
 
-    //var dayByDay = {
-    //  mode: "lines",
-    //  name: 'average sentiment score',
-    //  x: TimeSeriesX,
-    //  y: TimeSeriesY,
-    //  line: {color: '#17BECF'}
-    //}
-
-    var trace1 = {
+    var natAve = {
       mode: "lines",
       name: 'National Average Score',
       x: WeekAveX,
@@ -382,13 +363,12 @@
       name: 'Weekly Average Score',
       x: WeekAveX,
       y: WeekAveY,
-      line: { color: '#17BECF' }
+      line: { color: 'gold' }
     };
 
-    var data = [trace1, weekly];
+    var data = [natAve, weekly];
 
     var layout = {
-      title: 'Time Series',
       xaxis: {
         autorange: true,
         range: [WeekAveX[0], WeekAveX[WeekAveX.length - 1]],
@@ -415,7 +395,7 @@
         type: 'date'
       },
       yaxis: {
-        autorange: true,
+        autorange: false,
         range: [-10, 10],
         type: 'linear'
       }
@@ -675,6 +655,13 @@
       var responseIndex = IndexOfResponse + 1;
       document.getElementById('responseIndex').innerHTML ="Response: " + responseIndex + " of " + ResponseInfo.length;
     }
+  }
+  
+  function fillSummaryTable() {
+    document.getElementById("numResponses").innerHTML = NumResponses;
+    document.getElementById("percentCompleted").innerHTML = PercentCompleted;
+    document.getElementById("aveCharCount").innerHTML = AveCharCount;
+    document.getElementById("maxCharCount").innerHTML = MaxCharCount;
   }
 
   // Populate the entity list for search

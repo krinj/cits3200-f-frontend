@@ -4,18 +4,22 @@ html
     title #{title} | LFP Sentiment Analytics
 
     link(rel='stylesheet', href='/stylesheets/style.css')
+    link(rel='stylesheet', href='/stylesheets/nouislider.min.css')
     link(href="https://fonts.googleapis.com/css?family=Roboto+Condensed", rel="stylesheet")
-    link(href="https://fonts.googleapis.com/css?family=Ubuntu+Mono" rel="stylesheet") 
+    link(href="https://fonts.googleapis.com/css?family=Ubuntu+Mono" rel="stylesheet")
     
-    script(type="text/JavaScript" src='https://cdn.plot.ly/plotly-latest.min.js')
-    script(type="text/javascript" src="/javascripts/Chart.min.js")
     script(type="text/javascript" src="/javascripts/jquery-3.3.1.min.js")
+    script(type="text/JavaScript" src='https://cdn.plot.ly/plotly-latest.min.js')
+    script(type="text/javascript" src="/javascripts/nouislider.min.js")
+    script(type="text/javascript" src="/javascripts/Chart.min.js")
 
   body
     #logoDiv
       img(src='/images/LFP_logo.png', id='LFPlogo')
     #frame
       #topBlackPanel
+      //- **** Above elements in body are for framing only and should be removed
+
       .section#filters
         .centredBody#filterContainer
           #filterHeading
@@ -73,9 +77,14 @@ html
             span(style="color:rgb(204, 69, 40)") -10 (extremely negative) 
             | to 
             span(style="color:rgb(52, 143, 104)") 10 (extremely positive)
+            |. Data for these overall scores is visualised in the charts below.
 
           h3 Overall Sentiment Over Time
           p The following is a smoothed plot of the daily average overall sentiment for responses for the question selected, with the above filters applied. The lower graph shows the time series over all time for this survey; click into it or drag the handles to define the sub-range presented in the main graph above (this also changes the filter dates above). 
+
+          #focusTimeSeries
+          #fullTimeSeries
+          #dateSlider
 
           #sentiTimeSeriesContainer       
 
@@ -133,7 +142,7 @@ html
                 p 
                   strong Response:
                 p#responseText
-
+                
       .section#summary
         .centredBody
           h2 RESPONSE SUMMARY
@@ -150,7 +159,7 @@ html
               td#maxCharCount
             tr
               td(align='center' colspan='4')
-                span(style='font-size: 11pt;') * Percentage of surveys submitted that had a response entered for this question.
+                span(style='font-size: 11pt;') * Percentage of surveys submitted that had a response entered for this question.              
       
       .section#EntityAnalytics
         .centredBody
