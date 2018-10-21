@@ -274,19 +274,18 @@
     canvasContainerDOM.innerHTML = html; // (re-) insert the canvas into the DOM
     var canvasDOM = document.getElementById("compareAveSentCanvas");
     
-    var industryAve = OrgAveSentiment * 0.8; // use until industry field added to DB
+    //var industryAve = OrgAveSentiment * 0.8; // use until industry field added to DB
     
     var myChart = canvasDOM.getContext('2d');
     var compareSentChart = new Chart(myChart, {
       type: 'bar', 
       data: {
-        labels: ['Your Organization', 'Industry Average', 'National Average'],
+        labels: [ "" , "" ],
         datasets: [{
-          data: [OrgAveSentiment, industryAve, NationalAveSentiment],
+          data: [OrgAveSentiment, NationalAveSentiment],
           backgroundColor: [
-            getColor((OrgAveSentiment + 10) / 20),
-            getColor((industryAve + 10) / 20),
-            getColor((NationalAveSentiment + 10) / 20),
+          'rgba(255, 206, 86, 1)',
+          'rgba(128, 128, 128, 1)',
           ],
           borderWidth: 1,
           borderColor: '#777',
@@ -296,23 +295,40 @@
       },
       options: {
         scales: {
+          xAxes:[{
+            gridLines:{
+              display:false
+            },
+            barPercentage: 1,
+            categoryPercentage: 1
+
+          }],
+          
           yAxes: [{
+             gridLines:{
+              display:false
+            },
             ticks: {
               min: -10,
-              max: 10
+              max: 10,
+              maxTicksLimit: 10,
+              stepSize: 5
             },
+                   
           }],
         },
         title: {
           display: false
         },
         legend: {
+          
           display: false,
+        
         },
         layout: {
           padding: {
-            left: 50,
-            right: 0,
+            left:  50,
+            right: 00,
             bottom: 0,
             top: 0
           }
