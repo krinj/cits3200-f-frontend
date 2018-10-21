@@ -25,6 +25,9 @@ module.exports.getResults = function (req, res) {
   for(var i = 0;i<query.length;i++){
     asyncQuery(query[i],projectid,i);
   }
+  var first_date;
+  var last_date;
+  var question_array = [];
 async function asyncQuery(sqlquery, projectid,queryIndex) {
       // Imports the Google Cloud client library
       const BigQuery = require('@google-cloud/bigquery');
@@ -55,19 +58,22 @@ async function asyncQuery(sqlquery, projectid,queryIndex) {
     
       const [rows] = await job.getQueryResults();
       console.log('Rows:');
-      console.log(rows);
+      if(queryIndex==0){
+        first_date = rows[0].firstDate.value;
+        console.log(first_date);
+      }
+      else if(queryIndex ==1){
+        last_date = rows[0].lastDate.value;
+        console.log(last_date);
+      }
+      else if(queryIndex==2){
+        for(var i = 0;i<rows.length;i++){
+          question_array.push(rows[i].question_name);
+          console.log(question_array);
+        }
+      }
     }
-  // Run the SQL queries:
-  connection.query(query, function (err, rows, fields) {
-    if (err) throw err;
-    
-    // NB using underscores to distinguish from variables of same name sent back to AJAX    
-    var first_date = rows[0][0].firstDate;
-    var last_date = rows[1][0].lastDate;
-    var question_array = [];
-    for (i = 0; i < rows[2].length; i++) {
-      question_array.push(rows[2][i].question);
-    }
+  
 
     var results = {
       firstDate: first_date,
@@ -75,9 +81,8 @@ async function asyncQuery(sqlquery, projectid,queryIndex) {
       questionArray: question_array,
     };
 
-    connection.end();
 
     return res.send(results);
-  });
+  
 
 };
