@@ -129,24 +129,22 @@ block content
           #histogramByScoreContainer
 
         #right
-          #explanation-box Explanatory Text. 
           #selected-response
             #centered-text
-              h3 SELECTED RESPONSE
-            p 
-              | &emsp;
-            //  strong Score: 
-            //  span#responseScoreSpan 
             p.centred
-              strong#responseIndex
+              strong Response for overall score of 
+              span#responseScoreSpan 
+            p.centred
+              text(style='font-size:12px;') Response: 
+              span#responseIndex
+              text(style='font-size:12px;') of  
+              span#totalResponse 
               
-            p 
-              strong Response:
             p#responseText
             
-            p
-              strong Date: 
-              span#responseDateSpan 
+            p.centred
+              text(style='font-size:12px;') Date 
+              span(style='font-size:12px;')#responseDateSpan 
               
 
   script(type="text/javascript" src="/javascripts/sentiment-analytics-cs.js") 

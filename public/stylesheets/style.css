@@ -147,8 +147,11 @@ canvas#dialCanvas {
   right: 0;
 
 }
-#selected-response{
+#responseText{
+  quotes:"'" "''";
   overflow: scroll;
+  max-height: 120px;
+  font-style: italic;
 }
 
 /*#histogramContainer #selected-response {

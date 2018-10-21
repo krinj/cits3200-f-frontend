@@ -449,8 +449,8 @@
           ],
           borderWidth: 1,
           borderColor: '#777',
-          hoverBorderWidth: 3,
-          hoverBorderColor: '#000'
+          hoverBorderWidth: 6,
+          hoverBorderColor: 'red'
         }]
       },
       options: {
@@ -514,6 +514,9 @@
           fill: true,
           backgroundColor: fillColor,
           data: yData,
+          //hoverBorderWidth: 2,
+        //  hoverBorderColor: 'red'
+        //  bacborderColor: 'red',
         }
       ]
     };
@@ -547,21 +550,30 @@
           }]
         },
         tooltips: {
-          enabled: false
+          enabled: false,
+          borderColor: 'red',
         }
       }
     });
+
 // this was canvasDOM.onclick , Jc changed to
+    var previousClickedBar = -1;
     canvasDOM.onclick = function(event) {
       checkflag = true;
-      indexOfResponse = 0;
+
+
       var activeElement = histogramChart.getElementAtEvent(event)[0];
-      var responseScore = histogramChart.data.labels[activeElement._index];
+       responseScore = histogramChart.data.labels[activeElement._index];
+      if(responseScore!=previousClickedBar){
+        indexOfResponse = 0;
+        previousClickedBar = responseScore;
+        //histogramChart.data.datasets[0].backgroundColor = 'red';
+        //histogramChart.data.labels.xData = responseScore+10;
       $.ajax({
         url: "/response-details",
         // i.e. [Nodejs app]/app_server/controllers/response-details.js
         data: { // data to send to controller
-          "score": responseScore,
+          "score": previousClickedBar,
           "questionNum": QuestionNum,
           "gender": Gender,
           "ageRange": AgeRange,
@@ -578,17 +590,24 @@
           ResponseInfo = data.responseResult;
 
           fillResponseDetails();
+
+
         },
         error: function (data) {
           console.log("Could not fetch data.");
         }
 
       });
+    }else{
+      //清楚之前颜色的function
+      //histogramChart.data.datasets[0].backgroundColor = fillColor;
+      nextResponse();
+    }
     };
 
-    canvasDOM.addEventListener('click',function(event) {
-      nextResponse();
-    });
+  //  canvasDOM.addEventListener('click',function(event) {
+    //  nextResponse();
+    //})
 
     function nextResponse() {
   //  var next = document.getElementById("nextButton");
@@ -645,20 +664,21 @@
   }
 
   function fillResponseDetails() {
-    if(checkflag == false) {
-      document.getElementById('responseIndex').innerHTML = "No response selected";
-    }
+
     var date = ResponseInfo[indexOfResponse].submitDate.slice(0,10);
     document.getElementById('responseDateSpan').innerHTML = date;
-    //document.getElementById('responseScoreSpan').innerHTML = responseScore;
-    document.getElementById('responseText').innerHTML = ResponseInfo[indexOfResponse].responseDetail;
+    document.getElementById('responseScoreSpan').innerHTML = responseScore;
+    document.getElementById('responseText').innerHTML ="''" + ResponseInfo[indexOfResponse].responseDetail+"''";
     var responseIndex = indexOfResponse + 1;
-    document.getElementById('responseIndex').innerHTML ="Response: " + responseIndex + " of " + ResponseInfo.length;
+    document.getElementById('responseIndex').innerHTML =responseIndex+' '; //+ ResponseInfo.length;
+    document.getElementById('responseIndex').style = 'font-weight:bold; font-size:17px;';
+    document.getElementById('totalResponse').innerHTML = ResponseInfo.length;
   }
 
   /* Returns an rgb(x,y,z) string based on factor from 0 to 1 of how far along the
    * specified colour spectrum the output colour should be.
    */
+
   function getColor(factor) {
     var rgbStart = RedColor;
     var rgbMiddle = GreyColor;
