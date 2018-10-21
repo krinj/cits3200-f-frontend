@@ -22,6 +22,7 @@ module.exports.getResults = function (req, res) {
   // Query 2: List of Questions for the Survey
   query[2] = "SELECT distinct question_name,question_id FROM `cits-3200.analytics.responses_dev` R WHERE R.survey_id = '0e3c8b046672428d95d3212970814b2c' ;";
   
+  query[3] = ""
   for(var i = 0;i<query.length;i++){
     asyncQuery(query[i],projectid,i);
   }
@@ -92,7 +93,7 @@ async function asyncQuery(sqlquery, projectid,queryIndex) {
       }
     }, 1000);
 
-    return res.send(results);
+    
   
 
 };

@@ -7,12 +7,18 @@ module.exports.loadResults = function (req, res) {
   
   const projectid = 'cits-3200';
   // Filter variables, set to values sent to this controller from client:
-  var questionId = 'all';        // this needs to be changed after fix the client side render
-  var gender = req.body.gender;
-  var ageRange = req.body.ageRange;
-  var employStatus = req.body.employStatus;
-  var startDate = req.body.startDate;
-  var endDate = req.body.endDate;
+  //var questionNum = req.body.questionValue;
+  var questionId = 'NLP_CONS';
+  //var gender = req.body.gender;
+  var gender = 'all';
+  //var ageRange = req.body.ageRange;
+  var ageRange = 'all';
+  //var employStatus = req.body.employStatus;
+  var employStatus = 'all';
+  //var startDate = req.body.startDate;
+  var startDate = '2016-01-16';
+  //var endDate = req.body.endDate;
+  var endDate = '2018-04-20';
 
   // Determine the start and end years of birth for different age ranges:
   var birthStart;
@@ -234,7 +240,7 @@ module.exports.loadResults = function (req, res) {
         for(attrib in results) {
           console.log("Attrib: " + attrib + " value: " + results[attrib]);
         }
-        
+        connection.end();
         return res.send(results);
       }
     }, 1000);
