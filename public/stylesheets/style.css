@@ -229,7 +229,8 @@ p#dateNote {
 }
 
 #compareAveSentContainer {
-  width: 70%;
+  width: 25%;
+  height: 200px;
   float: left;
 }
 

@@ -653,6 +653,7 @@
         }]
       },
       options: {
+        maintainAspectRatio: false,
         scales: {
           xAxes:[{
             gridLines:{
@@ -661,8 +662,7 @@
             barPercentage: 1,
             categoryPercentage: 1
 
-          }],
-          
+          }],          
           yAxes: [{
              gridLines:{
               display:false
@@ -672,24 +672,21 @@
               max: 10,
               maxTicksLimit: 10,
               stepSize: 5
-            },
-                   
+            },                   
           }],
         },
         title: {
           display: false
         },
-        legend: {
-          
-          display: false,
-        
+        legend: {          
+          display: false,        
         },
         layout: {
           padding: {
             left:  50,
-            right: 00,
-            bottom: 0,
-            top: 0
+            right: 0,
+            bottom: 10,
+            top: 10
           }
         },
         tooltips: {
