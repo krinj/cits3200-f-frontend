@@ -73,14 +73,20 @@ async function asyncQuery(sqlquery, projectid,queryIndex) {
         }
       }
     }
-  
+    
 
-    var results = {
-      firstDate: first_date,
-      lastDate: last_date,
-      questionArray: question_array,
-    };
-
+    
+    setInterval(function(){
+      if((question_array && first_date && last_date) ){
+        var results = {
+          firstDate: first_date,
+          lastDate: last_date,
+          questionArray: question_array,
+        }; 
+        
+        return res.send(results);
+      }
+    }, 1000);
 
     return res.send(results);
   
