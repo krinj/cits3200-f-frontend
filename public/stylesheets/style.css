@@ -265,6 +265,7 @@ canvas#dialCanvas {
   max-height: 200px;
   overflow: auto;
   font-style: italic;
+  font-size: 13pt;
 }
 
 #histogramContainer #centered-text {

@@ -46,8 +46,8 @@
   // Histogram selected response variables:
   var ResponseScore;
   var IndexOfResponse = 0;
-  var ResponseSelected = false;
   var ResponseInfo;
+  var CheckFlag = false;
 
   // Entity Listing/Diagram variables:
   var EntityDisplayMode = "topFreq";
@@ -304,8 +304,8 @@
         renderAveSentimentDial();
         renderCompareSentimentChart();
         renderHistogramByScore();
-        fillSummaryTable();
         fillResponseDetails();
+        fillSummaryTable();
         getEntityTableDiagData();
 
       },
@@ -730,9 +730,6 @@
           fill: true,
           backgroundColor: fillColor,
           data: yData,
-          //hoverBorderWidth: 2,
-        //  hoverBorderColor: 'red'
-        //  bacborderColor: 'red',
         }
       ]
     };
@@ -774,15 +771,16 @@
 
     // this was canvasDOM.onclick , Jc changed to
     var previousClickedBar = -1;
+
     canvasDOM.onclick = function (event) {
-      checkflag = true;
+      CheckFlag = true;
       var activeElement = histogramChart.getElementAtEvent(event)[0];
-      responseScore = histogramChart.data.labels[activeElement._index];
-      if (responseScore != previousClickedBar) {
-        indexOfResponse = 0;
-        previousClickedBar = responseScore;
+      ResponseScore = histogramChart.data.labels[activeElement._index];
+      if (ResponseScore != previousClickedBar) {
+        IndexOfResponse = 0;
+        previousClickedBar = ResponseScore;
         //histogramChart.data.datasets[0].backgroundColor = 'red';
-        //histogramChart.data.labels.xData = responseScore+10;
+        //histogramChart.data.labels.xData = ResponseScore+10;
         $.ajax({
           url: "/response-details",
           // i.e. [Nodejs app]/app_server/controllers/response-details.js
@@ -800,8 +798,6 @@
           success: function (data) {
             ResponseInfo = data.responseResult;
             fillResponseDetails();
-
-
           },
           error: function (data) {
             console.log("Could not fetch response details for histogram.");
@@ -811,35 +807,32 @@
         //histogramChart.data.datasets[0].backgroundColor = fillColor;
         nextResponse();
       }
-    };
-
-    function nextResponse() {
-      //  var next = document.getElementById("nextButton");
-      //next.onclick = function () {
-      if (checkflag == false) {
-        alert("Please select a bar of responses first.");
-        return;
-      }
-      if (indexOfResponse == ResponseInfo.length - 1) {
-        alert("This is already the last response.");
-        return;
-      }
-      indexOfResponse++;
-      fillResponseDetails();
+    };    
+  }
+  
+  function nextResponse() {
+    //  var next = document.getElementById("nextButton");
+    //next.onclick = function () {
+    
+    if (IndexOfResponse == ResponseInfo.length - 1) {
+      alert("This is already the last response.");
+      return;
     }
-
+    IndexOfResponse++;
+    fillResponseDetails();
   }
 
   function fillResponseDetails() {
 
-    if (checkflag == false) {
-      document.getElementById('responseText').innerHTML = "Please click the chart bars."
+    if (CheckFlag == false) {
+      document.getElementById('responseText').innerHTML = "Please click the chart bars.";
+      return;
     }
-    var date = ResponseInfo[indexOfResponse].submitDate.slice(0, 10);
+    var date = ResponseInfo[IndexOfResponse].submitDate.slice(0, 10);
     document.getElementById('responseDateSpan').innerHTML = date;
-    document.getElementById('responseScoreSpan').innerHTML = responseScore;
-    document.getElementById('responseText').innerHTML = "''" + ResponseInfo[indexOfResponse].responseDetail + "''";
-    var responseIndex = indexOfResponse + 1;
+    document.getElementById('responseScoreSpan').innerHTML = ResponseScore;
+    document.getElementById('responseText').innerHTML = "''" + ResponseInfo[IndexOfResponse].responseDetail + "''";
+    var responseIndex = IndexOfResponse + 1;
     document.getElementById('responseIndex').innerHTML = responseIndex + ' '; //+ ResponseInfo.length;
     document.getElementById('responseIndex').style = 'font-weight:bold; font-size:17px;';
     document.getElementById('totalResponse').innerHTML = ResponseInfo.length;

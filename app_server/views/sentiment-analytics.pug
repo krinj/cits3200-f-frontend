@@ -99,16 +99,20 @@ block content
         #left
           #histogramByScoreContainer
         #right
-          #selected-response
+         #selected-response
+            #centered-text
             p.centred
-                text(style='font-size:12px;') Response: 
-                span#responseIndex
-                text(style='font-size:12px;') of  
-                span#totalResponse  
-              p#responseText
-              p.centred
-                text(style='font-size:12px;') Date 
-                span(style='font-size:12px;')#responseDateSpan 
+              strong Response for overall score of 
+              span#responseScoreSpan 
+            p.centred
+              text(style='font-size:12px;') Response: 
+              span#responseIndex
+              text(style='font-size:12px;') of  
+              span#totalResponse  
+            p#responseText
+            p.centred
+              text(style='font-size:12px;') Date 
+              span(style='font-size:12px;')#responseDateSpan 
             
   .section#summary
     .centredBody
