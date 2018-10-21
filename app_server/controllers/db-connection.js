@@ -9,7 +9,7 @@ functions.connectToDB = function() {
    * 3 : Local Node.js --> Local MySQL
    */
 
-  var CONNECTION_MODE = 1;
+  var CONNECTION_MODE = 3;
 
   var connection; // MySQL Connection object
 

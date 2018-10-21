@@ -266,13 +266,6 @@ canvas#dialCanvas {
   padding: 10px;
 }
 
-#explanation-box {
-  border: 1px dashed grey;
-  height: 30px;
-  padding: 10px;
-  margin: auto auto 10px;
-}
-
 #histogramContainer #centered-text {
   text-align: center;  
 }
