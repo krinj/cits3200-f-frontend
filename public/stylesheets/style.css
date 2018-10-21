@@ -38,6 +38,10 @@ input[type='radio'] {
   cursor: pointer;
 }
 
+input[type=date] {
+  font-family: 'Roboto Condensed', sans-serif;
+}
+
 button {
   font-size: 11pt;
   font-family: 'Roboto Condensed', sans-serif; 
@@ -254,16 +258,13 @@ canvas#dialCanvas {
 #histogramContainer #right {
   margin-left: 10px;
   width: 32%;
-  right: 0;  
+  right: 0;
 }
 
-#selected-response {
-  /* overflow: scroll; */
-}
-
-#histogramContainer #selected-response {
-  height: 320px;
-  padding: 10px;
+#responseText {  
+  max-height: 200px;
+  overflow: auto;
+  font-style: italic;
 }
 
 #histogramContainer #centered-text {

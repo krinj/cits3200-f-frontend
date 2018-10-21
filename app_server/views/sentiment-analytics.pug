@@ -100,27 +100,15 @@ block content
           #histogramByScoreContainer
         #right
           #selected-response
-            #centered-text
-              h3 SELECTED RESPONSE
-            p 
-              strong Date: 
-              span#responseDateSpan 
-              | &emsp;
-              strong Score: 
-              span#responseScoreSpan 
-            p 
-              button.responseCtrl#firstButton(type="button") First
-              | &thinsp;
-              button.responseCtrl#previousButton(type="button") Prev.
-              
-              strong#responseIndex
-              
-              button.responseCtrl#nextButton(type="button") Next
-              | &thinsp;
-              button.responseCtrl#lastButton(type="button") Last
-            p 
-              strong Response:
-            p#responseText
+            p.centred
+                text(style='font-size:12px;') Response: 
+                span#responseIndex
+                text(style='font-size:12px;') of  
+                span#totalResponse  
+              p#responseText
+              p.centred
+                text(style='font-size:12px;') Date 
+                span(style='font-size:12px;')#responseDateSpan 
             
   .section#summary
     .centredBody
@@ -182,6 +170,7 @@ block content
         #entityDiag
           h3 Keyword Linkage Diagram
           svg#entitySvg(width="800" height="800") 
+
 
 
 

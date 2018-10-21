@@ -648,8 +648,8 @@
           ],
           borderWidth: 1,
           borderColor: '#777',
-          hoverBorderWidth: 3,
-          hoverBorderColor: '#000'
+          hoverBorderWidth: 6,
+          hoverBorderColor: 'red'
         }]
       },
       options: {
@@ -730,6 +730,9 @@
           fill: true,
           backgroundColor: fillColor,
           data: yData,
+          //hoverBorderWidth: 2,
+        //  hoverBorderColor: 'red'
+        //  bacborderColor: 'red',
         }
       ]
     };
@@ -761,99 +764,85 @@
             barPercentage: 0.9,
             categoryPercentage: 1.0
           }]
+        },
+        tooltips: {
+          enabled: false,
+          borderColor: 'red',
         }
       }
     });
 
-    canvasDOM.onclick = function(event) {
-      ResponseSelected = true;
-      IndexOfResponse = 0;
+    // this was canvasDOM.onclick , Jc changed to
+    var previousClickedBar = -1;
+    canvasDOM.onclick = function (event) {
+      checkflag = true;
       var activeElement = histogramChart.getElementAtEvent(event)[0];
-      ResponseScore = histogramChart.data.labels[activeElement._index];
-      $.ajax({
-        url: "/response-details",
-        // i.e. [Nodejs app]/app_server/controllers/response-details.js
-        data: { 
-          "score": ResponseScore,
-          "questionNum": QuestionNum,
-          "gender": Gender,
-          "ageRange": AgeRange,
-          "employStatus": EmployStatus,
-          "startDate": toYYYY_MM_DD(StartDate),
-          "endDate": toYYYY_MM_DD(EndDate)
-        },
-        method: "POST",
-        dataType: 'JSON',
-        success: function (data) { 
-          ResponseInfo = data.responseResult;
-          fillResponseDetails();
-        },
-        error: function (data) {
-          console.log("Could not fetch response details for histogram.");
-        }
-      });
+      responseScore = histogramChart.data.labels[activeElement._index];
+      if (responseScore != previousClickedBar) {
+        indexOfResponse = 0;
+        previousClickedBar = responseScore;
+        //histogramChart.data.datasets[0].backgroundColor = 'red';
+        //histogramChart.data.labels.xData = responseScore+10;
+        $.ajax({
+          url: "/response-details",
+          // i.e. [Nodejs app]/app_server/controllers/response-details.js
+          data: { // data to send to controller
+            "score": previousClickedBar,
+            "questionNum": QuestionNum,
+            "gender": Gender,
+            "ageRange": AgeRange,
+            "employStatus": EmployStatus,
+            "startDate": toYYYY_MM_DD(StartDate),
+            "endDate": toYYYY_MM_DD(EndDate)
+          },
+          method: "POST",
+          dataType: 'JSON',
+          success: function (data) {
+            ResponseInfo = data.responseResult;
+            fillResponseDetails();
+
+
+          },
+          error: function (data) {
+            console.log("Could not fetch response details for histogram.");
+          }
+        });
+      } else {
+        //histogramChart.data.datasets[0].backgroundColor = fillColor;
+        nextResponse();
+      }
     };
 
-    var previous = document.getElementById("previousButton");
-    previous.onclick = function () {
-      if (ResponseSelected == false) {
+    function nextResponse() {
+      //  var next = document.getElementById("nextButton");
+      //next.onclick = function () {
+      if (checkflag == false) {
         alert("Please select a bar of responses first.");
         return;
       }
-      if (IndexOfResponse == 0) {
-        alert("This is already the first response.");
-        return;
-      }
-      IndexOfResponse--;
-      fillResponseDetails();
-    };
-
-    var next = document.getElementById("nextButton");
-    next.onclick = function () {
-      if (ResponseSelected == false) {
-        alert("Please select a bar of responses first.");
-        return;
-      }
-      if (IndexOfResponse == ResponseInfo.length - 1) {
+      if (indexOfResponse == ResponseInfo.length - 1) {
         alert("This is already the last response.");
         return;
       }
-      IndexOfResponse++;
+      indexOfResponse++;
       fillResponseDetails();
-    };
+    }
 
-    var first = document.getElementById("firstButton");
-    first.onclick = function () {
-      if (ResponseSelected == false) {
-        alert("Please select a bar of responses first.");
-        return;
-      }
-      IndexOfResponse = 0;
-      fillResponseDetails();
-    };
-
-    var last = document.getElementById("lastButton");
-    last.onclick = function () {
-      if (ResponseSelected == false) {
-        alert("Please select a bar of responses first.");
-        return;
-      }
-      IndexOfResponse = ResponseInfo.length - 1;
-      fillResponseDetails();
-    };
   }
 
   function fillResponseDetails() {
-    if(ResponseSelected == false) {
-      document.getElementById('responseIndex').innerHTML = "No response selected";
-    } else {
-      var date = ResponseInfo[IndexOfResponse].submitDate.slice(0,10);
-      document.getElementById('responseDateSpan').innerHTML = date;
-      document.getElementById('responseScoreSpan').innerHTML = ResponseScore;
-      document.getElementById('responseText').innerHTML = ResponseInfo[IndexOfResponse].responseDetail;
-      var responseIndex = IndexOfResponse + 1;
-      document.getElementById('responseIndex').innerHTML ="Response: " + responseIndex + " of " + ResponseInfo.length;
+
+    if (checkflag == false) {
+      document.getElementById('responseText').innerHTML = "Please click the chart bars."
     }
+    var date = ResponseInfo[indexOfResponse].submitDate.slice(0, 10);
+    document.getElementById('responseDateSpan').innerHTML = date;
+    document.getElementById('responseScoreSpan').innerHTML = responseScore;
+    document.getElementById('responseText').innerHTML = "''" + ResponseInfo[indexOfResponse].responseDetail + "''";
+    var responseIndex = indexOfResponse + 1;
+    document.getElementById('responseIndex').innerHTML = responseIndex + ' '; //+ ResponseInfo.length;
+    document.getElementById('responseIndex').style = 'font-weight:bold; font-size:17px;';
+    document.getElementById('totalResponse').innerHTML = ResponseInfo.length;
   }
   
   function fillSummaryTable() {
@@ -1261,6 +1250,7 @@
   /* Returns an rgb(x,y,z) string based on factor from 0 to 1 of how far along the
    * specified colour spectrum the output colour should be.
    */
+
   function getColor(factor) {
     var rgbStart = RED_COLOUR;
     var rgbMiddle = GREY_COLOUR;

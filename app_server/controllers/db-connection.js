@@ -8,7 +8,6 @@ functions.connectToDB = function() {
    * 2 : Local Node.js --> Google Cloud SQL
    * 3 : Local Node.js --> Local MySQL
    */
-
   var CONNECTION_MODE = 3;
 
   var connection; // MySQL Connection object
