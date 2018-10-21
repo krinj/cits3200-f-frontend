@@ -16,9 +16,13 @@
 
   // *** TODO: Server should POST the logged in user's organisation name ***
   var Organisation = "Honeywell"; 
+  
+  var FirstDate;
+  var LastDate;
+  var QuestionArray = [];
+  var SurveyName;
 
   // Filter variables:
-  var SurveyName;
   var QuestionNum;
   var Gender;
   var AgeRange;
@@ -33,8 +37,6 @@
   var MaxCharCount;
   var NationalAveSentiment;
   var OrgAveSentiment;
-  var FirstDate;
-  var QuestionArray = [];
   var ScoreFreqArray = [];  
   
   // Time Series variables:
@@ -71,58 +73,47 @@
     Gender = 'all';
     AgeRange = 'all';
     EmployStatus = 'all';
-    StartDate = new Date(2016,0,17); // first date for Glassdoor Honeywell data
-    //***** TODO: run a separate query when page loads
-    EndDate = new Date(); // i.e. today
 
     // Initialise the elements in the DOM accordingly:
     document.getElementById("questionList").value = QuestionNum;
     document.getElementById("gender").value = Gender;
     document.getElementById("ageRange").value = AgeRange;
     document.getElementById("employStatus").value = EmployStatus;
-    document.getElementById("startDateBox").valueAsDate = StartDate;
-    document.getElementById("endDateBox").valueAsDate = EndDate;
 
-    loadResults();
+    runInitialQueries();
 
     /************************** ESTABLISH EVENT LISTENERS ****************************/
 
     document.getElementById("questionList").addEventListener('change', function () {
       QuestionNum = document.getElementById("questionList").value;      
-      getTimeSeriesData("focus");
-      getTimeSeriesData("full");
+      loadResults();      
     });
 
     document.getElementById("gender").addEventListener('change', function () {
       Gender = document.getElementById("gender").value;      
-      getTimeSeriesData("focus");
-      getTimeSeriesData("full");
+      loadResults();      
     });
 
     document.getElementById("ageRange").addEventListener('change', function () {
       AgeRange = document.getElementById("ageRange").value;      
-      getTimeSeriesData("focus");
-      getTimeSeriesData("full");
+      loadResults();      
     });
 
     document.getElementById("employStatus").addEventListener('change', function () {
       EmployStatus = document.getElementById("employStatus").value;      
-      getTimeSeriesData("focus");
-      getTimeSeriesData("full");
+      loadResults();      
     });
 
     document.getElementById("startDateBox").addEventListener('change', function () {
       StartDate = new Date(document.getElementById("startDateBox").valueAsDate);  
       // Don't need to re-fetch data, only re-render it based on new date range  
-      renderFocusTimeSeries();
-      renderFullTimeSeries();
+      loadResults(); 
     });
 
     document.getElementById("endDateBox").addEventListener('change', function () {
       EndDate = new Date(document.getElementById("endDateBox").valueAsDate);
       // Don't need to re-fetch data, only re-render it based on new date range  
-      renderFocusTimeSeries();
-      renderFullTimeSeries();
+      loadResults(); 
     });
 
     // Event Listener for Fetch Results button:
@@ -136,13 +127,14 @@
       document.getElementById("ageRange").value = 'all';
       document.getElementById("employStatus").value = 'all';
       document.getElementById('startDateBox').valueAsDate = FirstDate;
-      document.getElementById('endDateBox').valueAsDate = new Date();
+      document.getElementById('endDateBox').valueAsDate = LastDate;
 
       // Reset the handles on the date slider:
       var startDateObj = FirstDate;
-      var endDateObj = new Date();
+      var endDateObj = LastDate;
       var slider = document.getElementById('dateSlider');
       slider.noUiSlider.set([startDateObj.getTime(), endDateObj.getTime()]);
+      loadResults();
     });
 
     // Sets the entity display mode by clicking on the relevant radio button
@@ -154,74 +146,41 @@
       getEntityTableDiagData();
     });
 
+    // Add event listener to search 'Go' button:
+    document.getElementById('entitySearchButton').addEventListener('click', function() {  
+      FocusEntity.name = document.getElementById("searchedEntity").value;
+      EntityDisplayMode = "focus";
+      document.getElementById('focusRadio').checked = true;
+      getEntityTableDiagData();
+    });
+
   };
 
-  // Convert a JavaScript Date object to a string of form YYYY-MM-DD e.g. 2018-01-27
-  function toYYYY_MM_DD(dateObj) {
-    return "" +  dateObj.getFullYear() + "-" + padZero((dateObj.getMonth() + 1)) + "-" + padZero(dateObj.getDate());
-  }
-
-  // Add a padding zero to the string if the number contained is less than 10
-  // (used for to ensure day and month date values have two digits, e.g. 2018-01-07)
-  function padZero(integer) {
-    var paddedString = "";
-    if(integer < 10) {
-      paddedString += "0" + integer;
-    } else {
-      paddedString += integer;
-    }
-    return paddedString;
-  }
-
   // jQuery AJAX function to fetch and load results from the database
-  function loadResults() {
+  function runInitialQueries() {
     $.ajax({
-      url: "/load-results",   // i.e. [Nodejs app]/app_server/controllers/load-results.js
-      data: { // data to send to load-results.js controller
-        "questionNum" : QuestionNum,
-        "gender" : Gender,
-        "ageRange" : AgeRange,
-        "employStatus" : EmployStatus,
-        "startDate" : toYYYY_MM_DD(StartDate),
-        "endDate" : toYYYY_MM_DD(EndDate)
+      url: "/initial-queries",   
+      // i.e. [Nodejs app]/app_server/controllers/initial-queries.js
+      data: { // data to send to controller
+        // "orgABN" : OrganisatioABN,
       },
       method: "POST",
       dataType: 'JSON',
       success: function (data) { // data is the JSON object returned from SQL via controller
-        NumResponses = data.numResponses;
-        PercentCompleted = data.percentCompleted;
-        AveCharCount = data.aveCharCount;
-        MaxCharCount = data.maxCharCount;
-        NationalAveSentiment = data.nationalAveSentiment;
-        OrgAveSentiment = data.orgAveSentiment;
+
         FirstDate = new Date(data.firstDate.slice(0,10));
+        LastDate = new Date(data.lastDate.slice(0,10));
+        StartDate = FirstDate;
+        EndDate = LastDate;
         QuestionArray = data.questionArray;
-        ScoreFreqArray = data.scoreFreqArray;
-        ResponseDate = data.responseDate;
-        ResponseScore = data.responseScore;
-        ResponseText = data.responseText;
 
-        // If loading the page for the first time:
-        if(document.getElementById("questionList").innerHTML == "") {
-          fillQuestionsList();
-          setOverallDates();
-          renderDateSlider();
-          getTimeSeriesData("full");
-        }
-
-        getTimeSeriesData("focus");
-        // updatePlotlyTimeSeries();
-        renderAveSentimentDial();
-        renderCompareSentimentChart();
-        renderHistogramByScore();
-        fillSummaryTable();
-        fillResponseDetails();
-        fillEntitySearchList();
-        getEntityTableDiagData();
-
+        fillQuestionsList();
+        setOverallDates();
+        renderDateSlider();
+        loadResults();
       },
       error: function (data) {
-        console.log("Could not fetch data.");
+        console.log("Could not load results data.");
       }
     });
   }
@@ -236,13 +195,26 @@
     document.getElementById("questionList").innerHTML = html;    
   }
 
+  // Set full survey history date range limits 
+  function setOverallDates() {    
+    document.getElementById("startDateBox").valueAsDate = StartDate;
+    document.getElementById("endDateBox").valueAsDate = EndDate;
+    var firstDay = FirstDate.getDate();
+    var firstMonth = FirstDate.getMonth();
+    var firstYear = FirstDate.getFullYear();
+    document.getElementById('firstDateSpan').innerHTML = padZero(firstDay) + '/' + padZero(firstMonth + 1) + "/" + firstYear;
+    var lastDay = LastDate.getDate();
+    var lastMonth = LastDate.getMonth();
+    var lastYear = LastDate.getFullYear();
+    document.getElementById('lastDateSpan').innerHTML = padZero(lastDay) + '/' + padZero(lastMonth + 1) + "/" + lastYear;
+  }
+
   function renderDateSlider() {
 
     // Overall date range for slider
     // (remains fixed even if filter range sliders/boxes is changed by the user)
-    var today = new Date();
     var rangeStart = FirstDate;
-    var rangeEnd = today;
+    var rangeEnd = LastDate;
 
     document.getElementById('startDateBox').valueAsDate = StartDate;
     document.getElementById('endDateBox').valueAsDate = EndDate;
@@ -272,24 +244,92 @@
       document.getElementById('endDateBox')
     ];
 
-    slider.noUiSlider.on('update', function (values, handle) {
+    slider.noUiSlider.on('change', function (values, handle) {
       dateValues[handle].valueAsDate = new Date(+values[handle]);
       StartDate = new Date(document.getElementById("startDateBox").valueAsDate);
       EndDate = new Date(document.getElementById("endDateBox").valueAsDate);  
-      // Don't need to re-fetch data, only re-render it based on new date range  
-      renderFocusTimeSeries();
-      renderFullTimeSeries();
+      loadResults();
     });
   }
 
-  // Set full survey history date range limits 
-  function setOverallDates() {    
-    var firstDay = FirstDate.getDate();
-    var firstMonth = FirstDate.getMonth();
-    var firstYear = FirstDate.getFullYear();
-    document.getElementById('firstDateSpan').innerHTML = padZero(firstDay) + '/' + padZero(firstMonth + 1) + "/" + firstYear;
-    var today = new Date();
-    document.getElementById("todaysDate").innerHTML = padZero(today.getDate()) + "/" + padZero((today.getMonth() + 1)) + "/" + today.getFullYear();
+  // jQuery AJAX function to fetch and load results from the database
+  function loadResults() {
+    $.ajax({
+      url: "/load-results",   // i.e. [Nodejs app]/app_server/controllers/load-results.js
+      data: { // data to send to load-results.js controller
+        "questionNum" : QuestionNum,
+        "gender" : Gender,
+        "ageRange" : AgeRange,
+        "employStatus" : EmployStatus,
+        "startDate" : toYYYY_MM_DD(StartDate),
+        "endDate" : toYYYY_MM_DD(EndDate)
+      },
+      method: "POST",
+      dataType: 'JSON',
+      success: function (data) { // data is the JSON object returned from SQL via controller
+        NumResponses = data.numResponses;
+        PercentCompleted = data.percentCompleted;
+        AveCharCount = data.aveCharCount;
+        MaxCharCount = data.maxCharCount;
+        OrgAveSentiment = data.orgAveSentiment;
+        NationalAveSentiment = data.nationalAveSentiment;
+        ScoreFreqArray = data.scoreFreqArray;
+
+        // Initialise/clear data for time-series:
+        var timeSeriesX = [];
+        var timeSeriesY = [];
+        WeekAveX = [];
+        WeekAveY = [];
+
+        var timeSeries = data.timeSeries;
+        for (i = 0; i < timeSeries.length; i++) {
+          timeSeriesX.push(timeSeries[i].ds.slice(0, 10));
+          timeSeriesY.push(timeSeries[i].avgOs);
+        }
+        for (i = 0; i < timeSeries.length; i += 4) {
+          WeekAveY.push(Math.round(((timeSeriesY[i] + timeSeriesY[i + 1] + timeSeriesY[i + 2] + timeSeriesY[i + 3]) / 4)*10)/10);
+          WeekAveX.push(timeSeriesX[i]);
+        }
+
+        // Populate the entity list for search:
+        var entities = data.entityList;
+        var html = "";
+        for (i = 0; i < entities.length; i++) {
+          html += "<option value='" + entities[i] + "'>";
+        }
+        document.getElementById("fullEntityList").innerHTML = html;
+
+        renderFocusTimeSeries();
+        renderFullTimeSeries();
+        renderAveSentimentDial();
+        renderCompareSentimentChart();
+        renderHistogramByScore();
+        fillSummaryTable();
+        fillResponseDetails();
+        getEntityTableDiagData();
+
+      },
+      error: function (data) {
+        console.log("Could not load results data.");
+      }
+    });
+  }
+
+  // Convert a JavaScript Date object to a string of form YYYY-MM-DD e.g. 2018-01-27
+  function toYYYY_MM_DD(dateObj) {
+    return "" +  dateObj.getFullYear() + "-" + padZero((dateObj.getMonth() + 1)) + "-" + padZero(dateObj.getDate());
+  }
+
+  // Add a padding zero to the string if the number contained is less than 10
+  // (used for to ensure day and month date values have two digits, e.g. 2018-01-07)
+  function padZero(integer) {
+    var paddedString = "";
+    if(integer < 10) {
+      paddedString += "0" + integer;
+    } else {
+      paddedString += integer;
+    }
+    return paddedString;
   }
 
   // Get time series data, for either the full or focus time series
@@ -299,7 +339,7 @@
     var start, end;
     if (series == "full") {
       start = FirstDate;
-      end = new Date();
+      end = LastDate;
     } else {
       start = StartDate;
       end = EndDate;
@@ -342,7 +382,7 @@
         }        
       },
       error: function (data) {
-        console.log("Could not fetch full time series data.");
+        console.log("Could not fetch time series data.");
       }
     });
   }  
@@ -448,6 +488,8 @@
     var leftBotExclusionData = [];
     var rightTopExclusionData = [];
     var rightBotExclusionData = [];
+    console.log('WeekAveX.length: ' + WeekAveX.length);
+    console.log('Start Date: ' + StartDate.toISOString());
     for (i = 0; i < WeekAveX.length; i++) {
       var thisTime = new Date(WeekAveX[i]).getTime();  
       if (thisTime < StartDate.getTime()) {
@@ -496,7 +538,6 @@
       pointRadius: 0,
       data: rightBotExclusionData
     };
-
    
     // (Re-)create canvas DOM element
     // (otherwise duplicate canvases will form on fetching new results)
@@ -520,7 +561,7 @@
                 quarter: 'MMM YYYY'
               },
               min: FirstDate,
-              max: new Date(),              
+              max: LastDate,              
             },
           }],
           yAxes: [{
@@ -545,7 +586,7 @@
             top: 5
           }
         },
-        tooltips: { enabled: true },
+        tooltips: { enabled: false},
         animation: { duration: 0 },
         hover: {animationDuration: 0 },
         responsiveAnimationDuration: 0, 
@@ -806,43 +847,6 @@
     document.getElementById("percentCompleted").innerHTML = PercentCompleted;
     document.getElementById("aveCharCount").innerHTML = AveCharCount;
     document.getElementById("maxCharCount").innerHTML = MaxCharCount;
-  }
-
-  // Populate the entity list for search
-  function fillEntitySearchList() {
-    $.ajax({
-      url: "/full-entity-list",   
-      // i.e. [Nodejs app]/app_server/controllers/full-entity-list.js
-      data: { // data to send to controller
-        "questionNum" : QuestionNum,
-        "gender" : Gender,
-        "ageRange" : AgeRange,
-        "employStatus" : EmployStatus,
-        "startDate" : toYYYY_MM_DD(StartDate),
-        "endDate" : toYYYY_MM_DD(EndDate),
-      },
-      method: "POST",
-      dataType: 'JSON',
-      success: function (entities) {
-        // Populate the entity list for search:
-        var html = "";
-        for (i = 0; i < entities.length; i++) {
-          html += "<option value='" + entities[i] + "'>";
-        }
-        document.getElementById("fullEntityList").innerHTML = html;
-
-        // Add event listener to search 'Go' button:
-        document.getElementById('entitySearchButton').addEventListener('click', function() {  
-          FocusEntity.name = document.getElementById("searchedEntity").value;
-          EntityDisplayMode = "focus";
-          document.getElementById('focusRadio').checked = true;
-          getEntityTableDiagData();
-        });
-      },
-      error: function (entities) {
-        console.log("Could not get full entity list.");
-      }
-    });
   }
 
   // Render the Entity Table and Linkage Diagram for a given set of filters, display mode 

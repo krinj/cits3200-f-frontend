@@ -1,208 +1,189 @@
-doctype html
-html
-  head
-    title #{title} | LFP Sentiment Analytics
+extends layout
 
-    link(rel='stylesheet', href='/stylesheets/style.css')
-    link(rel='stylesheet', href='/stylesheets/nouislider.min.css')
-    link(href="https://fonts.googleapis.com/css?family=Roboto+Condensed", rel="stylesheet")
-    link(href="https://fonts.googleapis.com/css?family=Ubuntu+Mono" rel="stylesheet")
-    
-    script(type="text/javascript" src="/javascripts/jquery-3.3.1.min.js")
-    script(type="text/javascript" src="/javascripts/nouislider.min.js")
-    script(type="text/javascript" src="/javascripts/moment.min.js")
-    script(type="text/javascript" src="/javascripts/Chart.min.js")
+block content
+  .section#filters
+    .centredBody#filterContainer
+      #filterHeading
+        h2 RESULT FILTERS
+      #filterBody
+        p#dateNote *Can use the time-series date range slider to control dates
+        p.filterLine
+          label Question
+          |:
+          select#questionList(name='question')
+        p.filterLine
+          label Gender:
+            select#gender(name="gender")
+              option(value='all') ALL
+              option(value='male') Male
+              option(value='female') Female
+              option(value='unspecified') Unspecified
+          label Age:
+            select#ageRange(name="ageRange")
+              option(value='all') ALL
+              option(value='ageunder18') Under 18
+              option(value='age18_24') 18-24
+              option(value='age25_34') 25-34
+              option(value='age35_44') 35-44
+              option(value='age45_54') 45-54
+              option(value='age55_64') 55-64
+              option(value='age65plus') 65+  
+          label Employment Status: 
+            select#employStatus(name="employStatus")
+              option(value='all') ALL
+              option(value='permanent') Permanent
+              option(value='fixedTerm') Fixed Term
+              option(value='partTime') Part-Time
+              option(value='casual') Casual
+          | &emsp;
+          label Date Range
+            | * &nbsp; 
+            i Start:
+            input(id="startDateBox" type="date" name="startDate")
+          label 
+            i End: 
+            input(id="endDateBox" type="date" name="endDate")
+      #filterButtons
+        button#resetFilters(type="button") RESET FILTERS
+        br
+        button#fetchResults(type="button") FETCH RESULTS
 
-  body
-    #logoDiv
-      img(src='/images/LFP_logo.png', id='LFPlogo')
-    #frame
-      #topBlackPanel
-      //- **** Above elements in body are for framing only and should be removed
+  .section#aveSentiment
+    .centredBody
+      h1 SENTIMENT ANALYTICS
+      h2 OVERALL SENTIMENTS OF RESPONSES
 
-      .section#filters
-        .centredBody#filterContainer
-          #filterHeading
-            h2 RESULT FILTERS
-          #filterBody
-            p#dateNote *Can use the time-series date range slider to control dates
-            p.filterLine
-              label Question
-              |:
-              select#questionList(name='question')
-            p.filterLine
-              label Gender:
-                select#gender(name="gender")
-                  option(value='all') ALL
-                  option(value='male') Male
-                  option(value='female') Female
-                  option(value='unspecified') Unspecified
-              label Age:
-                select#ageRange(name="ageRange")
-                  option(value='all') ALL
-                  option(value='ageunder18') Under 18
-                  option(value='age18_24') 18-24
-                  option(value='age25_34') 25-34
-                  option(value='age35_44') 35-44
-                  option(value='age45_54') 45-54
-                  option(value='age55_64') 55-64
-                  option(value='age65plus') 65+  
-              label Employment Status: 
-                select#employStatus(name="employStatus")
-                  option(value='all') ALL
-                  option(value='permanent') Permanent
-                  option(value='fixedTerm') Fixed Term
-                  option(value='partTime') Part-Time
-                  option(value='casual') Casual
+      p.centred 
+        | Overall sentiment of each response is scored from 
+        span(style="color:rgb(204, 69, 40)") -10 (extremely negative) 
+        | to 
+        span(style="color:rgb(52, 143, 104)") 10 (extremely positive)
+        |. Data for these overall scores is visualised in the charts below.
+
+      h3 Overall Sentiment Over Time
+      p The following is a smoothed plot of the daily average overall sentiment for responses for the question selected, with the above filters applied. The lower graph shows the time series over all time for this survey; click into it or drag the handles to define the sub-range presented in the main graph above (this also changes the filter dates above). 
+
+      .timeSeriesContainer#focusTimeSeriesCont
+      .timeSeriesContainer#fullTimeSeriesCont
+      #dateSlider
+
+      #sentiTimeSeriesContainer       
+
+      table
+        tr
+          td(style="color:grey")
+            | First submission: 
+            span#firstDateSpan
+          td(style="color:grey") Most recent submission: 
+            span#lastDateSpan
+
+      #dialAndCompareChart
+        #aveOverallSentiment
+          h3 Overall Sentiment (averaged over selected time period)
+          #dialColumn
+            img#dialImg(src='/images/sentiment_dial.png', style='display:none')
+            #dialCanvasContainer
+            p.centred 
+              b Ave. Score: 
+              span#aveSentimentSpan
+          #dialExplan
+            p.centred [Explanatory text about the dial]
+        #compareAveSentiment
+          h3 How Your Sentiment Compares
+          #compareAveSentContainer
+          p.centred [Explanatory text about this chart]
+
+      h3 Histogram of Response Sentiment Scores for Result Period
+      #explanation-box 
+        | Explanatory Text. 
+      #histogramContainer
+        #left
+          #histogramByScoreContainer
+
+        #right
+          #selected-response
+            #centered-text
+              h3 SELECTED RESPONSE
+            p 
+              strong Date: 
+              span#responseDateSpan 
               | &emsp;
-              label Date Range
-                | * &nbsp; 
-                i Start:
-                input(id="startDateBox" type="date" name="startDate")
-              label 
-                i End: 
-                input(id="endDateBox" type="date" name="endDate")
-          #filterButtons
-            button#resetFilters(type="button") RESET FILTERS
-            br
-            button#fetchResults(type="button") FETCH RESULTS
+              strong Score: 
+              span#responseScoreSpan 
+            p 
+              button.responseCtrl#firstButton(type="button") First
+              | &thinsp;
+              button.responseCtrl#previousButton(type="button") Prev.
+              
+              strong#responseIndex
+              
+              button.responseCtrl#nextButton(type="button") Next
+              | &thinsp;
+              button.responseCtrl#lastButton(type="button") Last
+            p 
+              strong Response:
+            p#responseText
+            
+  .section#summary
+    .centredBody
+      h2 RESPONSE STATISTICS
+      table
+        tr
+          th Response Count
+          th % Completed*
+          th Ave. Character Count
+          th Max. Character Count
+        tr
+          td#numResponses
+          td#percentCompleted
+          td#aveCharCount
+          td#maxCharCount
+        tr
+          td(align='center' colspan='4')
+            span(style='font-size: 11pt;') * Percentage of surveys submitted that had a response entered for this question.              
 
-      .section#aveSentiment
-        .centredBody
-          h1 SENTIMENT ANALYTICS
-          h2 OVERALL SENTIMENTS OF RESPONSES
+  .section#EntityAnalytics
+    .centredBody
+      h2 KEYWORDS/ENTITIES IN RESPONSES
 
-          p.centred 
-            | Overall sentiment of each response is scored from 
-            span(style="color:rgb(204, 69, 40)") -10 (extremely negative) 
-            | to 
-            span(style="color:rgb(52, 143, 104)") 10 (extremely positive)
-            |. Data for these overall scores is visualised in the charts below.
+      p.centred
+        b Display Mode:
+        label.displayMode#topFreqLabel
+          input(type="radio" class="dispModeRadio" name="dispModeRadio" value="topFreq" checked) 
+          | Top Frequency Keywords 
+        label.displayMode#mostPosLabel
+          input(type="radio" class="dispModeRadio" name="dispModeRadio" value="mostPos") 
+          | Most Positive Keywords
+        label.displayMode#mostNegLabel
+          input(type="radio" class="dispModeRadio" name="dispModeRadio" value="mostNeg") 
+          | Most Negative Keywords
+        label.displayMode#focusLabel
+          input(type="radio" class="dispModeRadio" name="dispModeRadio" value="focus" id='focusRadio')
+          | Keyword Focus
+        input(type="text" list="fullEntityList" id="searchedEntity" size=15)
+        datalist#fullEntityList
+        button(type="button" id="entitySearchButton") GO
 
-          h3 Overall Sentiment Over Time
-          p The following is a smoothed plot of the daily average overall sentiment for responses for the question selected, with the above filters applied. The lower graph shows the time series over all time for this survey; click into it or drag the handles to define the sub-range presented in the main graph above (this also changes the filter dates above). 
+      #entityTableDiag
+        #entityTable
+          h3 Keyword Listing
+          table#entityTable 
+            col#etcol1
+            col#etcol2
+            col#etcol3
+            col#etcol4
+            thead
+              tr
+                th Rank
+                th Keyword
+                th
+                  span#linkSpan
+                  | Frequency
+                th Average Sentiment Score
+            tbody#entityTableBody
+        #entityDiag
+          h3 Keyword Linkage Diagram
+          svg#entitySvg(width="800" height="800") 
 
-          .timeSeriesContainer#focusTimeSeriesCont
-          .timeSeriesContainer#fullTimeSeriesCont
-          #dateSlider
 
-          #sentiTimeSeriesContainer       
-
-          table
-            tr
-              td(style="color:grey")
-                | First result: 
-                span#firstDateSpan
-              td(style="color:grey") Today: 
-                span#todaysDate
-
-          #dialAndCompareChart
-            #aveOverallSentiment
-              h3 Overall Sentiment Averaged Over Time Period
-              #dialColumn
-                img#dialImg(src='/images/sentiment_dial.png', style='display:none')
-                #dialCanvasContainer
-                p.centred 
-                  b Ave. Score: 
-                  span#aveSentimentSpan
-              #dialExplan
-                p.centred [Explanatory text about the dial]
-            #compareAveSentiment
-              h3 How Your Sentiment Compares
-              #compareAveSentContainer
-              p.centred [Explanatory text about this chart]
-
-          h3 Histogram of Response Sentiment Scores for Result Period
-          #explanation-box 
-            | Explanatory Text. 
-          #histogramContainer
-            #left
-              #histogramByScoreContainer
-
-            #right
-              #selected-response
-                #centered-text
-                  h3 SELECTED RESPONSE
-                p 
-                  strong Date: 
-                  span#responseDateSpan 
-                  | &emsp;
-                  strong Score: 
-                  span#responseScoreSpan 
-                p 
-                  button.responseCtrl#firstButton(type="button") First
-                  | &thinsp;
-                  button.responseCtrl#previousButton(type="button") Prev.
-                  
-                  strong#responseIndex
-                  
-                  button.responseCtrl#nextButton(type="button") Next
-                  | &thinsp;
-                  button.responseCtrl#lastButton(type="button") Last
-                p 
-                  strong Response:
-                p#responseText
-                
-      .section#summary
-        .centredBody
-          h2 RESPONSE SUMMARY
-          table
-            tr
-              th Response Count
-              th % Completed*
-              th Ave. Character Count
-              th Max. Character Count
-            tr
-              td#numResponses
-              td#percentCompleted
-              td#aveCharCount
-              td#maxCharCount
-            tr
-              td(align='center' colspan='4')
-                span(style='font-size: 11pt;') * Percentage of surveys submitted that had a response entered for this question.              
-      
-      .section#EntityAnalytics
-        .centredBody
-          h2 KEYWORDS/ENTITIES IN RESPONSES
-
-          p.centred
-            b Display Mode:
-            label.displayMode#topFreqLabel
-              input(type="radio" class="dispModeRadio" name="dispModeRadio" value="topFreq" checked) 
-              | Top Frequency Keywords 
-            label.displayMode#mostPosLabel
-              input(type="radio" class="dispModeRadio" name="dispModeRadio" value="mostPos") 
-              | Most Positive Keywords
-            label.displayMode#mostNegLabel
-              input(type="radio" class="dispModeRadio" name="dispModeRadio" value="mostNeg") 
-              | Most Negative Keywords
-            label.displayMode#focusLabel
-              input(type="radio" class="dispModeRadio" name="dispModeRadio" value="focus" id='focusRadio')
-              | Keyword Focus
-            input(type="text" list="fullEntityList" id="searchedEntity" size=15)
-            datalist#fullEntityList
-            button(type="button" id="entitySearchButton") GO
-
-          #entityTableDiag
-            #entityTable
-              h3 Keyword Listing
-              table#entityTable 
-                col#etcol1
-                col#etcol2
-                col#etcol3
-                col#etcol4
-                thead
-                  tr
-                    th Rank
-                    th Keyword
-                    th
-                      span#linkSpan
-                      | Frequency
-                    th Average Sentiment Score
-                tbody#entityTableBody
-            #entityDiag
-              h3 Keyword Linkage Diagram
-              svg#entitySvg(width="800" height="800") 
-
-    script(type="text/javascript" src="/javascripts/sentiment-analytics-cs.js") 
 

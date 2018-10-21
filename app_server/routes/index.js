@@ -3,6 +3,7 @@ var router = express.Router();
 
 // Links to controller files:
 var ctrlInitialRender  = require('../controllers/initial-render');
+var ctrlInitialQueries  = require('../controllers/initial-queries');
 var ctrlLoadResults  = require('../controllers/load-results');
 var ctrlResponseDetails = require('../controllers/response-details');
 var ctrlEntityTableDiagram = require('../controllers/entity-table-diagram');
@@ -12,6 +13,7 @@ var ctrlTimeSeries = require('../controllers/time-series');
 
 // GET & POST HTTP requests for the page:
 router.get('/', ctrlInitialRender.initialRender); // initial HTML load
+router.post('/initial-queries', ctrlInitialQueries.getResults); // initial queries on page load
 router.post('/load-results', ctrlLoadResults.loadResults); // load non-interactive results
 router.post('/time-series',ctrlTimeSeries.getResponse); // load time-series data
 // Fetch response details (in the histogram section):
