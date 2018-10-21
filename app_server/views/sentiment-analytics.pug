@@ -134,23 +134,19 @@ block content
             #centered-text
               h3 SELECTED RESPONSE
             p 
-              strong Date: 
-              span#responseDateSpan 
               | &emsp;
-              strong Score: 
-              span#responseScoreSpan 
-            p 
-              button#firstButton(type = "button") First
-              | &thinsp;
-              button#previousButton(type="button") Prev.
-              
+            //  strong Score: 
+            //  span#responseScoreSpan 
+            p.centred
               strong#responseIndex
               
-              button#nextButton(type="button") Next
-              | &thinsp;
-              button#lastButton(type="button") Last
             p 
               strong Response:
             p#responseText
+            
+            p
+              strong Date: 
+              span#responseDateSpan 
+              
 
   script(type="text/javascript" src="/javascripts/sentiment-analytics-cs.js") 

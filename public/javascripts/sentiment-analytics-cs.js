@@ -375,7 +375,7 @@
           },
           {step: 'all'}
         ]},
-        
+
       rangeslider: {range: [WeekAveX[0], WeekAveX[WeekAveX.length - 1]]},
       color: 'black',
       type: 'date'
@@ -545,20 +545,23 @@
             barPercentage: 0.9,
             categoryPercentage: 1.0
           }]
+        },
+        tooltips: {
+          enabled: false
         }
       }
     });
-
+// this was canvasDOM.onclick , Jc changed to
     canvasDOM.onclick = function(event) {
       checkflag = true;
       indexOfResponse = 0;
       var activeElement = histogramChart.getElementAtEvent(event)[0];
-      responseScore = histogramChart.data.labels[activeElement._index];
+      var responseScore = histogramChart.data.labels[activeElement._index];
       $.ajax({
         url: "/response-details",
         // i.e. [Nodejs app]/app_server/controllers/response-details.js
         data: { // data to send to controller
-          //score: responseScore,
+          "score": responseScore,
           "questionNum": QuestionNum,
           "gender": Gender,
           "ageRange": AgeRange,
@@ -583,6 +586,28 @@
       });
     };
 
+    canvasDOM.addEventListener('click',function(event) {
+      nextResponse();
+    });
+
+    function nextResponse() {
+  //  var next = document.getElementById("nextButton");
+    //next.onclick = function () {
+      if (checkflag == false) {
+        alert("Please select a bar of responses first.");
+        return;
+      }
+      if (indexOfResponse == ResponseInfo.length - 1) {
+        alert("This is already the last response.");
+        return;
+      }
+      indexOfResponse++;
+      fillResponseDetails();
+    };
+  //};
+
+
+/*
     var previous = document.getElementById("previousButton");
     previous.onclick = function () {
       if (checkflag == false) {
@@ -597,19 +622,6 @@
       fillResponseDetails();
     };
 
-    var next = document.getElementById("nextButton");
-    next.onclick = function () {
-      if (checkflag == false) {
-        alert("Please select a bar of responses first.");
-        return;
-      }
-      if (indexOfResponse == ResponseInfo.length - 1) {
-        alert("This is already the last response.");
-        return;
-      }
-      indexOfResponse++;
-      fillResponseDetails();
-    };
 
     var first = document.getElementById("firstButton");
     first.onclick = function () {
@@ -629,7 +641,7 @@
       }
       indexOfResponse = ResponseInfo.length - 1;
       fillResponseDetails();
-    };
+    }; */
   }
 
   function fillResponseDetails() {
@@ -638,7 +650,7 @@
     }
     var date = ResponseInfo[indexOfResponse].submitDate.slice(0,10);
     document.getElementById('responseDateSpan').innerHTML = date;
-    document.getElementById('responseScoreSpan').innerHTML = responseScore;
+    //document.getElementById('responseScoreSpan').innerHTML = responseScore;
     document.getElementById('responseText').innerHTML = ResponseInfo[indexOfResponse].responseDetail;
     var responseIndex = indexOfResponse + 1;
     document.getElementById('responseIndex').innerHTML ="Response: " + responseIndex + " of " + ResponseInfo.length;
