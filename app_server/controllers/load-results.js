@@ -7,7 +7,7 @@ module.exports.loadResults = function (req, res) {
   
   const projectid = 'cits-3200';
   // Filter variables, set to values sent to this controller from client:
-  var questionId = req.body.questionValue;
+  var questionId = 'all';        // this needs to be changed after fix the client side render
   var gender = req.body.gender;
   var ageRange = req.body.ageRange;
   var employStatus = req.body.employStatus;
@@ -35,28 +35,26 @@ module.exports.loadResults = function (req, res) {
   }
   
   var query = [];
-  // Query 0: List of Questions for the Survey
-  query[0] = "SELECT distinct question_name,question_id FROM `cits-3200.analytics.responses_dev` R WHERE R.survey_id = 'd34f3eae8e9a48b6bc8c930bc5084b87';";
+  
 
-  // Query 1: Total response count:
-  query[1]= "SELECT COUNT(*) AS totalResponse FROM `cits-3200.analytics.responses_dev` R  WHERE R.employment_status = '"+ employStatus +"' AND R.survey_id ='d34f3eae8e9a48b6bc8c930bc5084b87' AND R.question_id = '"+ questionId +"' AND R.gender = '" + gender + "' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN "+ birthStart + " AND "+ birthEnd +"; ";
+  
 
   // Query 2: select all the responses
-  query[2]= "SELECT response FROM `cits-3200.analytics.responses_dev` R  WHERE R.employment_status = '" + employStatus + "' AND R.survey_id ='d34f3eae8e9a48b6bc8c930bc5084b87' AND R.question_id = '"+ questionId +"' AND R.gender = '" + gender + "' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN "+ birthStart + " AND "+ birthEnd +"; ";
+  query[0]= "SELECT response FROM `cits-3200.analytics.responses_dev` R  WHERE R.employment_status = '" + employStatus + "' AND R.survey_id ='d34f3eae8e9a48b6bc8c930bc5084b87' AND R.question_id = '"+ questionId +"' AND R.gender = '" + gender + "' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN "+ birthStart + " AND "+ birthEnd +"; ";
 
 
   // Query 3: National average overall sentiment score for the question
-  query[3]= "SELECT AVG(overall_sentiment) AS overallAverage FROM `cits-3200.analytics.responses_dev` R  WHERE R.employment_status = '"+ employStatus +"' AND R.question_id = '"+ questionId +"' AND R.survey_id ='d34f3eae8e9a48b6bc8c930bc5084b87' AND R.gender = '" + gender + "' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN "+ birthStart + " AND "+ birthEnd +" ;";
+  query[1]= "SELECT AVG(overall_sentiment) AS overallAverage FROM `cits-3200.analytics.responses_dev` R  WHERE R.employment_status = '"+ employStatus +"' AND R.question_id = '"+ questionId +"' AND R.survey_id ='d34f3eae8e9a48b6bc8c930bc5084b87' AND R.gender = '" + gender + "' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN "+ birthStart + " AND "+ birthEnd +" ;";
 
   // Query 4: Organisation's average overall sentiment score for the question
-  query[4]= "SELECT AVG(overall_sentiment) AS organizationAverage FROM `cits-3200.analytics.responses_dev` R WHERE R.employment_status = '"+ employStatus +"' AND R.question_id = '"+ questionId +"' AND R.survey_id ='d34f3eae8e9a48b6bc8c930bc5084b87' AND R.gender = '" + gender + "' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN "+ birthStart + " AND "+ birthEnd +" ;";
+  query[2]= "SELECT AVG(overall_sentiment) AS organizationAverage FROM `cits-3200.analytics.responses_dev` R WHERE R.employment_status = '"+ employStatus +"' AND R.question_id = '"+ questionId +"' AND R.survey_id ='d34f3eae8e9a48b6bc8c930bc5084b87' AND R.gender = '" + gender + "' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN "+ birthStart + " AND "+ birthEnd +" ;";
 
   // Query 5: First Date of responses for this question
-  query[5]= "SELECT timestamp AS firstDate FROM `cits-3200.analytics.responses_dev` R  WHERE R.survey_id ='d34f3eae8e9a48b6bc8c930bc5084b87' AND R.question_id = '" + questionId + "' ORDER BY firstDate ASC LIMIT 1;";
+  query[3]= "SELECT timestamp AS firstDate FROM `cits-3200.analytics.responses_dev` R  WHERE R.survey_id ='d34f3eae8e9a48b6bc8c930bc5084b87' AND R.question_id = '" + questionId + "' ORDER BY firstDate ASC LIMIT 1;";
 
   
   // Query 6: Frequency count array of sentiment scores -10 to 10 (for Histogram by Score)
-  query[6] = "SELECT overall_sentiment, count(*) as frequency FROM `cits-3200.analytics.responses_dev` R  WHERE R.employment_status = '"+ employStatus +"' AND R.survey_id ='d34f3eae8e9a48b6bc8c930bc5084b87' AND R.question_id = '"+ questionId +"' AND R.gender = '" + gender + "' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN "+ birthStart + " AND "+ birthEnd +" GROUP BY overall_sentiment;";
+  query[4] = "SELECT overall_sentiment, count(*) as frequency FROM `cits-3200.analytics.responses_dev` R  WHERE R.employment_status = '"+ employStatus +"' AND R.survey_id ='d34f3eae8e9a48b6bc8c930bc5084b87' AND R.question_id = '"+ questionId +"' AND R.gender = '" + gender + "' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN "+ birthStart + " AND "+ birthEnd +" GROUP BY overall_sentiment;";
 
   
   // Remove filters set to 'all' if applicable:
@@ -133,10 +131,14 @@ module.exports.loadResults = function (req, res) {
           question_array.push(rows[i]);
         }
         console.log(question_array);
-      }else if (queryIndex ==1){
+      }
+
+      else if (queryIndex ==1){
         num_responses = rows[0].totalResponse;
         console.log(num_responses);
-      }else if(queryIndex ==2){
+      }
+      
+      else if(queryIndex ==2){
         var totalchar = 0;
         max_char_count=0;
         if(num_responses!=0){
@@ -160,23 +162,29 @@ module.exports.loadResults = function (req, res) {
         ave_char_count = 0;
       }
         
-      }else if (queryIndex ==3){
+      }
+      
+      else if (queryIndex ==3){
         if(rows==[]){
           national_ave =0;
         }else{
         national_ave = rows[0].overallAverage*10;
         console.log("national ave" + national_ave);
         }
-      }else if(queryIndex==4){
+      }
+      
+      else if(queryIndex==4){
         if(rows==[]){
           organization_ave =0;
         }else{
         organization_ave = parseInt(rows[0].organizationAverage*10);
         }
-      }else if (queryIndex == 5){
+      }
+      else if (queryIndex == 5){
         first_date =rows[0].first_Date.value;
         console.log(first_date);
-      }else if (queryIndex == 6){
+      }
+      else if (queryIndex == 6){
         console.log(rows);
         
         var index = 0;

@@ -20,7 +20,7 @@ module.exports.getResults = function (req, res) {
   query[1] = "SELECT timestamp AS lastDate FROM `cits-3200.analytics.responses_dev` R WHERE R.survey_id = '0e3c8b046672428d95d3212970814b2c' ORDER BY lastDate DESC LIMIT 1;";
 
   // Query 2: List of Questions for the Survey
-  query[2] = "SELECT distinct question_name FROM `cits-3200.analytics.responses_dev` R WHERE R.survey_id = '0e3c8b046672428d95d3212970814b2c';";
+  query[2] = "SELECT distinct question_name,question_id FROM `cits-3200.analytics.responses_dev` R WHERE R.survey_id = '0e3c8b046672428d95d3212970814b2c' ;";
   
   for(var i = 0;i<query.length;i++){
     asyncQuery(query[i],projectid,i);
@@ -28,6 +28,7 @@ module.exports.getResults = function (req, res) {
   var first_date;
   var last_date;
   var question_array = [];
+  var question_id = [];
 async function asyncQuery(sqlquery, projectid,queryIndex) {
       // Imports the Google Cloud client library
       const BigQuery = require('@google-cloud/bigquery');
@@ -69,8 +70,11 @@ async function asyncQuery(sqlquery, projectid,queryIndex) {
       else if(queryIndex==2){
         for(var i = 0;i<rows.length;i++){
           question_array.push(rows[i].question_name);
-          console.log(question_array);
+          question_id.push(rows[i].question_id);
         }
+          console.log(question_array);
+          console.log(question_id);
+        
       }
     }
     
