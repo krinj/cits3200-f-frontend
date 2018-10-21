@@ -664,7 +664,9 @@
   }
 
   function fillResponseDetails() {
-
+    if(checkflag==false){
+      document.getElementById('responseText').innerHTML = "Please click the chart bars."
+    }
     var date = ResponseInfo[indexOfResponse].submitDate.slice(0,10);
     document.getElementById('responseDateSpan').innerHTML = date;
     document.getElementById('responseScoreSpan').innerHTML = responseScore;
