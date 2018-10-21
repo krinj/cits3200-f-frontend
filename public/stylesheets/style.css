@@ -195,6 +195,7 @@ p#dateNote {
 
 #dateSlider {
   margin: 10px 30px;
+  z-index: 0;
 }
 
 #dateSlider .noUi-connect {

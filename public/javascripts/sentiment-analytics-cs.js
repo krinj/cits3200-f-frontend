@@ -8,11 +8,11 @@
   /*** GLOBAL VARIABLES / 'MODEL' VARIABLES (Use capital first letter for globals): ***/
 
   // Sentiment colour scale end a middle points:
-  const RedColor = [204, 69, 40];
-  const GreyColor = [188, 191, 191];
-  const GreenColor = [52, 143, 104];
+  var RED_COLOUR = [204, 69, 40];
+  var GREY_COLOUR = [188, 191, 191];
+  var GREEN_COLOUR = [52, 143, 104];
 
-  const NUM_ENTITIES = 30; // (Max) number of entities to display in Entity Table & Diagram
+  var NUM_ENTITIES = 30; // (Max) number of entities to display in Entity Table & Diagram
 
   // *** TODO: Server should POST the logged in user's organisation name ***
   var Organisation = "Honeywell"; 
@@ -38,9 +38,8 @@
   var ScoreFreqArray = [];  
   
   // Time Series variables:
-  var WeekAveX = [];
-  var WeekAveY = [];
-  var NationalAverage = [];
+  var WeekAveX = [];  // weekly dates
+  var WeekAveY = [];  // weekly average sentiment scores
 
   // Histogram selected response variables:
   var ResponseScore;
@@ -85,9 +84,6 @@
     document.getElementById("endDateBox").valueAsDate = EndDate;
 
     loadResults();
-    // updatePlotlyTimeSeries();  
-    fillEntitySearchList();
-    getEntityTableDiagData();
 
     /************************** ESTABLISH EVENT LISTENERS ****************************/
 
@@ -116,15 +112,17 @@
     });
 
     document.getElementById("startDateBox").addEventListener('change', function () {
-      StartDate = new Date(document.getElementById("startDateBox").valueAsDate);    
-      getTimeSeriesData("focus");
-      getTimeSeriesData("full");
+      StartDate = new Date(document.getElementById("startDateBox").valueAsDate);  
+      // Don't need to re-fetch data, only re-render it based on new date range  
+      renderFocusTimeSeries();
+      renderFullTimeSeries();
     });
 
     document.getElementById("endDateBox").addEventListener('change', function () {
       EndDate = new Date(document.getElementById("endDateBox").valueAsDate);
-      getTimeSeriesData("focus");
-      getTimeSeriesData("full");
+      // Don't need to re-fetch data, only re-render it based on new date range  
+      renderFocusTimeSeries();
+      renderFullTimeSeries();
     });
 
     // Event Listener for Fetch Results button:
@@ -218,6 +216,7 @@
         renderHistogramByScore();
         fillSummaryTable();
         fillResponseDetails();
+        fillEntitySearchList();
         getEntityTableDiagData();
 
       },
@@ -274,11 +273,12 @@
     ];
 
     slider.noUiSlider.on('update', function (values, handle) {
-        dateValues[handle].valueAsDate = new Date(+values[handle]);
-        StartDate = new Date(document.getElementById("startDateBox").valueAsDate);
-        EndDate = new Date(document.getElementById("endDateBox").valueAsDate);  
-        getTimeSeriesData("focus");
-        getTimeSeriesData("full");
+      dateValues[handle].valueAsDate = new Date(+values[handle]);
+      StartDate = new Date(document.getElementById("startDateBox").valueAsDate);
+      EndDate = new Date(document.getElementById("endDateBox").valueAsDate);  
+      // Don't need to re-fetch data, only re-render it based on new date range  
+      renderFocusTimeSeries();
+      renderFullTimeSeries();
     });
   }
 
@@ -351,10 +351,13 @@
 
     var yourOrgData = [];
     for (i = 0; i < WeekAveX.length; i++) {
-      yourOrgData.push({
-        x: WeekAveX[i],
-        y: WeekAveY[i],
-      });
+      var thisTime = new Date(WeekAveX[i]).getTime();  
+      if (thisTime > StartDate.getTime() && thisTime < EndDate.getTime()) {
+        yourOrgData.push({
+          x: WeekAveX[i],
+          y: WeekAveY[i],
+        });
+      }
     }
     
     var yourOrgSeries = {
@@ -565,7 +568,7 @@
     var img = document.getElementById("dialImg");
 
     var angle = ((10 - OrgAveSentiment) * Math.PI) / 20;
-    var needleBaseX = canvasWidth / 2 - 8;
+    var needleBaseX = canvasWidth / 2 - 5;
     var needleBaseY = canvasHeight - 3;
     var needleTipX = needleBaseX + needleRadius * Math.cos(angle);
     var needleTipY = needleBaseY - needleRadius * Math.sin(angle);
@@ -715,7 +718,7 @@
       $.ajax({
         url: "/response-details",
         // i.e. [Nodejs app]/app_server/controllers/response-details.js
-        data: { // data to send to controller
+        data: { 
           "score": ResponseScore,
           "questionNum": QuestionNum,
           "gender": Gender,
@@ -726,18 +729,13 @@
         },
         method: "POST",
         dataType: 'JSON',
-        success: function (data) { // data is the JSON object returned from SQL via controller
-          // for(property in data) {
-          //   console.log("" + property + ": " + data[property]);
-          // }
+        success: function (data) { 
           ResponseInfo = data.responseResult;
-
           fillResponseDetails();
         },
         error: function (data) {
           console.log("Could not fetch response details for histogram.");
         }
-
       });
     };
 
@@ -1246,9 +1244,9 @@
    * specified colour spectrum the output colour should be.
    */
   function getColor(factor) {
-    var rgbStart = RedColor;
-    var rgbMiddle = GreyColor;
-    var rgbEnd = GreenColor;
+    var rgbStart = RED_COLOUR;
+    var rgbMiddle = GREY_COLOUR;
+    var rgbEnd = GREEN_COLOUR;
     var r, g, b;
     if (factor <= 0.5) {
       r = lerp(rgbStart[0], rgbMiddle[0], factor * 2);
