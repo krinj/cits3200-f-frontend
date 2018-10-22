@@ -117,9 +117,9 @@
     });
 
     // Event Listener for Fetch Results button:
-    document.getElementById('fetchResults').addEventListener('click', function () {
-      loadResults();
-    });
+    // document.getElementById('fetchResults').addEventListener('click', function () {
+    //   loadResults();
+    // });
 
     // When resetting filters, reset start date and end date to overall range start and range end:
     document.getElementById('resetFilters').addEventListener('click', function() {
@@ -129,6 +129,12 @@
       document.getElementById('startDateBox').valueAsDate = FirstDate;
       document.getElementById('endDateBox').valueAsDate = LastDate;
 
+      Gender = 'all';
+      AgeRange = 'all';
+      EmployStatus = 'all';
+      StartDate = FirstDate;
+      EndDate = LastDate;
+      
       // Reset the handles on the date slider:
       var startDateObj = FirstDate;
       var endDateObj = LastDate;
