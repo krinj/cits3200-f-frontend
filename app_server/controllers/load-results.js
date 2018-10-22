@@ -4,21 +4,21 @@ var dbConnection = require('./db-connection');
 module.exports.loadResults = function (req, res) {
   
   var connection = dbConnection.connectToDB();
-  
+  console.log("getting in the load-reslut");
   const projectid = 'cits-3200';
   // Filter variables, set to values sent to this controller from client:
   //var questionNum = req.body.questionValue;
   var questionId = 'NLP_CONS';
-  //var gender = req.body.gender;
-  var gender = 'all';
-  //var ageRange = req.body.ageRange;
-  var ageRange = 'all';
-  //var employStatus = req.body.employStatus;
-  var employStatus = 'all';
-  //var startDate = req.body.startDate;
-  var startDate = '2016-01-16';
-  //var endDate = req.body.endDate;
-  var endDate = '2018-04-20';
+  var gender = req.body.gender;
+  
+  var ageRange = req.body.ageRange;
+ 
+  var employStatus = req.body.employStatus;
+  
+  var startDate = req.body.startDate;
+ 
+  var endDate = req.body.endDate;
+  
 
   // Determine the start and end years of birth for different age ranges:
   var birthStart;

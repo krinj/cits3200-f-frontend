@@ -22,16 +22,15 @@ module.exports.getResults = function (req, res) {
   // Query 2: List of Questions for the Survey
   query[2] = "SELECT distinct question_name,question_id FROM `cits-3200.analytics.responses_dev` R WHERE R.abn_hash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1' ;";
   
-  queryArray(query);
-  async function queryArray(query){
+  
     for(var i = 0 ;i<query.length;i++){
-      await asyncQuery(query[i],projectid,i);
+      asyncQuery(query[i],projectid,i);
     }
-    console.log("done");
-  }
+  
   var first_date;
   var last_date;
   var question_array = [];
+  console.log("quesition_array is " + question_array);
   var question_id = [];
 async function asyncQuery(sqlquery, projectid,queryIndex) {
       // Imports the Google Cloud client library
@@ -65,7 +64,7 @@ async function asyncQuery(sqlquery, projectid,queryIndex) {
     
       const [rows] = await job.getQueryResults();
       console.log('Rows:');
-      console.log(rows);
+      
       if(queryIndex==0){
         first_date = rows[0].firstDate.value;
        
@@ -79,28 +78,30 @@ async function asyncQuery(sqlquery, projectid,queryIndex) {
           question_array.push(rows[i].question_name);
           question_id.push(rows[i].question_id);
         }
-        console.log(question_array);
+       
         
       }
 
     }
-    
-
-    
-    setInterval(function(){
-      if((question_array && first_date && last_date) ){
-        console.log(question_array);
-        console.log(first_date);
-        console.log(last_date);
-        var results = {
+    var results;
+    var interval = setInterval(function() {
+      if((question_array != null && first_date && last_date) ){
+        
+       
+        results = {
           firstDate: first_date,
           lastDate: last_date,
           questionArray: question_array,
         }; 
         
+        clearInterval(interval);
         return res.send(results);
       }
     }, 1000);
+    
+    
+    
+
 
     
   
