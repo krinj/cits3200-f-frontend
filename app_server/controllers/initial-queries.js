@@ -99,11 +99,5 @@ async function asyncQuery(sqlquery, projectid,queryIndex) {
       }
     }, 1000);
     
-    
-    
-
-
-    
-  
 
 };
