@@ -60,7 +60,7 @@ module.exports.loadResults = function (req, res) {
 
   
   // Query 6: Frequency count array of sentiment scores -10 to 10 (for Histogram by Score)
-  query[4] = "SELECT overall_sentiment, count(*) as frequency FROM `cits-3200.analytics.responses_dev` R  WHERE R.employment_status = '"+ employStatus +"' AND R.abn_hash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1' AND R.question_id = '"+ questionId +"' AND R.gender = '" + gender + "' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN "+ birthStart + " AND "+ birthEnd +" GROUP BY overall_sentiment;";
+  query[4] = "SELECT overall_sentiment, count(*) as frequency FROM `cits-3200.analytics.responses_dev` R  WHERE R.employment_status = '"+ employStatus +"' AND R.abn_hash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1' AND R.question_id = '"+ questionId +"' AND R.gender = '" + gender + "' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN "+ birthStart + " AND "+ birthEnd +" GROUP BY overall_sentiment ORDER BY overall_sentiment ASC;";
 
   
   // Remove filters set to 'all' if applicable:
@@ -201,11 +201,9 @@ module.exports.loadResults = function (req, res) {
       }
       
       else if (queryIndex ==3){
-        if(rows==[]){
-          national_ave =0;
-        }else{
-        national_ave = rows[0].overallAverage*10;
-        console.log("national ave" + national_ave);
+        var s = rows;
+        for(var i =0;i<rows.length;i++){
+          
         }
       }
       
