@@ -14,17 +14,20 @@ module.exports.getResults = function (req, res) {
   //TODO: *** Convert to BigQuery queries and add filter on orgABN ***
 
   // Query 0: First date of responses for the survey
-  query[0] =  "SELECT timestamp As firstDate from `cits-3200.analytics.responses_dev` R WHERE R.survey_id = '0e3c8b046672428d95d3212970814b2c' ORDER BY firstDate ASC LIMIT 1;";
+  query[0] =  "SELECT timestamp As firstDate from `cits-3200.analytics.responses_dev` R WHERE R.abn_hash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1' ORDER BY firstDate ASC LIMIT 1;";
 
   // Query 1: Last date of responses for the survey
-  query[1] = "SELECT timestamp AS lastDate FROM `cits-3200.analytics.responses_dev` R WHERE R.survey_id = '0e3c8b046672428d95d3212970814b2c' ORDER BY lastDate DESC LIMIT 1;";
+  query[1] = "SELECT timestamp AS lastDate FROM `cits-3200.analytics.responses_dev` R WHERE R.abn_hash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1' ORDER BY lastDate DESC LIMIT 1;";
 
   // Query 2: List of Questions for the Survey
-  query[2] = "SELECT distinct question_name,question_id FROM `cits-3200.analytics.responses_dev` R WHERE R.survey_id = '0e3c8b046672428d95d3212970814b2c' ;";
+  query[2] = "SELECT distinct question_name,question_id FROM `cits-3200.analytics.responses_dev` R WHERE R.abn_hash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1' ;";
   
-  query[3] = ""
-  for(var i = 0;i<query.length;i++){
-    asyncQuery(query[i],projectid,i);
+  queryArray(query);
+  async function queryArray(query){
+    for(var i = 0 ;i<query.length;i++){
+      await asyncQuery(query[i],projectid,i);
+    }
+    console.log("done");
   }
   var first_date;
   var last_date;
@@ -54,35 +57,41 @@ async function asyncQuery(sqlquery, projectid,queryIndex) {
       // Check the job's status for errors
       const errors = metadata[0].status.errors;
       if (errors && errors.length > 0) {
+       
         throw errors;
+        
       }
       console.log('Job ${job.id} completed.')
     
       const [rows] = await job.getQueryResults();
       console.log('Rows:');
+      console.log(rows);
       if(queryIndex==0){
         first_date = rows[0].firstDate.value;
-        console.log(first_date);
+       
       }
       else if(queryIndex ==1){
         last_date = rows[0].lastDate.value;
-        console.log(last_date);
+       
       }
       else if(queryIndex==2){
         for(var i = 0;i<rows.length;i++){
           question_array.push(rows[i].question_name);
           question_id.push(rows[i].question_id);
         }
-          console.log(question_array);
-          console.log(question_id);
+        console.log(question_array);
         
       }
+
     }
     
 
     
     setInterval(function(){
       if((question_array && first_date && last_date) ){
+        console.log(question_array);
+        console.log(first_date);
+        console.log(last_date);
         var results = {
           firstDate: first_date,
           lastDate: last_date,
