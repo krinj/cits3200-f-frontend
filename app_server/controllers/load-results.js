@@ -8,7 +8,7 @@ module.exports.loadResults = function (req, res) {
   const projectid = 'cits-3200';
   // Filter variables, set to values sent to this controller from client:
   //var questionNum = req.body.questionValue;
-  var questionId = 'NLP_CONS';
+  var questionId = 'all';
   var gender = req.body.gender;
   
   var ageRange = req.body.ageRange;
