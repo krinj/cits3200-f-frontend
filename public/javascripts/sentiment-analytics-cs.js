@@ -639,7 +639,7 @@
     var compareSentChart = new Chart(myChart, {
       type: 'bar',
       data: {
-        labels: [ "" , "" ],
+        labels: [ "Your Organisation" , "National Average" ],
         datasets: [{
           data: [OrgAveSentiment, NationalAveSentiment],
           backgroundColor: [
@@ -656,12 +656,10 @@
         maintainAspectRatio: false,
         scales: {
           xAxes:[{
-            gridLines:{
-              display:false
-            },
+            gridLines:{display:false},
             barPercentage: 1,
-            categoryPercentage: 1
-
+            categoryPercentage: 1,
+            labels: ["",""],
           }],          
           yAxes: [{
              gridLines:{

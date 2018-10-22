@@ -210,6 +210,17 @@ p#dateNote {
   background: rgb(202, 202, 202);
 }
 
+p#firstDate {
+  color: grey;
+  margin-top: 5px;  
+}
+
+p#lastDate {
+  float: right;
+  color: grey;
+  margin-top: 5px;
+}
+
 /*********** SENTIMENT DIAL & COMPARE SENTIMENT CHART *************/
 
 #dialAndCompareChart {
@@ -229,7 +240,7 @@ p#dateNote {
 }
 
 #compareAveSentContainer {
-  width: 25%;
+  width: 180px;
   height: 200px;
   float: left;
 }

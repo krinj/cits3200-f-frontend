@@ -44,9 +44,9 @@ block content
             i End: 
             input(id="endDateBox" type="date" name="endDate")
       #filterButtons
-        button#resetFilters(type="button") RESET FILTERS
         br
-        button#fetchResults(type="button") FETCH RESULTS
+        br
+        button#resetFilters(type="button") RESET FILTERS
 
   .section#aveSentiment
     .centredBody
@@ -65,17 +65,15 @@ block content
 
       .timeSeriesContainer#focusTimeSeriesCont
       .timeSeriesContainer#fullTimeSeriesCont
-      #dateSlider
-
-      #sentiTimeSeriesContainer       
-
-      table
-        tr
-          td(style="color:grey")
-            | First submission: 
-            span#firstDateSpan
-          td(style="color:grey") Most recent submission: 
-            span#lastDateSpan
+      #dateSlider    
+      p#lastDate 
+        | Most recent submission: 
+        b 
+          span#lastDateSpan
+      p#firstDate 
+        b
+          span#firstDateSpan
+        | : First submission
 
       #dialAndCompareChart
         #aveOverallSentiment
