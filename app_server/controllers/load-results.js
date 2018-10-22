@@ -55,14 +55,19 @@ module.exports.loadResults = function (req, res) {
   // Query 4: Organisation's average overall sentiment score for the question
   query[2]= "SELECT AVG(overall_sentiment) AS organizationAverage FROM `cits-3200.analytics.responses_dev` R WHERE R.employment_status = '"+ employStatus +"' AND R.question_id = '"+ questionId +"' AND R.abn_hash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1' AND R.gender = '" + gender + "' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN "+ birthStart + " AND "+ birthEnd +" ;";
 
-  // Query 5: First Date of responses for this question
-  query[3]= "SELECT timestamp AS firstDate FROM `cits-3200.analytics.responses_dev` R  WHERE R.abn_hash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1' AND R.question_id = '" + questionId + "' ORDER BY firstDate ASC LIMIT 1;";
+  
 
   
   // Query 6: Frequency count array of sentiment scores -10 to 10 (for Histogram by Score)
-  query[4] = "SELECT overall_sentiment, count(*) as frequency FROM `cits-3200.analytics.responses_dev` R  WHERE R.employment_status = '"+ employStatus +"' AND R.abn_hash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1' AND R.question_id = '"+ questionId +"' AND R.gender = '" + gender + "' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN "+ birthStart + " AND "+ birthEnd +" GROUP BY overall_sentiment ORDER BY overall_sentiment ASC;";
+  query[3] = "SELECT overall_sentiment, count(*) as frequency FROM `cits-3200.analytics.responses_dev` R  WHERE R.employment_status = '"+ employStatus +"' AND R.abn_hash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1' AND R.question_id = '"+ questionId +"' AND R.gender = '" + gender + "' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN "+ birthStart + " AND "+ birthEnd +" GROUP BY overall_sentiment ORDER BY overall_sentiment ASC;";
 
-  
+  // Query 4: Get overall sentiment time-series data:
+  query[4] = "SELECT timestamp as ds, AVG(overall_sentiment) as avgOs FROM `cits-3200.analytics.responses_dev` R WHERE R.employment_status = '"+ employStatus +"' AND R.abn_hash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1' AND R.question_id = '"+ questionId +"'  AND R.gender = '" + gender + "' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN "+ birthStart + " AND "+ birthEnd +"  Group BY ds order by ds;";  
+
+  // Query 5: Get list of entities for entity search function
+  query[5] = "SELECT DISTINCT entity.name as ent FROM `cits-3200.analytics.responses_dev` R WHERE R.entity.name IS NOT NULL AND R.question_id = '" + questionId + "' AND R.gender = '" + gender + "' AND R.employment_status = '" + employStatus + "' AND R.timestamp BETWEEN '" + startDate + "' AND '" + endDate + "' AND R.year_of_birth BETWEEN " + birthStart + " AND " + birthEnd + " ORDER BY ent;";
+
+
   // Remove filters set to 'all' if applicable:
   /*var queries2 = "";
   // Query 0: Total response count:
@@ -129,14 +134,14 @@ module.exports.loadResults = function (req, res) {
   
     // NB using underscores to distinguish from variables of same name sent to pug file
   var num_responses;
-  
+  var time_series;
   var percent_completed = 0;
   var ave_char_count = 0;
   var max_char_count= 0;
   var national_ave;
   var organization_ave;
   var first_date;
-  
+  var entities;
   var score_freq_array = [];
 
  
@@ -159,7 +164,7 @@ module.exports.loadResults = function (req, res) {
         
       };
       
-      if(queryIndex == 1){
+      if(queryIndex == 5){
         console.log(sqlquery);
       }
       // Runs the query as a job
@@ -178,7 +183,7 @@ module.exports.loadResults = function (req, res) {
     
       const [rows] = await job.getQueryResults();
       console.log('Rows:');
-      console.log(rows);
+      
       if(queryIndex==0){
         num_responses = rows[0].totalResponse;
         console.log("response num is :" + rows[0].totalResponse);
@@ -199,21 +204,29 @@ module.exports.loadResults = function (req, res) {
       
         
       }
-      
-      else if (queryIndex ==3){
-        var s = rows;
-        for(var i =0;i<rows.length;i++){
-          
+      else if(queryIndex==3){
+        var index = 0;
+        var arrayIndex = 0;
+        var responses = rows;
+       for (i = -10; i < 11; i++) {
+        if (i != Math.round(responses[index].overall_sentiment*10)) {
+          score_freq_array[arrayIndex] = 0;
+          arrayIndex++;
+        } else {
+          score_freq_array[arrayIndex] = responses[index].frequency;
+
+          index++;
+          if (index == responses.length) {
+            index--;
+          }
+          arrayIndex++;
         }
-      }
-      
-      else if(queryIndex==4){
-        if(rows==[]){
-          organization_ave =0;
-        }else{
-        organization_ave = parseInt(rows[0].organizationAverage*10);
         }
-      }
+       }
+       else if(queryIndex == 4){
+        console.log(rows);
+       }
+      
       else if (queryIndex == 5){
         first_date =rows[0].first_Date.value;
         console.log(first_date);
