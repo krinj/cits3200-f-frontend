@@ -2,16 +2,14 @@ var dbConnection = require('./db-connection');
 
 // Load/update the histogram response details based on user interaction:
 module.exports.getResponse = function (req, res) {
+  
+ 
+  const projectid = 'cits-3200';
 
-  var connection = dbConnection.connectToDB();
-
-  connection.connect(function(err) {
-    if (err) throw err;
-    console.log("Connected to Response database!");
-  });
 
   // Filter variables, set to values sent to this controller from client:
-  var questionNum = req.body.questionNum;
+ // var questionNum = req.body.questionNum;
+  var questionId = 'all';
   var gender = req.body.gender;
   var ageRange = req.body.ageRange;
   var employStatus = req.body.employStatus;

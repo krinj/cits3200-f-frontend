@@ -282,8 +282,9 @@
         WeekAveY = [];
 
         var timeSeries = data.timeSeries;
+        console.log(timeSeries);
         for (i = 0; i < timeSeries.length; i++) {
-          timeSeriesX.push(timeSeries[i].ds.slice(0, 10));
+          timeSeriesX.push(timeSeries[i].ds.value.slice(0, 10));
           timeSeriesY.push(timeSeries[i].avgOs);
         }
         for (i = 0; i < timeSeries.length; i += 4) {
