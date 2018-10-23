@@ -65,10 +65,10 @@ module.exports.loadResults = function (req, res) {
   query[4] = "SELECT timestamp as ds, AVG(overall_sentiment) as avgOs FROM `cits-3200.analytics.responses_dev` R WHERE R.employment_status = '"+ employStatus +"' AND R.abn_hash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1' AND R.question_id = '"+ questionId +"'  AND R.gender = '" + gender + "' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN "+ birthStart + " AND "+ birthEnd +"  Group BY ds order by ds;";  
 
   // Query 5: Get list of entities for entity search function
-  query[5] = "SELECT entity as ent FROM `cits-3200.analytics.responses_dev` R WHERE R.abn_hash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1' AND R.question_id = '" + questionId + "' AND R.gender = '" + gender + "' AND R.employment_status = '" + employStatus + "' AND R.timestamp BETWEEN '" + startDate + "' AND '" + endDate + "' AND R.year_of_birth BETWEEN " + birthStart + " AND " + birthEnd + " ;";
+  query[5] = "SELECT DISTINCT LOWER(e.name) as ent FROM `cits-3200.analytics.responses_dev` R,UNNEST(entity) AS e WHERE R.abn_hash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1' AND R.question_id = '" + questionId + "' AND R.gender = '" + gender + "' AND R.employment_status = '" + employStatus + "' AND R.timestamp BETWEEN '" + startDate + "' AND '" + endDate + "' AND R.year_of_birth BETWEEN " + birthStart + " AND " + birthEnd + " ;";
 
 
- 
+  
   /* Query 8: Get list of entities for entity search function
   queries2 += "SELECT DISTINCT E.entity as ent FROM Submission S NATURAL JOIN Response R NATURAL JOIN Entity E WHERE E.entity IS NOT NULL AND question_num = " + questionNum + " AND S.gender = '" + gender + "' AND S.employment_status = '" + employStatus + "' AND S.date_submitted BETWEEN '" + startDate + "' AND '" + endDate + "' AND S.year_of_birth BETWEEN '" + birthStart + "' AND '" + birthEnd + "' ORDER BY E.entity;";*/
 
@@ -137,7 +137,9 @@ module.exports.loadResults = function (req, res) {
         useLegacySql: false, // Use standard SQL syntax for queries.
         
       };
-      
+      if(queryIndex==5){
+        console.log(sqlquery);
+      }
       // Runs the query as a job
       const [job] = await bigquery.createQueryJob(options);
       console.log(`Job ${job.id} started.`);
@@ -189,7 +191,7 @@ module.exports.loadResults = function (req, res) {
        }
       
       else if (queryIndex == 5){
-        entities = ['job','company','salary','food'];
+       entities = rows;
       }
     
       

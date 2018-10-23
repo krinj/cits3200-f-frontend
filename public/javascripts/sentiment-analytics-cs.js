@@ -296,7 +296,7 @@
         var entities = data.entityList;
         var html = "";
         for (i = 0; i < entities.length; i++) {
-          html += "<option value='" + entities[i] + "'>";
+          html += "<option value='" + entities[i].ent + "'>";
         }
         document.getElementById("fullEntityList").innerHTML = html;
 

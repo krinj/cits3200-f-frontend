@@ -6,7 +6,7 @@ module.exports.getResponse = function (req, res) {
  
   const projectid = 'cits-3200';
 
-
+  var connection = dbConnection.connectToDB();
   // Filter variables, set to values sent to this controller from client:
  // var questionNum = req.body.questionNum;
   var questionId = 'all';
@@ -16,7 +16,7 @@ module.exports.getResponse = function (req, res) {
   var startDate = req.body.startDate;
   var endDate = req.body.endDate;
   var score = req.body.score;
-  var response=[];
+  
   // Determine the start and end years of birth for different age ranges:
   var birthStart;
   var birthEnd;
@@ -50,7 +50,8 @@ module.exports.getResponse = function (req, res) {
   if(questionId == 'all'){
     query =query.replace(/AND R.question_id = 'all'/,'');
   }
-
+  var response=[];
+  var stop = false;
   asyncQuery(query,projectid);
   async function asyncQuery(sqlquery, projectid) {
     // Imports the Google Cloud client library
@@ -65,6 +66,7 @@ module.exports.getResponse = function (req, res) {
       useLegacySql: false, // Use standard SQL syntax for queries.
       
     };
+   
     // Runs the query as a job
     const [job] = await bigquery.createQueryJob(options);
     console.log(`Job ${job.id} started.`);
@@ -83,17 +85,21 @@ module.exports.getResponse = function (req, res) {
     
     for(var i = 0; i <rows.length;i++){
       if(Math.round(rows[i].overall_sentiment*10) == score){
+       
         response.push(rows[i]);
+      }
+      if(i==rows.length-1){
+        stop = true;
+        
       }
     }
   } 
     
   
-  console.log(response);
-     
+  
   var results;
   var interval = setInterval(function() {
-    if((response!=null) ){
+    if(response!=null && stop==true ){
       
      
       results = {
@@ -101,7 +107,7 @@ module.exports.getResponse = function (req, res) {
       }; 
       
       clearInterval(interval);
-      console.log("send back response " + results);
+      
       return res.send(results);
     }
   }, 1000);
