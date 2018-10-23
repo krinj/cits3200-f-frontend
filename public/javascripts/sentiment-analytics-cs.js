@@ -494,8 +494,6 @@
     var leftBotExclusionData = [];
     var rightTopExclusionData = [];
     var rightBotExclusionData = [];
-    console.log('WeekAveX.length: ' + WeekAveX.length);
-    console.log('Start Date: ' + StartDate.toISOString());
     for (i = 0; i < WeekAveX.length; i++) {
       var thisTime = new Date(WeekAveX[i]).getTime();  
       if (thisTime < StartDate.getTime()) {
