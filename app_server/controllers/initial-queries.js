@@ -30,7 +30,7 @@ module.exports.getResults = function (req, res) {
   var first_date;
   var last_date;
   var question_array = [];
-  console.log("quesition_array is " + question_array);
+ 
   var question_id = [];
 async function asyncQuery(sqlquery, projectid,queryIndex) {
       // Imports the Google Cloud client library
@@ -63,7 +63,7 @@ async function asyncQuery(sqlquery, projectid,queryIndex) {
       console.log('Job ${job.id} completed.')
     
       const [rows] = await job.getQueryResults();
-      console.log('Rows:');
+      
       
       if(queryIndex==0){
         first_date = rows[0].firstDate.value;

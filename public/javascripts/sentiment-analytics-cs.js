@@ -285,7 +285,7 @@
         console.log(timeSeries);
         for (i = 0; i < timeSeries.length; i++) {
           timeSeriesX.push(timeSeries[i].ds.value.slice(0, 10));
-          timeSeriesY.push(timeSeries[i].avgOs);
+          timeSeriesY.push(timeSeries[i].avgOs*10);
         }
         for (i = 0; i < timeSeries.length; i += 4) {
           WeekAveY.push(Math.round(((timeSeriesY[i] + timeSeriesY[i + 1] + timeSeriesY[i + 2] + timeSeriesY[i + 3]) / 4)*10)/10);
@@ -795,6 +795,7 @@
           dataType: 'JSON',
           success: function (data) {
             ResponseInfo = data.responseResult;
+            console.log("response info is : " + ResponseInfo);
             fillResponseDetails();
           },
           error: function (data) {
@@ -826,7 +827,7 @@
       document.getElementById('responseText').innerHTML = "Please click the chart bars.";
       return;
     }
-    var date = ResponseInfo[IndexOfResponse].submitDate.slice(0, 10);
+    var date = ResponseInfo[IndexOfResponse].submitDate.value.slice(0, 10);
     document.getElementById('responseDateSpan').innerHTML = date;
     document.getElementById('responseScoreSpan').innerHTML = ResponseScore;
     document.getElementById('responseText').innerHTML = "''" + ResponseInfo[IndexOfResponse].responseDetail + "''";

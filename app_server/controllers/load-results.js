@@ -209,8 +209,8 @@ module.exports.loadResults = function (req, res) {
           percentCompleted: percent_completed,
           aveCharCount: ave_char_count,
           maxCharCount: max_char_count,
-          orgAveSentiment: organization_ave,
-          nationalAveSentiment: national_ave,
+          orgAveSentiment: organization_ave*10,
+          nationalAveSentiment: national_ave*10,
           scoreFreqArray: score_freq_array,
           timeSeries: time_series,
           entityList: entities
