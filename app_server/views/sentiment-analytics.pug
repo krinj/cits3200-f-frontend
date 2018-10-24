@@ -8,16 +8,16 @@ block content
       #filterBody
         p#dateNote *Can use the time-series date range slider to control dates
         p.filterLine
+          label Survey
+          |:
+          select#surveyList(name='surveyList')
           label Question
           |:
           select#questionList(name='question')
         p.filterLine
           label Gender:
             select#gender(name="gender")
-              option(value='all') ALL
-              option(value='male') Male
-              option(value='female') Female
-              option(value='unspecified') Unspecified
+             
           label Age:
             select#ageRange(name="ageRange")
               option(value='all') ALL
@@ -30,11 +30,8 @@ block content
               option(value='age65plus') 65+  
           label Employment Status: 
             select#employStatus(name="employStatus")
-              option(value='all') ALL
-              option(value='permanent') Permanent
-              option(value='fixedTerm') Fixed Term
-              option(value='partTime') Part-Time
-              option(value='casual') Casual
+              
+              
           | &emsp;
           label Date Range
             | * &nbsp; 
@@ -100,17 +97,21 @@ block content
          #selected-response
             #centered-text
             p.centred
-              strong Response for overall score of 
+              strong 
               span#responseScoreSpan 
-            p.centred
-              text(style='font-size:12px;') Response: 
+            p
+              | &emsp;
+              | &emsp;
+              | &emsp;
               span#responseIndex
-              text(style='font-size:12px;') of  
               span#totalResponse  
+              | &emsp;
+              | &emsp;
+              | &emsp;
+              
+              span(style='font-size:14px;')#responseDateSpan 
             p#responseText
-            p.centred
-              text(style='font-size:12px;') Date 
-              span(style='font-size:12px;')#responseDateSpan 
+            
             
   .section#summary
     .centredBody
@@ -133,7 +134,7 @@ block content
   .section#EntityAnalytics
     .centredBody
       h2 KEYWORDS/ENTITIES IN RESPONSES
-
+          
       p.centred
         b Display Mode:
         label.displayMode#topFreqLabel

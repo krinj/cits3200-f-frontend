@@ -2,23 +2,21 @@ var dbConnection = require('./db-connection');
 
 // Load/update the histogram response details based on user interaction:
 module.exports.getResponse = function (req, res) {
+  
+ 
+  const projectid = 'cits-3200';
 
   var connection = dbConnection.connectToDB();
-
-  connection.connect(function(err) {
-    if (err) throw err;
-    console.log("Connected to Response database!");
-  });
-
   // Filter variables, set to values sent to this controller from client:
-  var questionNum = req.body.questionNum;
+  var orgABNhash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1';
+  var questionId = req.body.questionNum;
   var gender = req.body.gender;
   var ageRange = req.body.ageRange;
   var employStatus = req.body.employStatus;
   var startDate = req.body.startDate;
   var endDate = req.body.endDate;
   var score = req.body.score;
-
+  
   // Determine the start and end years of birth for different age ranges:
   var birthStart;
   var birthEnd;
@@ -40,28 +38,79 @@ module.exports.getResponse = function (req, res) {
   }
 
   var query = "";
-  query += "SELECT response AS responseDetail, date_submitted AS submitDate from Response R NATURAL JOIN Submission S WHERE R.overall_sentiment = '" + score + "' AND S.employment_status = '" + employStatus + "' AND R.question_num = '" + questionNum + "' AND R.survey_id = 1 AND S.gender = '" + gender + "' AND S.date_submitted BETWEEN '" + startDate + "' AND '" + endDate + "' AND S.year_of_birth BETWEEN '" + birthStart + "' AND '"+ birthEnd + "' ;";
+  query += "SELECT response AS responseDetail, timestamp AS submitDate,overall_sentiment from `cits-3200.analytics.responses_dev` R WHERE  R.employment_status = '" + employStatus + "' AND R.abn_hash = '"+ orgABNhash + "' AND R.question_id = '" + questionId + "' AND R.gender = '" + gender + "' AND R.timestamp BETWEEN '" + startDate + "' AND '" + endDate + "' AND R.year_of_birth BETWEEN " + birthStart + " AND "+ birthEnd + " ;";
 
   if (gender == 'all') {
-    query = query.replace(/S.gender = 'all' AND/g, '');
+    query = query.replace(/R.gender = 'all' AND/g, '');
   }
 
   if (employStatus == 'all') {
-    query = query.replace(/S.employment_status = 'all' AND/g, '');
+    query = query.replace(/R.employment_status = 'all' AND/g, '');
   }
-
-  connection.query(query, function (err, rows, fields) {
-    if (err) throw err;
-
-    var result = rows;
-
-    var results = {
-      responseResult: result
+  if(questionId == 'all'){
+    query =query.replace(/AND R.question_id = 'all'/,'');
+  }
+  var response=[];
+  var stop = false;
+  asyncQuery(query,projectid);
+  async function asyncQuery(sqlquery, projectid) {
+    // Imports the Google Cloud client library
+    const BigQuery = require('@google-cloud/bigquery');
+    const bigquery = new BigQuery({
+      projectId: projectid,
+    });  
+    projectId = projectid;
+      sqlQuery = sqlquery;
+    const options = {
+      query: sqlQuery,
+      useLegacySql: false, // Use standard SQL syntax for queries.
+      
     };
-
-    connection.end();
-
-    return res.send(results);
-  });
-
+    console.log(sqlquery);
+    // Runs the query as a job
+    const [job] = await bigquery.createQueryJob(options);
+    console.log(`Job ${job.id} started.`);
+  
+    // Get the job's status
+    const metadata = await job.getMetadata();
+  
+    // Check the job's status for errors
+    const errors = metadata[0].status.errors;
+    if (errors && errors.length > 0) {
+      throw errors;
+    }
+    console.log('Job ${job.id} completed.')
+   
+    const [rows] = await job.getQueryResults();
+    if(rows.length==0){
+      return;
+    }
+    for(var i = 0; i <rows.length;i++){
+      if(Math.round(rows[i].overall_sentiment*10) == score){
+       
+        response.push(rows[i]);
+      }
+      if(i==rows.length-1){
+        stop = true;
+        
+      }
+    }
+  } 
+    
+  
+  
+  var results;
+  var interval = setInterval(function() {
+    if(response!=null && stop==true ){
+      
+     
+      results = {
+        responseResult : response
+      }; 
+      
+      clearInterval(interval);
+      
+      return res.send(results);
+    }
+  }, 1000);
 };

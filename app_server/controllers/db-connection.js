@@ -8,7 +8,7 @@ functions.connectToDB = function() {
    * 2 : Local Node.js --> Google Cloud SQL
    * 3 : Local Node.js --> Local MySQL
    */
-  var CONNECTION_MODE = 1;
+  var CONNECTION_MODE = 4;
 
   var connection; // MySQL Connection object
 
@@ -33,14 +33,16 @@ functions.connectToDB = function() {
       multipleStatements: true
     });
   }
-  else {
+  else if (CONNECTION_MODE == 3) {
     connection = mysql.createConnection({
       host     : 'localhost',
       user     : 'root',
-      password : 'cits1402',   
+      password : 'Cyr331705',   
       database : 'survey_data',
       multipleStatements: true
     });
+  }else{
+    console.log("connecting bigquery....");
   }
 
   return connection;
