@@ -20,8 +20,11 @@
   var FirstDate;
   var LastDate;
   var QuestionArray = [];
-  var SurveyName;
-
+  var SurveyArray = [];
+  var SurveyId = [];
+  var QuestionId = [];
+  var EmployStatusArray = [];
+  var GenderArray = [];
   // Filter variables:
   var QuestionNum;
   var Gender;
@@ -69,13 +72,13 @@
   window.onload = function() {
 
     // Set initial filter values:
-    QuestionNum = 1;
+    
     Gender = 'all';
     AgeRange = 'all';
     EmployStatus = 'all';
 
     // Initialise the elements in the DOM accordingly:
-    document.getElementById("questionList").value = QuestionNum;
+    
     document.getElementById("gender").value = Gender;
     document.getElementById("ageRange").value = AgeRange;
     document.getElementById("employStatus").value = EmployStatus;
@@ -173,7 +176,12 @@
         StartDate = FirstDate;
         EndDate = LastDate;
         QuestionArray = data.questionArray;
-
+        QuestionId = data.questionId;
+        SurveyArray = data.surveyArray;
+        SurveyId = data.surveyId;
+        EmployStatusArray = data.employmentStatus;
+        GenderArray = data.genderArray;
+        QuestionNum = QuestionId[0];
         fillQuestionsList();
         setOverallDates();
         renderDateSlider();
@@ -190,9 +198,24 @@
   function fillQuestionsList() {
     var html = "";
     for(var i = 0; i < QuestionArray.length; i++) {
-      html += "<option value='" + (i+1) + "'>" + QuestionArray[i] + "</option>";
+      html += "<option value='" + QuestionId[i] + "'>" + QuestionArray[i] + "</option>";
     }
-    document.getElementById("questionList").innerHTML = html;    
+    document.getElementById("questionList").innerHTML = html; 
+    var html2 = "";
+    for(var i = 0 ;i< SurveyArray.length;i++){
+      html2 += "<option value = '" + SurveyId[i] +"'>" + SurveyArray[i] + "</option>";
+    }   
+    document.getElementById("surveyList").innerHTML = html2;
+    var html3 = "<option value = 'all'>" + 'ALL' + "</option>";
+    for(var i = 0;i<EmployStatusArray.length;i++){
+      html3 += "<option value = '" + EmployStatusArray[i]+"'>" + EmployStatusArray[i] + "</option>" ;
+    }
+    document.getElementById("employStatus").innerHTML = html3;
+    var html4 = "<option value = 'all'>" + 'ALL' + "</option>";
+    for(var i = 0;i<GenderArray.length;i++){
+      html4 += "<option value = '" + GenderArray[i]+"'>" + GenderArray[i] + "</option>" ;
+    }
+    document.getElementById("gender").innerHTML = html4;
   }
 
   // Set full survey history date range limits 
@@ -745,7 +768,7 @@
           yAxes: [{
             scaleLabel: {
               display: true,
-              labelString: "Frequency"
+              labelString: "Response Frequency"
             },
             ticks : {
               beginAtZero : true
@@ -754,7 +777,7 @@
           xAxes: [{
             scaleLabel: {
               display: true,
-              labelString: "Overall Sentiment Score"
+              labelString: "Sentiment Score"
             },
             barPercentage: 0.9,
             categoryPercentage: 1.0
@@ -762,7 +785,8 @@
         },
         tooltips: {
           enabled: false,
-          borderColor: 'red',
+          
+          
         }
       }
     });
@@ -777,8 +801,6 @@
       if (ResponseScore != previousClickedBar) {
         IndexOfResponse = 0;
         previousClickedBar = ResponseScore;
-        //histogramChart.data.datasets[0].backgroundColor = 'red';
-        //histogramChart.data.labels.xData = ResponseScore+10;
         $.ajax({
           url: "/response-details",
           // i.e. [Nodejs app]/app_server/controllers/response-details.js
@@ -795,7 +817,6 @@
           dataType: 'JSON',
           success: function (data) {
             ResponseInfo = data.responseResult;
-            console.log("response info is : " + ResponseInfo);
             fillResponseDetails();
           },
           error: function (data) {
@@ -814,7 +835,6 @@
     //next.onclick = function () {
     
     if (IndexOfResponse == ResponseInfo.length - 1) {
-      alert("This is already the last response.");
       return;
     }
     IndexOfResponse++;
@@ -822,19 +842,21 @@
   }
 
   function fillResponseDetails() {
-
-    if (CheckFlag == false) {
-      document.getElementById('responseText').innerHTML = "Please click the chart bars.";
+    if(CheckFlag == false){
+      document.getElementById('responseScoreSpan').innerHTML = "Please click the chart bar";
       return;
     }
+    
     var date = ResponseInfo[IndexOfResponse].submitDate.value.slice(0, 10);
-    document.getElementById('responseDateSpan').innerHTML = date;
-    document.getElementById('responseScoreSpan').innerHTML = ResponseScore;
+    document.getElementById('responseDateSpan').innerHTML = "Date: " + date;
+    document.getElementById('responseScoreSpan').innerHTML = "Response for overall score of " + ResponseScore;
     document.getElementById('responseText').innerHTML = "''" + ResponseInfo[IndexOfResponse].responseDetail + "''";
     var responseIndex = IndexOfResponse + 1;
-    document.getElementById('responseIndex').innerHTML = responseIndex + ' '; //+ ResponseInfo.length;
-    document.getElementById('responseIndex').style = 'font-weight:bold; font-size:17px;';
-    document.getElementById('totalResponse').innerHTML = ResponseInfo.length;
+    document.getElementById('responseIndex').innerHTML = "Response " + responseIndex + ' '; //+ ResponseInfo.length;
+    document.getElementById('responseIndex').style = 'font-size:14px;';
+    document.getElementById('totalResponse').innerHTML = "Of " + ResponseInfo.length;
+    document.getElementById('totalResponse').style = 'font-size:14px;';
+    
   }
   
   function fillSummaryTable() {

@@ -8,8 +8,8 @@ module.exports.getResponse = function (req, res) {
 
   var connection = dbConnection.connectToDB();
   // Filter variables, set to values sent to this controller from client:
- // var questionNum = req.body.questionNum;
-  var questionId = 'all';
+  var orgABNhash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1';
+  var questionId = req.body.questionNum;
   var gender = req.body.gender;
   var ageRange = req.body.ageRange;
   var employStatus = req.body.employStatus;
@@ -38,7 +38,7 @@ module.exports.getResponse = function (req, res) {
   }
 
   var query = "";
-  query += "SELECT response AS responseDetail, timestamp AS submitDate,overall_sentiment from `cits-3200.analytics.responses_dev` R WHERE  R.employment_status = '" + employStatus + "' AND R.abn_hash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1' AND R.question_id = '" + questionId + "' AND R.gender = '" + gender + "' AND R.timestamp BETWEEN '" + startDate + "' AND '" + endDate + "' AND R.year_of_birth BETWEEN " + birthStart + " AND "+ birthEnd + " ;";
+  query += "SELECT response AS responseDetail, timestamp AS submitDate,overall_sentiment from `cits-3200.analytics.responses_dev` R WHERE  R.employment_status = '" + employStatus + "' AND R.abn_hash = '"+ orgABNhash + "' AND R.question_id = '" + questionId + "' AND R.gender = '" + gender + "' AND R.timestamp BETWEEN '" + startDate + "' AND '" + endDate + "' AND R.year_of_birth BETWEEN " + birthStart + " AND "+ birthEnd + " ;";
 
   if (gender == 'all') {
     query = query.replace(/R.gender = 'all' AND/g, '');
@@ -66,7 +66,7 @@ module.exports.getResponse = function (req, res) {
       useLegacySql: false, // Use standard SQL syntax for queries.
       
     };
-   
+    console.log(sqlquery);
     // Runs the query as a job
     const [job] = await bigquery.createQueryJob(options);
     console.log(`Job ${job.id} started.`);
@@ -82,7 +82,9 @@ module.exports.getResponse = function (req, res) {
     console.log('Job ${job.id} completed.')
    
     const [rows] = await job.getQueryResults();
-    
+    if(rows.length==0){
+      return;
+    }
     for(var i = 0; i <rows.length;i++){
       if(Math.round(rows[i].overall_sentiment*10) == score){
        

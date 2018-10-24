@@ -3,26 +3,34 @@ var dbConnection = require('./db-connection');
 // LOAD/UPDATE THE PAGE WITH FILTERS SPECIFIED:
 module.exports.getResults = function (req, res) {
 
-  var connection = dbConnection.connectToDB();
+  
   const projectid = 'cits-3200';
   
 
-  var orgABN = req.body.orgABN; // organisation ABN
+  var orgABNhash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1'; // organisation ABN
 
   var query = [];
 
   //TODO: *** Convert to BigQuery queries and add filter on orgABN ***
 
   // Query 0: First date of responses for the survey
-  query[0] =  "SELECT timestamp As firstDate from `cits-3200.analytics.responses_dev` R WHERE R.abn_hash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1' ORDER BY firstDate ASC LIMIT 1;";
+  query[0] =  "SELECT timestamp As firstDate from `cits-3200.analytics.responses_dev` R WHERE R.abn_hash = '"+ orgABNhash + "' ORDER BY firstDate ASC LIMIT 1;";
 
   // Query 1: Last date of responses for the survey
-  query[1] = "SELECT timestamp AS lastDate FROM `cits-3200.analytics.responses_dev` R WHERE R.abn_hash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1' ORDER BY lastDate DESC LIMIT 1;";
+  query[1] = "SELECT timestamp AS lastDate FROM `cits-3200.analytics.responses_dev` R WHERE R.abn_hash = '"+ orgABNhash + "' ORDER BY lastDate DESC LIMIT 1;";
 
   // Query 2: List of Questions for the Survey
-  query[2] = "SELECT distinct question_name,question_id FROM `cits-3200.analytics.responses_dev` R WHERE R.abn_hash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1' ;";
+  query[2] = "SELECT distinct question_name,question_id FROM `cits-3200.analytics.responses_dev` R WHERE R.abn_hash = '"+ orgABNhash + "' ;";
   
-  
+  //Query 3: List of Surveys for the organization
+  query[3] = "SELECT distinct survey_name,survey_id FROM `cits-3200.analytics.responses_dev` R WHERE R.abn_hash = '"+ orgABNhash + "' ;"
+
+  //Query 4: List of employment_status
+  query[4] = "SELECT distinct employment_status FROM `cits-3200.analytics.responses_dev` R WHERE R.abn_hash = '"+ orgABNhash + "' ;"
+
+  //Query 5: List of gender
+
+  query[5] = "SELECT distinct gender FROM `cits-3200.analytics.responses_dev` R WHERE R.abn_hash = '"+ orgABNhash + "' ;"
     for(var i = 0 ;i<query.length;i++){
       asyncQuery(query[i],projectid,i);
     }
@@ -30,8 +38,11 @@ module.exports.getResults = function (req, res) {
   var first_date;
   var last_date;
   var question_array = [];
- 
   var question_id = [];
+  var survey_id = [];
+  var survey_array = [];
+  var employment_status =[];
+  var gender_array = [];
 async function asyncQuery(sqlquery, projectid,queryIndex) {
       // Imports the Google Cloud client library
       const BigQuery = require('@google-cloud/bigquery');
@@ -66,14 +77,23 @@ async function asyncQuery(sqlquery, projectid,queryIndex) {
       
       
       if(queryIndex==0){
+        if(rows.length==0){
+          return;
+        }
         first_date = rows[0].firstDate.value;
        
       }
       else if(queryIndex ==1){
+        if(rows.length==0){
+          return;
+        }
         last_date = rows[0].lastDate.value;
        
       }
       else if(queryIndex==2){
+        if(rows.length==0){
+          return;
+        }
         for(var i = 0;i<rows.length;i++){
           question_array.push(rows[i].question_name);
           question_id.push(rows[i].question_id);
@@ -81,17 +101,38 @@ async function asyncQuery(sqlquery, projectid,queryIndex) {
        
         
       }
-
+      else if(queryIndex ==3){
+        
+        for(var i = 0;i<rows.length;i++){
+        survey_array.push(rows[i].survey_name);
+        survey_id.push(rows[i].survey_id);
+        }
+      }
+      else if(queryIndex==4){
+        for(var i =0;i<rows.length;i++){
+          employment_status.push(rows[i].employment_status);
+        }
+      }
+      else if(queryIndex ==5){
+        for(var i =0;i<rows.length;i++){
+          gender_array.push(rows[i].gender);
+        }
+      }
     }
     var results;
     var interval = setInterval(function() {
-      if((question_array != null && first_date && last_date) ){
+      if((question_array != null && first_date && last_date &&survey_array!=null && survey_id!=null && employment_status!=null&& gender_array!=null)){
         
-       
+        
         results = {
           firstDate: first_date,
           lastDate: last_date,
           questionArray: question_array,
+          questionId : question_id,
+          surveyArray: survey_array,
+          surveyId : survey_id,
+          employmentStatus: employment_status,
+          genderArray:gender_array
         }; 
         
         clearInterval(interval);

@@ -8,7 +8,8 @@ module.exports.loadResults = function (req, res) {
   const projectid = 'cits-3200';
   // Filter variables, set to values sent to this controller from client:
   //var questionNum = req.body.questionValue;
-  var questionId = 'all';
+  var orgABNhash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1';
+  var questionId = req.body.questionNum;
   var gender = req.body.gender;
   
   var ageRange = req.body.ageRange;
@@ -46,48 +47,26 @@ module.exports.loadResults = function (req, res) {
   
 
   // Query 2: select all the responses
-  query[0]= "SELECT count(*) as totalResponse FROM `cits-3200.analytics.responses_dev` R  WHERE R.employment_status = '" + employStatus + "' AND R.abn_hash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1' AND R.question_id = '"+ questionId +"' AND R.gender = '" + gender + "' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN "+ birthStart + " AND "+ birthEnd +"; ";
+  query[0]= "SELECT count(*) as totalResponse FROM `cits-3200.analytics.responses_dev` R  WHERE R.employment_status = '" + employStatus + "' AND R.abn_hash = '"+ orgABNhash + "' AND R.question_id = '"+ questionId +"' AND R.gender = '" + gender + "' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN "+ birthStart + " AND "+ birthEnd +"; ";
   
 
   // Query 3: National average overall sentiment score for the question
   query[1]= "SELECT AVG(overall_sentiment) AS nationalAverage FROM `cits-3200.analytics.responses_dev` R  WHERE R.employment_status = '"+ employStatus +"' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.question_id = '"+ questionId +"' AND R.gender = '" + gender + "' AND R.year_of_birth BETWEEN "+ birthStart + " AND "+ birthEnd +" ;";
 
   // Query 4: Organisation's average overall sentiment score for the question
-  query[2]= "SELECT AVG(overall_sentiment) AS organizationAverage FROM `cits-3200.analytics.responses_dev` R WHERE R.employment_status = '"+ employStatus +"' AND R.abn_hash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1' AND R.question_id = '"+ questionId +"' AND R.gender = '" + gender + "' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN "+ birthStart + " AND "+ birthEnd +" ;";
+  query[2]= "SELECT AVG(overall_sentiment) AS organizationAverage FROM `cits-3200.analytics.responses_dev` R WHERE R.employment_status = '"+ employStatus +"' AND R.abn_hash = '"+ orgABNhash + "' AND R.question_id = '"+ questionId +"' AND R.gender = '" + gender + "' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN "+ birthStart + " AND "+ birthEnd +" ;";
 
   
 
   
   // Query 6: Frequency count array of sentiment scores -10 to 10 (for Histogram by Score)
-  query[3] = "SELECT overall_sentiment, count(*) as frequency FROM `cits-3200.analytics.responses_dev` R  WHERE R.employment_status = '"+ employStatus +"' AND R.abn_hash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1' AND R.question_id = '"+ questionId +"' AND R.gender = '" + gender + "' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN "+ birthStart + " AND "+ birthEnd +" GROUP BY overall_sentiment ORDER BY overall_sentiment ASC;";
+  query[3] = "SELECT overall_sentiment, count(*) as frequency FROM `cits-3200.analytics.responses_dev` R  WHERE R.employment_status = '"+ employStatus +"' AND R.abn_hash = '"+ orgABNhash + "' AND R.question_id = '"+ questionId +"' AND R.gender = '" + gender + "' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN "+ birthStart + " AND "+ birthEnd +" GROUP BY overall_sentiment ORDER BY overall_sentiment ASC;";
 
   // Query 4: Get overall sentiment time-series data:
-  query[4] = "SELECT timestamp as ds, AVG(overall_sentiment) as avgOs FROM `cits-3200.analytics.responses_dev` R WHERE R.employment_status = '"+ employStatus +"' AND R.abn_hash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1' AND R.question_id = '"+ questionId +"'  AND R.gender = '" + gender + "' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN "+ birthStart + " AND "+ birthEnd +"  Group BY ds order by ds;";  
+  query[4] = "SELECT timestamp as ds, AVG(overall_sentiment) as avgOs FROM `cits-3200.analytics.responses_dev` R WHERE R.employment_status = '"+ employStatus +"' AND R.abn_hash = '"+ orgABNhash + "' AND R.question_id = '"+ questionId +"'  AND R.gender = '" + gender + "' AND R.year_of_birth BETWEEN "+ birthStart + " AND "+ birthEnd +"  Group BY ds order by ds;";  
 
   // Query 5: Get list of entities for entity search function
-  query[5] = "SELECT DISTINCT LOWER(e.name) as ent FROM `cits-3200.analytics.responses_dev` R,UNNEST(entity) AS e WHERE R.abn_hash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1' AND R.question_id = '" + questionId + "' AND R.gender = '" + gender + "' AND R.employment_status = '" + employStatus + "' AND R.timestamp BETWEEN '" + startDate + "' AND '" + endDate + "' AND R.year_of_birth BETWEEN " + birthStart + " AND " + birthEnd + " ;";
-
-
-  
-  /* Query 8: Get list of entities for entity search function
-  queries2 += "SELECT DISTINCT E.entity as ent FROM Submission S NATURAL JOIN Response R NATURAL JOIN Entity E WHERE E.entity IS NOT NULL AND question_num = " + questionNum + " AND S.gender = '" + gender + "' AND S.employment_status = '" + employStatus + "' AND S.date_submitted BETWEEN '" + startDate + "' AND '" + endDate + "' AND S.year_of_birth BETWEEN '" + birthStart + "' AND '" + birthEnd + "' ORDER BY E.entity;";*/
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  query[5] = "SELECT DISTINCT LOWER(e.name) as ent FROM `cits-3200.analytics.responses_dev` R,UNNEST(entity) AS e WHERE R.abn_hash = '"+ orgABNhash + "' AND R.question_id = '" + questionId + "' AND R.gender = '" + gender + "' AND R.employment_status = '" + employStatus + "' AND R.timestamp BETWEEN '" + startDate + "' AND '" + endDate + "' AND R.year_of_birth BETWEEN " + birthStart + " AND " + birthEnd + " ;";
 
   var queryCopy = [];
   for (var i= 0;i<query.length;i++){
@@ -137,9 +116,7 @@ module.exports.loadResults = function (req, res) {
         useLegacySql: false, // Use standard SQL syntax for queries.
         
       };
-      if(queryIndex==5){
-        console.log(sqlquery);
-      }
+      
       // Runs the query as a job
       const [job] = await bigquery.createQueryJob(options);
       console.log(`Job ${job.id} started.`);
@@ -157,21 +134,40 @@ module.exports.loadResults = function (req, res) {
       const [rows] = await job.getQueryResults();
       
       if(queryIndex==0){
+        if(rows.length==0){
+          num_responses =0;
+          return;
+        }
         num_responses = rows[0].totalResponse;
       }
 
       else if (queryIndex ==1){
-       
+        if(rows.length==0){
+          national_ave = 0;
+          return;
+        }
         national_ave = rows[0].nationalAverage;
       }
       else if(queryIndex ==2){
+        if(rows.length==0){
+          organization_ave = 0;
+          return;
+        }
         organization_ave = rows[0].organizationAverage;
       }
       else if(queryIndex==3){
+        if(rows.length==0){
+          for (var i = -10; i < 11; i++) {
+            score_freq_array[i] = 0;
+          }
+          return;
+        }
         var index = 0;
         var arrayIndex = 0;
         var responses = rows;
-       for (i = -10; i < 11; i++) {
+       
+        
+       for (var i = -10; i < 11; i++) {
         if (i != Math.round(responses[index].overall_sentiment*10)) {
           score_freq_array[arrayIndex] = 0;
           arrayIndex++;
@@ -187,10 +183,16 @@ module.exports.loadResults = function (req, res) {
         }
        }
        else if(queryIndex == 4){
+        if(rows.length==0){
+          return;
+        }
         time_series = rows;
        }
       
       else if (queryIndex == 5){
+        if(rows.length==0){
+          return;
+        }
        entities = rows;
       }
     
@@ -202,8 +204,8 @@ module.exports.loadResults = function (req, res) {
     max_char_count = 100;
     var results;
     var interval = setInterval(function() {
-      if((num_responses && percent_completed && ave_char_count&&max_char_count&& organization_ave && national_ave && score_freq_array && time_series && entities) ){
-        
+      if((num_responses && organization_ave && national_ave && score_freq_array && time_series && entities) ){
+          
           
           results = {
           numResponses: num_responses, 
