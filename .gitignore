@@ -10,5 +10,3 @@ node_modules/
 \.env
 .gitignore
 .DS_Store
-cits3200.json
-setup_ev.sh

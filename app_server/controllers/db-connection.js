@@ -41,7 +41,7 @@ functions.connectToDB = function() {
       database : 'survey_data',
       multipleStatements: true
     });
-  }else{
+  } else {
     console.log("connecting bigquery....");
   }
 
