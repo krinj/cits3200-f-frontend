@@ -19,13 +19,16 @@
   
   var FirstDate;
   var LastDate;
+
+  // Filter option sets:
   var QuestionArray = [];
   var SurveyArray = [];
   var SurveyId = [];
   var QuestionId = [];
   var EmployStatusArray = [];
   var GenderArray = [];
-  // Filter variables:
+
+  // Active filter variables:
   var QuestionNum;
   var Gender;
   var AgeRange;
@@ -118,11 +121,6 @@
       // Don't need to re-fetch data, only re-render it based on new date range  
       loadResults(); 
     });
-
-    // Event Listener for Fetch Results button:
-    // document.getElementById('fetchResults').addEventListener('click', function () {
-    //   loadResults();
-    // });
 
     // When resetting filters, reset start date and end date to overall range start and range end:
     document.getElementById('resetFilters').addEventListener('click', function() {

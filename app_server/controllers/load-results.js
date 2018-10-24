@@ -1,25 +1,20 @@
-var dbConnection = require('./db-connection');
 
 // LOAD/UPDATE THE PAGE WITH FILTERS SPECIFIED:
 module.exports.loadResults = function (req, res) {
   
-  var connection = dbConnection.connectToDB();
-  console.log("getting in the load-reslut");
+  console.log("Starting the the load-result controller");
   const projectid = 'cits-3200';
+  
   // Filter variables, set to values sent to this controller from client:
-  //var questionNum = req.body.questionValue;
   var orgABNhash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1';
+  // var orgABNhash = req.body.orgABNhash; // *** TO IMPLEMENT 
+  // var surveyID = req.body.surveyID; // *** TO IMPLEMENT 
   var questionId = req.body.questionNum;
-  var gender = req.body.gender;
-  
-  var ageRange = req.body.ageRange;
- 
+  var gender = req.body.gender;  
+  var ageRange = req.body.ageRange; 
   var employStatus = req.body.employStatus;
-  
-  var startDate = req.body.startDate;
- 
-  var endDate = req.body.endDate;
-  
+  var startDate = req.body.startDate; 
+  var endDate = req.body.endDate;  
 
   // Determine the start and end years of birth for different age ranges:
   var birthStart;
@@ -74,8 +69,6 @@ module.exports.loadResults = function (req, res) {
       queryCopy[i] = queryCopy[i].replace(/AND R.question_id = 'all'/, '');
     }
   }
-
-  // Run the SQL queries:
   
   // NB using underscores to distinguish from variables of same name sent to pug file
   var num_responses;
@@ -85,9 +78,10 @@ module.exports.loadResults = function (req, res) {
   var max_char_count;
   var national_ave;
   var organization_ave;
-  var entities;
+  var entities; 
   var score_freq_array = [];
-
+  
+  // Run the SQL queries:
   for (var i = 0; i < queryCopy.length; i++) {
     asyncQuery(queryCopy[i], projectid, i);
   }
@@ -103,12 +97,11 @@ module.exports.loadResults = function (req, res) {
     const options = {
       query: sqlQuery,
       useLegacySql: false, // Use standard SQL syntax for queries.
-
     };
 
     // Runs the query as a job
     const [job] = await bigquery.createQueryJob(options);
-    console.log(`Job ${job.id} started.`);
+    console.log("Job ${job.id} started.");
 
     // Get the job's status
     const metadata = await job.getMetadata();
@@ -155,7 +148,6 @@ module.exports.loadResults = function (req, res) {
       var arrayIndex = 0;
       var responses = rows;
 
-
       for (var i = -10; i < 11; i++) {
         if (i != Math.round(responses[index].overall_sentiment * 10)) {
           score_freq_array[arrayIndex] = 0;
@@ -193,10 +185,8 @@ module.exports.loadResults = function (req, res) {
   var interval = setInterval(function () {
     if ((num_responses && organization_ave && national_ave && score_freq_array && time_series && entities)) {
 
-
       results = {
         numResponses: num_responses,
-
         percentCompleted: percent_completed,
         aveCharCount: ave_char_count,
         maxCharCount: max_char_count,
