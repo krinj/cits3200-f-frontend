@@ -247,11 +247,14 @@ canvas#dialCanvas {
 #histogramContainer {
   display: flex; /* or inline-flex */
   min-height: 400px;
+  
 }
 
 #histogramContainer #left {
   width: 64%;
   left: 0;
+  background-color: white;
+  
   float: left;
 }
 
@@ -271,7 +274,9 @@ canvas#dialCanvas {
 #histogramContainer #centered-text {
   text-align: center;  
 }
-
+#histogramSection{
+  background-color: #EEEBEB;
+}
 td.alignRight {
   text-align: right;
 }

@@ -87,9 +87,10 @@ block content
           h3 How Your Sentiment Compares
           #compareAveSentContainer
           p.centred [Explanatory text about this chart]
-
-      h3 Histogram of Response Sentiment Scores for Result Period
-      p Frequency describes  amount of responses which have a particular overall sentiment score. If the column for 0 has a frequency of 0.4, then there were 40 responses for the question that had an overall sentiment for the response of 0.
+  #histogramSection
+      h3(style = "font-size: 20px") Sentiment Distribution
+      p This histogram represents the distribution of all responses over their respective sentiment score. The higher the bar, the more responses with that particular affective magnitude. Click on the bars to explore the responses in verbatim.
+  
       #histogramContainer
         #left
           #histogramByScoreContainer
