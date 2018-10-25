@@ -5,8 +5,8 @@ module.exports.getResults = function (req, res) {
 
   const projectid = 'cits-3200';  
 
-  var orgABNhash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1'; // hash of organisation ABN
-  // var orgABNhash = req.body.orgABNhash; // *** TO IMPLEMENT 
+  // var orgABNhash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1'; 
+  var orgABNhash = req.body.orgABNhash; // hash of organisation ABN 
   // var surveyID = req.body.surveyID; // *** TO IMPLEMENT 
 
   var queries = [];

@@ -132,22 +132,10 @@ img#LFPlogo {
   display: flex;
 }
 
-#filterHeading {
-  margin: 0px;
-  padding: 5px 0px 0px 0px;
-  width: 100px;
-}
-
-#filterHeading h2 {
-  margin: 0px;
-  text-align: left;
-  line-height: 30px;
-}
-
 #filterBody {
   margin: 0px;
   padding: 5px 0px 0px 0px;
-  width: 950px;
+  width: 1050px;
 }
 
 #filterBody select, #filterBody input {

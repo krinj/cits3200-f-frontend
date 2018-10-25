@@ -6,8 +6,8 @@ module.exports.loadResults = function (req, res) {
   const projectid = 'cits-3200';
   
   // Filter variables, set to values sent to this controller from client:
-  var orgABNhash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1';
-  // var orgABNhash = req.body.orgABNhash; // *** TO IMPLEMENT 
+  // var orgABNhash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1';
+  var orgABNhash = req.body.orgABNhash; 
   // var surveyID = req.body.surveyID; // *** TO IMPLEMENT 
   var questionId = req.body.questionNum;
   var gender = req.body.gender;  

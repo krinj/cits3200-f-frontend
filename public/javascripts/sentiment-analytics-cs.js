@@ -15,7 +15,7 @@
   var NUM_ENTITIES = 30; // (Max) number of entities to display in Entity Table & Diagram
 
   // *** TODO: Server should POST the logged in user's organisation name ***
-  var Organisation = "Honeywell"; 
+  var OrgABNhash; 
   
   var FirstDate;
   var LastDate;
@@ -74,17 +74,8 @@
 
   window.onload = function() {
 
-    // Set initial filter values:
-    
-    Gender = 'all';
-    AgeRange = 'all';
-    EmployStatus = 'all';
-
-    // Initialise the elements in the DOM accordingly:
-    
-    document.getElementById("gender").value = Gender;
-    document.getElementById("ageRange").value = AgeRange;
-    document.getElementById("employStatus").value = EmployStatus;
+    // Get logged in user's organisation's ABN hash
+    OrgABNhash = document.getElementById("orgABNhash").innerText;
 
     runInitialQueries();
 
@@ -169,57 +160,70 @@
       url: "/initial-queries",   
       // i.e. [Nodejs app]/app_server/controllers/initial-queries.js
       data: { // data to send to controller
-        // "orgABN" : OrganisatioABN,
+        "orgABNhash" : OrgABNhash,
       },
       method: "POST",
       dataType: 'JSON',
       success: function (data) { // data is the JSON object returned from SQL via controller
 
+        SurveyArray = data.surveyArray;
+        SurveyId = data.surveyId;
+        QuestionArray = data.questionArray;
+        QuestionId = data.questionId;
+        QuestionNum = QuestionId[0];
+        GenderArray = data.genderArray;
+        EmployStatusArray = data.employmentStatus;
         FirstDate = new Date(data.firstDate.slice(0,10));
         LastDate = new Date(data.lastDate.slice(0,10));
         StartDate = FirstDate;
         EndDate = LastDate;
-        QuestionArray = data.questionArray;
-        QuestionId = data.questionId;
-        SurveyArray = data.surveyArray;
-        SurveyId = data.surveyId;
-        EmployStatusArray = data.employmentStatus;
-        GenderArray = data.genderArray;
-        QuestionNum = QuestionId[0];
-        fillQuestionsList();
+
+        fillDropDowns();
         setOverallDates();
         renderDateSlider();
         loadResults();
       },
       error: function (data) {
-        console.log("Could not load results data.");
+        console.log("Could not fetch results of initial queries.");
       }
     });
   }
 
-  // Set the filter DOM inputs to the values returned from the loadResults method
-  // (which have been saved to global variables)
-  function fillQuestionsList() {
+  // Populate the filter drop downs:
+  function fillDropDowns() {
     var html = "";
-    for(var i = 0; i < QuestionArray.length; i++) {
+    for (var i = 0; i < QuestionArray.length; i++) {
       html += "<option value='" + QuestionId[i] + "'>" + QuestionArray[i] + "</option>";
     }
-    document.getElementById("questionList").innerHTML = html; 
+    document.getElementById("questionList").innerHTML = html;
+
     var html2 = "";
-    for(var i = 0 ;i< SurveyArray.length;i++){
-      html2 += "<option value = '" + SurveyId[i] +"'>" + SurveyArray[i] + "</option>";
-    }   
+    for (var i = 0; i < SurveyArray.length; i++) {
+      html2 += "<option value = '" + SurveyId[i] + "'>" + SurveyArray[i] + "</option>";
+    }
     document.getElementById("surveyList").innerHTML = html2;
+
     var html3 = "<option value = 'all'>" + 'ALL' + "</option>";
-    for(var i = 0;i<EmployStatusArray.length;i++){
-      html3 += "<option value = '" + EmployStatusArray[i]+"'>" + EmployStatusArray[i] + "</option>" ;
+    for (var i = 0; i < EmployStatusArray.length; i++) {
+      html3 += "<option value = '" + EmployStatusArray[i] + "'>" + EmployStatusArray[i] + "</option>";
     }
     document.getElementById("employStatus").innerHTML = html3;
+
     var html4 = "<option value = 'all'>" + 'ALL' + "</option>";
-    for(var i = 0;i<GenderArray.length;i++){
-      html4 += "<option value = '" + GenderArray[i]+"'>" + GenderArray[i] + "</option>" ;
+    for (var i = 0; i < GenderArray.length; i++) {
+      html4 += "<option value = '" + GenderArray[i] + "'>" + GenderArray[i] + "</option>";
     }
     document.getElementById("gender").innerHTML = html4;
+
+    // Set initial filter values:    
+    Gender = 'all';
+    AgeRange = 'all';
+    EmployStatus = 'all';
+
+    // Initialise the elements in the DOM accordingly:    
+    document.getElementById("gender").value = Gender;
+    document.getElementById("ageRange").value = AgeRange;
+    document.getElementById("employStatus").value = EmployStatus;    
   }
 
   // Set full survey history date range limits 
@@ -284,6 +288,7 @@
     $.ajax({
       url: "/load-results",   // i.e. [Nodejs app]/app_server/controllers/load-results.js
       data: { // data to send to load-results.js controller
+        "orgABNhash" : OrgABNhash,
         "questionNum" : QuestionNum,
         "gender" : Gender,
         "ageRange" : AgeRange,
