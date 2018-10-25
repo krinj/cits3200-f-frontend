@@ -5,7 +5,8 @@
 // JQUERY FUNCTIONS
 (function($) {
 
-  /*** GLOBAL VARIABLES / 'MODEL' VARIABLES (Use capital first letter for globals): ***/
+  /*** GLOBAL VARIABLES / 'MODEL' VARIABLES 
+   * (Use capital first letter for globals, all caps for constants): ***/
 
   // Sentiment colour scale end a middle points:
   var RED_COLOUR = [204, 69, 40];
@@ -15,26 +16,32 @@
   var NUM_ENTITIES = 30; // (Max) number of entities to display in Entity Table & Diagram
 
   // *** TODO: Server should POST the logged in user's organisation name ***
-  var OrgABNhash; 
+  // var OrgABNhash; 
+
+  // *** TESTING: High level filters
+  var OrgNames = []; 
+  var OrgABNs = [];
+  var OrgABNhashes = [];
+  var SurveyNames = [];
+  var SurveyIDs = [];  
+  var OrgABNhash; // selected organisation's ABN hash
+  var SurveyID; // selected survey's ID
   
-  var FirstDate;
-  var LastDate;
-
   // Filter option sets:
-  var QuestionArray = [];
-  var SurveyArray = [];
-  var SurveyId = [];
-  var QuestionId = [];
-  var EmployStatusArray = [];
-  var GenderArray = [];
-
+  var QuestionWordings = [];
+  var QuestionIDs = [];
+  var EmployStatuses = [];
+  var GenderOptions = [];
+  
   // Active filter variables:
-  var QuestionNum;
+  var QuestionID;
   var Gender;
   var AgeRange;
   var EmployStatus;
   var StartDate;
   var EndDate;
+  var FirstDate;
+  var LastDate;
 
   // Filter result variables:
   var NumResponses;
@@ -43,7 +50,7 @@
   var MaxCharCount;
   var NationalAveSentiment;
   var OrgAveSentiment;
-  var ScoreFreqArray = [];  
+  var HistogramScoreFreqs = [];  
   
   // Time Series variables:
   var WeekAveX = [];  // weekly dates
@@ -53,7 +60,7 @@
   var ResponseScore;
   var IndexOfResponse = 0;
   var ResponseInfo;
-  var CheckFlag = false;
+  var NoHistColSelected = false;
 
   // Entity Listing/Diagram variables:
   var EntityDisplayMode = "topFreq";
@@ -75,14 +82,24 @@
   window.onload = function() {
 
     // Get logged in user's organisation's ABN hash
-    OrgABNhash = document.getElementById("orgABNhash").innerText;
+    // OrgABNhash = document.getElementById("orgABNhash").innerText;
 
-    runInitialQueries();
+    getOrgsAndSurveys();
 
     /************************** ESTABLISH EVENT LISTENERS ****************************/
 
+    // TESTING ONLY ***
+    document.getElementById("orgList").addEventListener('change', function () {
+      OrgABNhash = document.getElementById("orgList").value;      
+      runInitialQueries();      
+    });
+    document.getElementById("surveyList").addEventListener('change', function () {
+      SurveyID = document.getElementById("surveyList").value;      
+      runInitialQueries();      
+    });
+
     document.getElementById("questionList").addEventListener('change', function () {
-      QuestionNum = document.getElementById("questionList").value;      
+      QuestionID = document.getElementById("questionList").value;      
       loadResults();      
     });
 
@@ -154,6 +171,50 @@
 
   };
 
+  // *** FOR TESTING ONLY ***
+  // jQuery AJAX function to get organisation and survey data from the database
+  function getOrgsAndSurveys() {
+    $.ajax({
+      url: "/get-orgs-and-surveys",   
+      // i.e. [Nodejs app]/app_server/controllers/get-orgs-and-surveys.js
+      data: {}, // data to send to controller
+      method: "POST",
+      dataType: 'JSON',
+      success: function (data) { // data is the JSON object returned from controller
+        SurveyNames = data.surveyNames,
+        SurveyIDs = data.surveyIDs,
+        OrgNames = data.orgNames,
+        OrgABNs = data.orgABNs, 
+        OrgABNhashes = data.orgABNhashes,
+
+        fillDropDown(OrgABNhashes, OrgNames, "orgList", false);
+        fillDropDown(SurveyIDs, SurveyNames, "surveyList", false);
+
+        OrgABNhash = OrgABNhashes[0]; // choose first in list
+        SurveyID = SurveyIDs[0]; // choose first in list
+
+        document.getElementById("orgList").value = OrgABNhash;
+        document.getElementById("surveyList").value = SurveyID;
+
+        runInitialQueries();
+      },
+      error: function (data) {
+        console.log("Could not fetch organisation and survey id data.");
+      }
+    });
+  }
+
+  function fillDropDown(valueArray, textArray, selectDOM, inclAll) {
+    var html = "";
+    if (inclAll) {
+      html += "<option value='all'>ALL</option>";
+    }
+    for (var i = 0; i < textArray.length; i++) {
+      html += "<option value='" + valueArray[i] + "'>" + textArray[i] + "</option>";
+    }
+    document.getElementById(selectDOM).innerHTML = html;
+  }
+
   // jQuery AJAX function to fetch and load results from the database
   function runInitialQueries() {
     $.ajax({
@@ -161,18 +222,15 @@
       // i.e. [Nodejs app]/app_server/controllers/initial-queries.js
       data: { // data to send to controller
         "orgABNhash" : OrgABNhash,
+        "surveyID" : SurveyID,
       },
       method: "POST",
       dataType: 'JSON',
       success: function (data) { // data is the JSON object returned from SQL via controller
-
-        SurveyArray = data.surveyArray;
-        SurveyId = data.surveyId;
-        QuestionArray = data.questionArray;
-        QuestionId = data.questionId;
-        QuestionNum = QuestionId[0];
-        GenderArray = data.genderArray;
-        EmployStatusArray = data.employmentStatus;
+        QuestionWordings = data.questionWordings;
+        QuestionIDs = data.questionIDs;
+        GenderOptions = data.genderOptions;
+        EmployStatuses = data.employmentStatuses;
         FirstDate = new Date(data.firstDate.slice(0,10));
         LastDate = new Date(data.lastDate.slice(0,10));
         StartDate = FirstDate;
@@ -191,36 +249,20 @@
 
   // Populate the filter drop downs:
   function fillDropDowns() {
-    var html = "";
-    for (var i = 0; i < QuestionArray.length; i++) {
-      html += "<option value='" + QuestionId[i] + "'>" + QuestionArray[i] + "</option>";
-    }
-    document.getElementById("questionList").innerHTML = html;
 
-    var html2 = "";
-    for (var i = 0; i < SurveyArray.length; i++) {
-      html2 += "<option value = '" + SurveyId[i] + "'>" + SurveyArray[i] + "</option>";
-    }
-    document.getElementById("surveyList").innerHTML = html2;
-
-    var html3 = "<option value = 'all'>" + 'ALL' + "</option>";
-    for (var i = 0; i < EmployStatusArray.length; i++) {
-      html3 += "<option value = '" + EmployStatusArray[i] + "'>" + EmployStatusArray[i] + "</option>";
-    }
-    document.getElementById("employStatus").innerHTML = html3;
-
-    var html4 = "<option value = 'all'>" + 'ALL' + "</option>";
-    for (var i = 0; i < GenderArray.length; i++) {
-      html4 += "<option value = '" + GenderArray[i] + "'>" + GenderArray[i] + "</option>";
-    }
-    document.getElementById("gender").innerHTML = html4;
-
+    fillDropDown(QuestionIDs, QuestionWordings, "questionList", false);
+    fillDropDown(SurveyIDs, SurveyNames, "surveyList", true);
+    fillDropDown(EmployStatuses, EmployStatuses, "employStatus", true);
+    fillDropDown(GenderOptions, GenderOptions, "gender", true);
+    
     // Set initial filter values:    
+    QuestionID = QuestionIDs[0];
     Gender = 'all';
     AgeRange = 'all';
     EmployStatus = 'all';
 
     // Initialise the elements in the DOM accordingly:    
+    document.getElementById("questionList").value = QuestionID;
     document.getElementById("gender").value = Gender;
     document.getElementById("ageRange").value = AgeRange;
     document.getElementById("employStatus").value = EmployStatus;    
@@ -289,7 +331,7 @@
       url: "/load-results",   // i.e. [Nodejs app]/app_server/controllers/load-results.js
       data: { // data to send to load-results.js controller
         "orgABNhash" : OrgABNhash,
-        "questionNum" : QuestionNum,
+        "questionNum" : QuestionID,
         "gender" : Gender,
         "ageRange" : AgeRange,
         "employStatus" : EmployStatus,
@@ -305,7 +347,7 @@
         MaxCharCount = data.maxCharCount;
         OrgAveSentiment = data.orgAveSentiment;
         NationalAveSentiment = data.nationalAveSentiment;
-        ScoreFreqArray = data.scoreFreqArray;
+        HistogramScoreFreqs = data.scoreFreqArray;
 
         // Initialise/clear data for time-series:
         var timeSeriesX = [];
@@ -314,7 +356,6 @@
         WeekAveY = [];
 
         var timeSeries = data.timeSeries;
-        console.log(timeSeries);
         for (i = 0; i < timeSeries.length; i++) {
           timeSeriesX.push(timeSeries[i].ds.value.slice(0, 10));
           timeSeriesY.push(timeSeries[i].avgOs*10);
@@ -381,7 +422,7 @@
     $.ajax({
       url: "/time-series",   // i.e. [Nodejs app]/app_server/controllers/full-time-series.js
       data: { // data to send to controller
-        "questionNum" : QuestionNum,
+        "questionNum" : QuestionID,
         "gender" : Gender,
         "ageRange" : AgeRange,
         "employStatus" : EmployStatus,
@@ -745,7 +786,7 @@
     for (var i = 0; i < tiers + 1; i++)
     {
       xData.push(i - tiers/2);
-      yData.push(ScoreFreqArray[i]);
+      yData.push(HistogramScoreFreqs[i]);
       fillColor.push(getColor(i/tiers));
     }
 
@@ -860,7 +901,7 @@
     var previousClickedBar = -1;
 
     canvasDOM.onclick = function (event) {
-      CheckFlag = true;
+      NoHistColSelected = true;
       var activeElement = histogramChart.getElementAtEvent(event)[0];
       ResponseScore = histogramChart.data.labels[activeElement._index];
       if (ResponseScore != previousClickedBar) {
@@ -871,7 +912,7 @@
           // i.e. [Nodejs app]/app_server/controllers/response-details.js
           data: { // data to send to controller
             "score": previousClickedBar,
-            "questionNum": QuestionNum,
+            "questionNum": QuestionID,
             "gender": Gender,
             "ageRange": AgeRange,
             "employStatus": EmployStatus,
@@ -907,7 +948,7 @@
   }
 
   function fillResponseDetails() {
-    if(CheckFlag == false){
+    if(NoHistColSelected == false){
       document.getElementById('responseScoreSpan').innerHTML = "< Click on the bars to explore responses.";
       return;
     }
@@ -939,7 +980,7 @@
       url: "/entity-table-diagram",   
       // i.e. [Nodejs app]/app_server/controllers/entity-table-diagram.js
       data: { // data to send to controller
-        "questionNum" : QuestionNum,
+        "questionNum" : QuestionID,
         "gender" : Gender,
         "ageRange" : AgeRange,
         "employStatus" : EmployStatus,

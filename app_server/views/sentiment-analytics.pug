@@ -5,19 +5,21 @@ block content
     .centredBody#filterContainer
       #filterBody
         p#dateNote *Can use the time-series date range slider to control dates
-        p.filterLine
+        p.filterLine 
+          label Organisation
+          |:
+          select#orgList
           label Survey
           |:
-          select#surveyList(name='surveyList')
+          select#surveyList
           label Question
           |:
-          select#questionList(name='question')
+          select#questionList
         p.filterLine
           label Gender:
-            select#gender(name="gender")
-             
+            select#gender             
           label Age:
-            select#ageRange(name="ageRange")
+            select#ageRange
               option(value='all') ALL
               option(value='ageunder18') Under 18
               option(value='age18_24') 18-24
@@ -27,9 +29,7 @@ block content
               option(value='age55_64') 55-64
               option(value='age65plus') 65+  
           label Employment Status: 
-            select#employStatus(name="employStatus")
-              
-              
+            select#employStatus       
           | &emsp;
           label Date Range
             | * &nbsp; 

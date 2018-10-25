@@ -1,33 +1,30 @@
-var dbConnection = require('./db-connection');
 
 // LOAD/UPDATE THE PAGE WITH FILTERS SPECIFIED:
 module.exports.getResults = function (req, res) {
 
   const projectid = 'cits-3200';  
 
-  // var orgABNhash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1'; 
   var orgABNhash = req.body.orgABNhash; // hash of organisation ABN 
-  // var surveyID = req.body.surveyID; // *** TO IMPLEMENT 
+  var surveyID = req.body.surveyID; 
+  console.log('orgABNhash: ' + orgABNhash);
+  console.log('surveyID: ' + surveyID);
 
   var queries = [];
 
   // Query 0: First date of responses for the survey
-  queries[0] = "SELECT timestamp As firstDate from `cits-3200.analytics.responses_dev` R WHERE R.abn_hash = '" + orgABNhash + "' ORDER BY firstDate ASC LIMIT 1;";
+  queries[0] = "SELECT timestamp As firstDate from `cits-3200.analytics.responses_dev` WHERE abn_hash = '" + orgABNhash + "' AND survey_id = '" + surveyID + "' ORDER BY firstDate ASC LIMIT 1;";
 
   // Query 1: Last date of responses for the survey
-  queries[1] = "SELECT timestamp AS lastDate FROM `cits-3200.analytics.responses_dev` R WHERE R.abn_hash = '" + orgABNhash + "' ORDER BY lastDate DESC LIMIT 1;";
+  queries[1] = "SELECT timestamp AS lastDate FROM `cits-3200.analytics.responses_dev` WHERE abn_hash = '" + orgABNhash + "' AND survey_id = '" + surveyID + "' ORDER BY lastDate DESC LIMIT 1;";
 
   // Query 2: List of Questions for the Survey
-  queries[2] = "SELECT distinct question_name,question_id FROM `cits-3200.analytics.responses_dev` R WHERE R.abn_hash = '" + orgABNhash + "' ;";
+  queries[2] = "SELECT DISTINCT question_name, question_id FROM `cits-3200.analytics.responses_dev` WHERE abn_hash = '" + orgABNhash + "' AND survey_id = '" + surveyID + "';";
 
-  // Query 3: List of surveys for the organization
-  queries[3] = "SELECT distinct survey_name,survey_id FROM `cits-3200.analytics.responses_dev` R WHERE R.abn_hash = '" + orgABNhash + "' ;"
+  // Query 3: List of employment status options
+  queries[3] = "SELECT DISTINCT employment_status FROM `cits-3200.analytics.responses_dev` WHERE abn_hash = '" + orgABNhash + "' AND survey_id = '" + surveyID + "';"
 
-  // Query 4: List of employment status options
-  queries[4] = "SELECT distinct employment_status FROM `cits-3200.analytics.responses_dev` R WHERE R.abn_hash = '" + orgABNhash + "' ;"
-
-  // Query 5: List of gender options
-  queries[5] = "SELECT distinct gender FROM `cits-3200.analytics.responses_dev` R WHERE R.abn_hash = '" + orgABNhash + "' ;"
+  // Query 4: List of gender options
+  queries[4] = "SELECT DISTINCT gender FROM `cits-3200.analytics.responses_dev` WHERE abn_hash = '" + orgABNhash + "' AND survey_id = '" + surveyID + "' ORDER BY gender;"
 
   for (var i = 0; i < queries.length; i++) {
     asyncQuery(queries[i], projectid, i);
@@ -35,12 +32,10 @@ module.exports.getResults = function (req, res) {
 
   var first_date;
   var last_date;
-  var question_array = [];
-  var question_id = [];
-  var survey_id = [];
-  var survey_array = [];
-  var employment_status = [];
-  var gender_array = [];
+  var question_wordings = [];
+  var question_ids = [];
+  var employment_statuses = [];
+  var gender_options = [];
 
   async function asyncQuery(sqlquery, projectid, queryIndex) {
     // Imports the Google Cloud client library
@@ -88,46 +83,38 @@ module.exports.getResults = function (req, res) {
         return;
       }
       for (var i = 0; i < rows.length; i++) {
-        question_array.push(rows[i].question_name);
-        question_id.push(rows[i].question_id);
+        question_wordings.push(rows[i].question_name);
+        question_ids.push(rows[i].question_id);
       }
     }
     else if (queryIndex == 3) {
       for (var i = 0; i < rows.length; i++) {
-        survey_array.push(rows[i].survey_name);
-        survey_id.push(rows[i].survey_id);
+        employment_statuses.push(rows[i].employment_status);
       }
     }
     else if (queryIndex == 4) {
       for (var i = 0; i < rows.length; i++) {
-        employment_status.push(rows[i].employment_status);
-      }
-    }
-    else if (queryIndex == 5) {
-      for (var i = 0; i < rows.length; i++) {
-        gender_array.push(rows[i].gender);
+        gender_options.push(rows[i].gender);
       }
     }
   }
 
   var results;
   var interval = setInterval(function () {
-    if ((question_array != null && first_date && last_date && survey_array != null && survey_id != null && employment_status != null && gender_array != null)) {
+    if ((question_wordings.length != 0 && first_date && last_date && employment_statuses.length != 0 && gender_options.length != 0)) {
 
       results = {
         firstDate: first_date,
         lastDate: last_date,
-        questionArray: question_array,
-        questionId: question_id,
-        surveyArray: survey_array,
-        surveyId: survey_id,
-        employmentStatus: employment_status,
-        genderArray: gender_array
+        questionWordings: question_wordings,
+        questionIDs: question_ids,
+        employmentStatuses: employment_statuses,
+        genderOptions: gender_options
       };
 
       clearInterval(interval);
       return res.send(results);
     }
-  }, 1000);
+  }, 100);
 
 };

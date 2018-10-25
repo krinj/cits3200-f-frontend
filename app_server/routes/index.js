@@ -4,12 +4,13 @@ var router = express.Router();
 
 // Links to controller files:
 var ctrlInitialRender  = require('../controllers/initial-render');
+var ctrlGetOrgsAndSurveys = require('../controllers/get-orgs-and-surveys'); // TESTING
 var ctrlInitialQueries  = require('../controllers/initial-queries');
 var ctrlLoadResults  = require('../controllers/load-results');
 var ctrlResponseDetails = require('../controllers/response-details');
 var ctrlEntityTableDiagram = require('../controllers/entity-table-diagram');
 
-// ACCESS ROUTES (Retrieval of user's organisation ABN hash)
+// Access Routes (Retrieval of user's organisation ABN hash) - CURRENTLY UNUSED
 let loadMasterPage = function (req, res) {
 	return loadAccessPost(req, res);
 };
@@ -37,6 +38,7 @@ router.get('/load_access', loadAccessGet);
 // GET & POST HTTP REQUESTS FOR THE PAGE:
 
 router.get('/', loadMasterPage); // initial HTML load
+router.post('/get-orgs-and-surveys', ctrlGetOrgsAndSurveys.getResults); 
 router.post('/initial-queries', ctrlInitialQueries.getResults); // initial queries on page load
 router.post('/load-results', ctrlLoadResults.loadResults); // load non-interactive results
 
