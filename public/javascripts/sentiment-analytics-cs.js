@@ -848,7 +848,7 @@
 
   function fillResponseDetails() {
     if(CheckFlag == false){
-      document.getElementById('responseScoreSpan').innerHTML = "Please click the chart bar";
+      document.getElementById('responseScoreSpan').innerHTML = "< Click on the bars to explore responses.";
       return;
     }
     
