@@ -9,22 +9,16 @@ var ctrlLoadResults  = require('../controllers/load-results');
 var ctrlResponseDetails = require('../controllers/response-details');
 var ctrlEntityTableDiagram = require('../controllers/entity-table-diagram');
 
-// ===============================================================================
-// ACCESS ROUTES
-// ===============================================================================
-
-
+// ACCESS ROUTES (Retrieval of user's organisation ABN hash)
 let loadMasterPage = function (req, res) {
 	return loadAccessPost(req, res);
 };
-
 let loadAccessPost = function (req, res) {
 	let orgABN = req.body.orgABN;
 	if (orgABN == null)
 		orgABN = "master";
 	return ctrlInitialRender.initialRender(req, res, orgABN);
 };
-
 let loadAccessGet = function (req, res) {
 	let orgABN = req.query.orgABN;
 	if (orgABN == null)
@@ -32,13 +26,7 @@ let loadAccessGet = function (req, res) {
 	return ctrlInitialRender.initialRender(req, res, orgABN);
 };
 
-
-// ===============================================================================
-// ACCESS ROUTES
-// ===============================================================================
-
-// Support JSON Encoded Post Requests.
-
+// Support for JSON Encoded Post Requests:
 router.use(bodyParser.json());
 router.use(express.json());
 
@@ -46,7 +34,8 @@ router.use(express.json());
 router.post('/load_access', loadAccessPost);
 router.get('/load_access', loadAccessGet);
 
-// GET & POST HTTP requests for the page:
+// GET & POST HTTP REQUESTS FOR THE PAGE:
+
 router.get('/', loadMasterPage); // initial HTML load
 router.post('/initial-queries', ctrlInitialQueries.getResults); // initial queries on page load
 router.post('/load-results', ctrlLoadResults.loadResults); // load non-interactive results
