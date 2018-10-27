@@ -2,14 +2,12 @@
 // LOAD/UPDATE THE PAGE WITH FILTERS SPECIFIED:
 module.exports.loadResults = function (req, res) {
   
-  console.log("Starting the the load-result controller");
   const projectid = 'cits-3200';
   
   // Filter variables, set to values sent to this controller from client:
-  // var orgABNhash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1';
   var orgABNhash = req.body.orgABNhash; 
-  // var surveyID = req.body.surveyID; // *** TO IMPLEMENT 
-  var questionId = req.body.questionNum;
+  var surveyID = req.body.surveyID; 
+  var questionID = req.body.questionID;
   var gender = req.body.gender;  
   var ageRange = req.body.ageRange; 
   var employStatus = req.body.employStatus;
@@ -39,47 +37,41 @@ module.exports.loadResults = function (req, res) {
   var query = [];
   
   // Query 0: Find number of responses for set of filters
-  query[0]= "SELECT count(*) as totalResponse FROM `cits-3200.analytics.responses_dev` R  WHERE R.employment_status = '" + employStatus + "' AND R.abn_hash = '"+ orgABNhash + "' AND R.question_id = '"+ questionId +"' AND R.gender = '" + gender + "' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN "+ birthStart + " AND "+ birthEnd +"; ";  
+  query[0] = "SELECT COUNT(*) as totalResponse FROM `cits-3200.analytics.responses_dev` WHERE employment_status = '" + employStatus + "' AND abn_hash = '"+ orgABNhash + "' AND survey_id = '" + surveyID + "' AND question_id = '" + questionID +"' AND gender = '" + gender + "' AND timestamp BETWEEN '" + startDate + "' AND '" + endDate + "' AND year_of_birth BETWEEN "+ birthStart + " AND " + birthEnd + "; ";  
 
-  // Query 1: National average overall sentiment score for the question
-  query[1]= "SELECT AVG(overall_sentiment) AS nationalAverage FROM `cits-3200.analytics.responses_dev` R  WHERE R.employment_status = '"+ employStatus +"' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.question_id = '"+ questionId +"' AND R.gender = '" + gender + "' AND R.year_of_birth BETWEEN "+ birthStart + " AND "+ birthEnd +" ;";
-
-  // Query 2: Organisation's average overall sentiment score for the question
-  query[2]= "SELECT AVG(overall_sentiment) AS organizationAverage FROM `cits-3200.analytics.responses_dev` R WHERE R.employment_status = '"+ employStatus +"' AND R.abn_hash = '"+ orgABNhash + "' AND R.question_id = '"+ questionId +"' AND R.gender = '" + gender + "' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN "+ birthStart + " AND "+ birthEnd +" ;";
+  // Query 1: Organisation's average overall sentiment score for the question
+  query[1] = "SELECT AVG(overall_sentiment) AS organizationAverage FROM `cits-3200.analytics.responses_dev` WHERE employment_status = '" + employStatus + "' AND abn_hash = '" + orgABNhash + "' AND survey_id = '" + surveyID + "' AND question_id = '" + questionID + "' AND gender = '" + gender + "' AND timestamp BETWEEN '" + startDate + "' AND '" + endDate + "' AND year_of_birth BETWEEN " + birthStart + " AND " + birthEnd + " ;";
   
+  // Query 2: Get overall sentiment time-series data:
+  query[2] = "SELECT timestamp as ds, AVG(overall_sentiment) as avgOs FROM `cits-3200.analytics.responses_dev` WHERE employment_status = '" + employStatus + "' AND abn_hash = '" + orgABNhash + "' AND survey_id = '" + surveyID + "' AND question_id = '" + questionID + "'  AND gender = '" + gender + "' AND year_of_birth BETWEEN " + birthStart + " AND " + birthEnd + "  GROUP BY ds ORDER BY ds;";
+
   // Query 3: Frequency count array of sentiment scores -10 to 10 (for Histogram by Score)
-  query[3] = "SELECT overall_sentiment, count(*) as frequency FROM `cits-3200.analytics.responses_dev` R  WHERE R.employment_status = '"+ employStatus +"' AND R.abn_hash = '"+ orgABNhash + "' AND R.question_id = '"+ questionId +"' AND R.gender = '" + gender + "' AND R.timestamp BETWEEN '"+ startDate + "' AND '" + endDate +"' AND R.year_of_birth BETWEEN "+ birthStart + " AND "+ birthEnd +" GROUP BY overall_sentiment ORDER BY overall_sentiment ASC;";
+  query[3] = "SELECT overall_sentiment, COUNT(*) as frequency FROM `cits-3200.analytics.responses_dev` WHERE employment_status = '" + employStatus + "' AND abn_hash = '" + orgABNhash + "' AND survey_id = '" + surveyID + "' AND question_id = '" + questionID + "' AND gender = '" + gender + "' AND timestamp BETWEEN '" + startDate + "' AND '" + endDate + "' AND year_of_birth BETWEEN " + birthStart + " AND " + birthEnd + " GROUP BY overall_sentiment ORDER BY overall_sentiment ASC;";
 
-  // Query 4: Get overall sentiment time-series data:
-  query[4] = "SELECT timestamp as ds, AVG(overall_sentiment) as avgOs FROM `cits-3200.analytics.responses_dev` R WHERE R.employment_status = '"+ employStatus +"' AND R.abn_hash = '"+ orgABNhash + "' AND R.question_id = '"+ questionId +"'  AND R.gender = '" + gender + "' AND R.year_of_birth BETWEEN "+ birthStart + " AND "+ birthEnd +"  Group BY ds order by ds;";  
+  // Query 4: Get list of entities for entity search function
+  query[4] = "SELECT DISTINCT LOWER(e.name) as ent FROM `cits-3200.analytics.responses_dev` R,UNNEST(entity) AS e WHERE abn_hash = '" + orgABNhash + "' AND survey_id = '" + surveyID + "' AND question_id = '" + questionID + "' AND gender = '" + gender + "' AND employment_status = '" + employStatus + "' AND timestamp BETWEEN '" + startDate + "' AND '" + endDate + "' AND year_of_birth BETWEEN " + birthStart + " AND " + birthEnd + ";";
 
-  // Query 5: Get list of entities for entity search function
-  query[5] = "SELECT DISTINCT LOWER(e.name) as ent FROM `cits-3200.analytics.responses_dev` R,UNNEST(entity) AS e WHERE R.abn_hash = '"+ orgABNhash + "' AND R.question_id = '" + questionId + "' AND R.gender = '" + gender + "' AND R.employment_status = '" + employStatus + "' AND R.timestamp BETWEEN '" + startDate + "' AND '" + endDate + "' AND R.year_of_birth BETWEEN " + birthStart + " AND " + birthEnd + " ;";
+  // Query 6: National average overall sentiment score for the question
+  // query[1] = "SELECT AVG(overall_sentiment) AS nationalAverage FROM `cits-3200.analytics.responses_dev` WHERE employment_status = '" + employStatus + "' AND timestamp BETWEEN '" + startDate + "' AND '" + endDate + "' AND question_id = '" + questionID + "' AND gender = '" + gender + "' AND year_of_birth BETWEEN " + birthStart + " AND " + birthEnd + " ;";
 
   var queryCopy = [];
   for (var i = 0; i < query.length; i++) {
     queryCopy[i] = query[i];
     if (gender == 'all') {
-      queryCopy[i] = queryCopy[i].replace(/R.gender = 'all' AND/, '');
+      queryCopy[i] = queryCopy[i].replace(/gender = 'all' AND/, '');
     }
     if (employStatus == 'all') {
-      queryCopy[i] = queryCopy[i].replace(/R.employment_status = 'all' AND/, '');
-    }
-    if (questionId == 'all') {
-      queryCopy[i] = queryCopy[i].replace(/AND R.question_id = 'all'/, '');
+      queryCopy[i] = queryCopy[i].replace(/employment_status = 'all' AND/, '');
     }
   }
   
   // NB using underscores to distinguish from variables of same name sent to pug file
   var num_responses;
-  var time_series;
-  var percent_completed ;
-  var ave_char_count ;
-  var max_char_count;
-  var national_ave;
   var organization_ave;
-  var entities; 
+  var time_series;
   var score_freq_array = [];
+  var entities; 
+  // var national_ave;
   
   // Run the SQL queries:
   for (var i = 0; i < queryCopy.length; i++) {
@@ -119,23 +111,24 @@ module.exports.loadResults = function (req, res) {
       if (rows.length == 0) {
         num_responses = 0;
         return;
+      } else {
+        num_responses = rows[0].totalResponse;
       }
-      num_responses = rows[0].totalResponse;
     }
-
     else if (queryIndex == 1) {
-      if (rows.length == 0) {
-        national_ave = 0;
-        return;
-      }
-      national_ave = rows[0].nationalAverage;
-    }
-    else if (queryIndex == 2) {
       if (rows.length == 0) {
         organization_ave = 0;
         return;
+      } else {
+        organization_ave = rows[0].organizationAverage;
       }
-      organization_ave = rows[0].organizationAverage;
+    }
+    else if (queryIndex == 2) {
+      if (rows.length == 0) {
+        return;
+      } else {
+        time_series = rows;
+      }
     }
     else if (queryIndex == 3) {
       if (rows.length == 0) {
@@ -143,23 +136,23 @@ module.exports.loadResults = function (req, res) {
           score_freq_array[i] = 0;
         }
         return;
-      }
-      var index = 0;
-      var arrayIndex = 0;
-      var responses = rows;
-
-      for (var i = -10; i < 11; i++) {
-        if (i != Math.round(responses[index].overall_sentiment * 10)) {
-          score_freq_array[arrayIndex] = 0;
-          arrayIndex++;
-        } else {
-          score_freq_array[arrayIndex] = responses[index].frequency;
-
-          index++;
-          if (index == responses.length) {
-            index--;
+      } 
+      else {
+        var index = 0;
+        var arrayIndex = 0;
+        var responses = rows;  
+        for (var i = -10; i < 11; i++) {
+          if (i != Math.round(responses[index].overall_sentiment * 10)) {
+            score_freq_array[arrayIndex] = 0;
+            arrayIndex++;
+          } else {
+            score_freq_array[arrayIndex] = responses[index].frequency;  
+            index++;
+            if (index == responses.length) {
+              index--;
+            }
+            arrayIndex++;
           }
-          arrayIndex++;
         }
       }
     }
@@ -167,31 +160,18 @@ module.exports.loadResults = function (req, res) {
       if (rows.length == 0) {
         return;
       }
-      time_series = rows;
-    }
-
-    else if (queryIndex == 5) {
-      if (rows.length == 0) {
-        return;
-      }
       entities = rows;
     }
   }
 
-  percent_completed = 100;
-  ave_char_count = 100;
-  max_char_count = 100;
   var results;
   var interval = setInterval(function () {
-    if ((num_responses && organization_ave && national_ave && score_freq_array && time_series && entities)) {
+    if ((num_responses && organization_ave && score_freq_array.length > 0 && time_series && entities)) {
 
       results = {
         numResponses: num_responses,
-        percentCompleted: percent_completed,
-        aveCharCount: ave_char_count,
-        maxCharCount: max_char_count,
         orgAveSentiment: organization_ave * 10,
-        nationalAveSentiment: national_ave * 10,
+        // nationalAveSentiment: national_ave * 10,
         scoreFreqArray: score_freq_array,
         timeSeries: time_series,
         entityList: entities
@@ -200,7 +180,7 @@ module.exports.loadResults = function (req, res) {
       clearInterval(interval);
       return res.send(results);
     }
-  }, 1000);
+  }, 100);
 };
 
 

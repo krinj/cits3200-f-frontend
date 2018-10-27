@@ -1,15 +1,13 @@
-var dbConnection = require('./db-connection');
 
 // Load/update the histogram response details based on user interaction:
-module.exports.getResponse = function (req, res) {
-  
+module.exports.getResponse = function (req, res) {  
  
   const projectid = 'cits-3200';
 
-  var connection = dbConnection.connectToDB();
   // Filter variables, set to values sent to this controller from client:
-  var orgABNhash = 'a11e075a60a41650aa6b8dad77fdd347aacb5e3ee850708c68de607f454f07d1';
-  var questionId = req.body.questionNum;
+  var orgABNhash = req.body.orgABNhash; 
+  var surveyID = req.body.surveyID; 
+  var questionID = req.body.questionID;
   var gender = req.body.gender;
   var ageRange = req.body.ageRange;
   var employStatus = req.body.employStatus;
@@ -37,80 +35,70 @@ module.exports.getResponse = function (req, res) {
     birthEnd = currentYear - parseInt(ageRangeArray[0]);
   }
 
-  var query = "";
-  query += "SELECT response AS responseDetail, timestamp AS submitDate,overall_sentiment from `cits-3200.analytics.responses_dev` R WHERE  R.employment_status = '" + employStatus + "' AND R.abn_hash = '"+ orgABNhash + "' AND R.question_id = '" + questionId + "' AND R.gender = '" + gender + "' AND R.timestamp BETWEEN '" + startDate + "' AND '" + endDate + "' AND R.year_of_birth BETWEEN " + birthStart + " AND "+ birthEnd + " ;";
+  var query = "SELECT response AS responseDetail, timestamp AS submitDate, overall_sentiment from `cits-3200.analytics.responses_dev` WHERE employment_status = '" + employStatus + "' AND abn_hash = '" + orgABNhash + "' AND survey_id = '" + surveyID + "' AND question_id = '" + questionID + "' AND gender = '" + gender + "' AND timestamp BETWEEN '" + startDate + "' AND '" + endDate + "' AND year_of_birth BETWEEN " + birthStart + " AND " + birthEnd + " ;";
 
   if (gender == 'all') {
-    query = query.replace(/R.gender = 'all' AND/g, '');
+    query = query.replace(/gender = 'all' AND/g, '');
+  }
+  if (employStatus == 'all') {
+    query = query.replace(/employment_status = 'all' AND/g, '');
   }
 
-  if (employStatus == 'all') {
-    query = query.replace(/R.employment_status = 'all' AND/g, '');
-  }
-  if(questionId == 'all'){
-    query =query.replace(/AND R.question_id = 'all'/,'');
-  }
-  var response=[];
-  var stop = false;
-  asyncQuery(query,projectid);
+  var response = [];
+  var finished = false;
+  asyncQuery(query, projectid);
+
   async function asyncQuery(sqlquery, projectid) {
+    
     // Imports the Google Cloud client library
     const BigQuery = require('@google-cloud/bigquery');
+    
     const bigquery = new BigQuery({
       projectId: projectid,
-    });  
+    });
     projectId = projectid;
-      sqlQuery = sqlquery;
+    sqlQuery = sqlquery;
     const options = {
       query: sqlQuery,
       useLegacySql: false, // Use standard SQL syntax for queries.
-      
     };
-    console.log(sqlquery);
+
     // Runs the query as a job
     const [job] = await bigquery.createQueryJob(options);
-    console.log(`Job ${job.id} started.`);
-  
+    console.log('Job ${job.id} started.');
+
     // Get the job's status
     const metadata = await job.getMetadata();
-  
+
     // Check the job's status for errors
     const errors = metadata[0].status.errors;
     if (errors && errors.length > 0) {
       throw errors;
     }
     console.log('Job ${job.id} completed.')
-   
+
     const [rows] = await job.getQueryResults();
-    if(rows.length==0){
+    if (rows.length == 0) {
       return;
     }
-    for(var i = 0; i <rows.length;i++){
-      if(Math.round(rows[i].overall_sentiment*10) == score){
-       
+    for (var i = 0; i < rows.length; i++) {
+      if (Math.round(rows[i].overall_sentiment * 10) == score) {
         response.push(rows[i]);
       }
-      if(i==rows.length-1){
-        stop = true;
-        
+      if (i == rows.length - 1) {
+        finished = true;
       }
     }
-  } 
-    
-  
-  
+  }
+
   var results;
-  var interval = setInterval(function() {
-    if(response!=null && stop==true ){
-      
-     
+  var interval = setInterval(function () {
+    if (finished) {
       results = {
-        responseResult : response
-      }; 
-      
+        responseResult: response
+      };
       clearInterval(interval);
-      
       return res.send(results);
     }
-  }, 1000);
+  }, 100);
 };

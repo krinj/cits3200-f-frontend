@@ -331,7 +331,8 @@
       url: "/load-results",   // i.e. [Nodejs app]/app_server/controllers/load-results.js
       data: { // data to send to load-results.js controller
         "orgABNhash" : OrgABNhash,
-        "questionNum" : QuestionID,
+        "surveyID" : SurveyID,
+        "questionID" : QuestionID,
         "gender" : Gender,
         "ageRange" : AgeRange,
         "employStatus" : EmployStatus,
@@ -342,11 +343,8 @@
       dataType: 'JSON',
       success: function (data) { // data is the JSON object returned from SQL via controller
         NumResponses = data.numResponses;
-        PercentCompleted = data.percentCompleted;
-        AveCharCount = data.aveCharCount;
-        MaxCharCount = data.maxCharCount;
         OrgAveSentiment = data.orgAveSentiment;
-        NationalAveSentiment = data.nationalAveSentiment;
+        // NationalAveSentiment = data.nationalAveSentiment;
         HistogramScoreFreqs = data.scoreFreqArray;
 
         // Initialise/clear data for time-series:
@@ -406,61 +404,6 @@
     return paddedString;
   }
 
-  // Get time series data, for either the full or focus time series
-  // param series - either "full" or "focused"
-  function getTimeSeriesData(series) {
-
-    var start, end;
-    if (series == "full") {
-      start = FirstDate;
-      end = LastDate;
-    } else {
-      start = StartDate;
-      end = EndDate;
-    }
-
-    $.ajax({
-      url: "/time-series",   // i.e. [Nodejs app]/app_server/controllers/full-time-series.js
-      data: { // data to send to controller
-        "questionNum" : QuestionID,
-        "gender" : Gender,
-        "ageRange" : AgeRange,
-        "employStatus" : EmployStatus,
-        "startDate" : toYYYY_MM_DD(start),
-        "endDate" : toYYYY_MM_DD(end)
-      },
-      method: "POST",
-      dataType: 'JSON',
-      success: function (data) { // data is the JSON object returned from SQL via controller
-
-        // Initialise/clear data:
-        var timeSeriesX = [];
-        var timeSeriesY = [];
-        WeekAveX = [];
-        WeekAveY = [];
-
-        var timeSeries = data.timeSeries;
-        for (i = 0; i < timeSeries.length; i++) {
-          timeSeriesX.push(timeSeries[i].ds.slice(0, 10));
-          timeSeriesY.push(timeSeries[i].avgOs);
-        }
-        for (i = 0; i < timeSeries.length; i += 4) {
-          WeekAveY.push(Math.round(((timeSeriesY[i] + timeSeriesY[i + 1] + timeSeriesY[i + 2] + timeSeriesY[i + 3]) / 4)*10)/10);
-          WeekAveX.push(timeSeriesX[i]);
-        }
-
-        if (series == "full") {
-          renderFullTimeSeries();
-        } else {
-          renderFocusTimeSeries();
-        }        
-      },
-      error: function (data) {
-        console.log("Could not fetch time series data.");
-      }
-    });
-  }  
-
   function renderFocusTimeSeries() {
 
     var yourOrgData = [];
@@ -518,12 +461,8 @@
             },
           }],
         },
-        title: {
-          display: false
-        },
-        legend: {
-          display: false,
-        },
+        title: { display: false },
+        legend: { display: false },
         layout: {
           padding: {
             left: 0,
@@ -532,9 +471,7 @@
             top: 0
           }
         },
-        tooltips: {
-          enabled: true
-        }
+        tooltips: { enabled: true }
       }
     });
   }
@@ -660,7 +597,7 @@
         },
         tooltips: { enabled: false},
         animation: { duration: 0 },
-        hover: {animationDuration: 0 },
+        hover: { animationDuration: 0 },
         responsiveAnimationDuration: 0, 
       }
     });
@@ -783,8 +720,7 @@
     var tiers = 20;
 
     // Populate data and bar colours
-    for (var i = 0; i < tiers + 1; i++)
-    {
+    for (var i = 0; i < tiers + 1; i++) {
       xData.push(i - tiers/2);
       yData.push(HistogramScoreFreqs[i]);
       fillColor.push(getColor(i/tiers));
@@ -792,14 +728,11 @@
 
     var data = {
       labels: xData,
-      datasets: [
-        {
-          fill: true,
-          backgroundColor: fillColor,
-          data: yData,
-          
-        }
-      ]
+      datasets: [{
+        fill: true,
+        backgroundColor: fillColor,
+        data: yData,          
+      }]
     };
 
     var histogramChart = new Chart(ctx, {
@@ -807,7 +740,7 @@
       data: data,
       options: {
         defaultFontFamily: Chart.defaults.global.defaultFontFamily = "'Roboto Condensed'",
-        defaultFontSize:  Chart.defaults.global.defaultFontSize = 16,
+        defaultFontSize: Chart.defaults.global.defaultFontSize = 16,
         legend: {
           display: false
         },
@@ -817,8 +750,8 @@
               display: true,
               labelString: "Response Frequency"
             },
-            ticks : {
-              beginAtZero : true
+            ticks: {
+              beginAtZero: true
             }
           }],
           xAxes: [{
@@ -832,51 +765,47 @@
         },
         tooltips: {
           enabled: false,
-          custom: function(tooltipModel) {
+          custom: function (tooltipModel) {
             // Tooltip Element
             var tooltipEl = document.getElementById('chartjs-tooltip');
 
             // Create element on first render
             if (!tooltipEl) {
-                tooltipEl = document.createElement('div');
-                tooltipEl.id = 'chartjs-tooltip';
-                tooltipEl.innerHTML = "<table></table>";
-                document.body.appendChild(tooltipEl);
+              tooltipEl = document.createElement('div');
+              tooltipEl.id = 'chartjs-tooltip';
+              tooltipEl.innerHTML = "<table></table>";
+              document.body.appendChild(tooltipEl);
             }
 
             // Hide if no tooltip
             if (tooltipModel.opacity === 0) {
-                tooltipEl.style.opacity = 0;
-                return;
+              tooltipEl.style.opacity = 0;
+              return;
             }
 
             // Set caret Position
             tooltipEl.classList.remove('above', 'below', 'no-transform');
             if (tooltipModel.yAlign) {
-                tooltipEl.classList.add(tooltipModel.yAlign);
+              tooltipEl.classList.add(tooltipModel.yAlign);
             } else {
-                tooltipEl.classList.add('no-transform');
+              tooltipEl.classList.add('no-transform');
             }
 
             function getBody(bodyItem) {
-                return bodyItem.lines;
+              return bodyItem.lines;
             }
 
             // Set Text
             if (tooltipModel.body) {
-                var titleLines = tooltipModel.title || [];
-                var bodyLines = tooltipModel.body.map(getBody);
-
-                var innerHtml = '<thead>';
-
-                
-                innerHtml += 'Click me';
-
-                var tableRoot = tooltipEl.querySelector('table');
-                tableRoot.innerHTML = innerHtml;
+              var titleLines = tooltipModel.title || [];
+              var bodyLines = tooltipModel.body.map(getBody);
+              var innerHtml = '<thead>';
+              innerHtml += 'Click me';
+              var tableRoot = tooltipEl.querySelector('table');
+              tableRoot.innerHTML = innerHtml;
             }
 
-            // `this` will be the overall tooltip
+            // 'this' will be the overall tooltip
             var position = this._chart.canvas.getBoundingClientRect();
 
             // Display, position, and set styles for font
@@ -889,10 +818,8 @@
             tooltipEl.style.fontStyle = tooltipModel._bodyFontStyle;
             tooltipEl.style.padding = tooltipModel.yPadding + 'px ' + tooltipModel.xPadding + 'px';
             tooltipEl.style.pointerEvents = 'none';
-            tooltipEl.style.backgroundColor='#F9EAC7';
-        }
-          
-          
+            tooltipEl.style.backgroundColor = '#F9EAC7';
+          }
         }
       }
     });
@@ -911,13 +838,15 @@
           url: "/response-details",
           // i.e. [Nodejs app]/app_server/controllers/response-details.js
           data: { // data to send to controller
-            "score": previousClickedBar,
-            "questionNum": QuestionID,
+            "orgABNhash" : OrgABNhash,
+            "surveyID" : SurveyID,
+            "questionID" : QuestionID,
             "gender": Gender,
             "ageRange": AgeRange,
             "employStatus": EmployStatus,
             "startDate": toYYYY_MM_DD(StartDate),
-            "endDate": toYYYY_MM_DD(EndDate)
+            "endDate": toYYYY_MM_DD(EndDate),
+            "score": previousClickedBar
           },
           method: "POST",
           dataType: 'JSON',
@@ -936,10 +865,7 @@
     };    
   }
   
-  function nextResponse() {
-    //  var next = document.getElementById("nextButton");
-    //next.onclick = function () {
-    
+  function nextResponse() {  
     if (IndexOfResponse == ResponseInfo.length - 1) {
       return;
     }
@@ -948,11 +874,11 @@
   }
 
   function fillResponseDetails() {
-    if(NoHistColSelected == false){
+    if (NoHistColSelected == false) {
       document.getElementById('responseScoreSpan').innerHTML = "< Click on the bars to explore responses.";
       return;
     }
-    
+
     var date = ResponseInfo[IndexOfResponse].submitDate.value.slice(0, 10);
     document.getElementById('responseDateSpan').innerHTML = "Date: " + date;
     document.getElementById('responseScoreSpan').innerHTML = "Response for overall score of " + ResponseScore;
@@ -962,7 +888,6 @@
     document.getElementById('responseIndex').style = 'font-size:14px;';
     document.getElementById('totalResponse').innerHTML = "Of " + ResponseInfo.length;
     document.getElementById('totalResponse').style = 'font-size:14px;';
-    
   }
   
   function fillSummaryTable() {
@@ -980,7 +905,9 @@
       url: "/entity-table-diagram",   
       // i.e. [Nodejs app]/app_server/controllers/entity-table-diagram.js
       data: { // data to send to controller
-        "questionNum" : QuestionID,
+        "orgABNhash" : OrgABNhash,
+        "surveyID" : SurveyID,
+        "questionID" : QuestionID,
         "gender" : Gender,
         "ageRange" : AgeRange,
         "employStatus" : EmployStatus,

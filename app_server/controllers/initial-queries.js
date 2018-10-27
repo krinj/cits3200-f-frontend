@@ -6,8 +6,6 @@ module.exports.getResults = function (req, res) {
 
   var orgABNhash = req.body.orgABNhash; // hash of organisation ABN 
   var surveyID = req.body.surveyID; 
-  console.log('orgABNhash: ' + orgABNhash);
-  console.log('surveyID: ' + surveyID);
 
   var queries = [];
 
