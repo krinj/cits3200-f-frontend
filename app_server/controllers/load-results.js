@@ -57,6 +57,9 @@ module.exports.loadResults = function (req, res) {
   var queryCopy = [];
   for (var i = 0; i < query.length; i++) {
     queryCopy[i] = query[i];
+    if (orgABNhash == 'all') {
+      queryCopy[i] = queryCopy[i].replace(/abn_hash = 'all' AND/, '');
+    }
     if (gender == 'all') {
       queryCopy[i] = queryCopy[i].replace(/gender = 'all' AND/, '');
     }

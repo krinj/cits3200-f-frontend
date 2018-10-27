@@ -23,8 +23,11 @@ module.exports.getResults = function (req, res) {
 
   // Query 4: List of gender options
   queries[4] = "SELECT DISTINCT gender FROM `cits-3200.analytics.responses_dev` WHERE abn_hash = '" + orgABNhash + "' AND survey_id = '" + surveyID + "' ORDER BY gender;"
-
+    
   for (var i = 0; i < queries.length; i++) {
+    if (orgABNhash == 'all') {
+      queries[i] = queries[i].replace(/abn_hash = 'all' AND/, '');
+    }
     asyncQuery(queries[i], projectid, i);
   }
 

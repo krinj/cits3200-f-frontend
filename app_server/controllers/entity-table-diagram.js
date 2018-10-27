@@ -39,7 +39,7 @@ module.exports.getResults = function (req, res) {
   }  
 
   var query1Start = "SELECT DISTINCT Lower(e.name) as entity, COUNT(*) AS freq, AVG(e.score) AS aveSentiment ";
-  var query1Middle = "FROM `cits-3200.analytics.responses_dev` R, UNNEST(entity) AS e WHERE R.abn_hash = '" + orgABNhash + "' AND survey_id = '" + surveyID + "' AND R.question_id = '" + questionID + "' AND R.gender = '" + gender + "' AND R.employment_status = '" + employStatus + "' AND R.timestamp BETWEEN '" + startDate + "' AND '" + endDate + "' AND R.year_of_birth BETWEEN " + birthStart + " AND " + birthEnd;
+  var query1Middle = "FROM `cits-3200.analytics.responses_dev`, UNNEST(entity) AS e WHERE abn_hash = '" + orgABNhash + "' AND survey_id = '" + surveyID + "' AND question_id = '" + questionID + "' AND gender = '" + gender + "' AND employment_status = '" + employStatus + "' AND timestamp BETWEEN '" + startDate + "' AND '" + endDate + "' AND year_of_birth BETWEEN " + birthStart + " AND " + birthEnd;
   var query1End;
   if (displayMode == "focus") {
     query1End = " GROUP BY entity ORDER BY entity";
@@ -55,17 +55,20 @@ module.exports.getResults = function (req, res) {
   }
   var query1 = query1Start + query1Middle + query1End + ";\n";
 
-  var query2 = "SELECT DISTINCT Lower(e.name) as entity, submission_id AS responseID " + query1Middle + ";"
+  var query2 = "SELECT e.name as entity, submission_id AS responseID " + query1Middle + ";"
   
   var queries = [];
   queries[0] = query1;
   queries[1] = query2;
   for (var i = 0; i < queries.length; i++) {
+    if (orgABNhash == 'all') {
+      queries[i] = queries[i].replace(/abn_hash = 'all' AND/g, '');
+    }
     if (gender == 'all') {
-      queries[i] = queries[i].replace(/R.gender = 'all' AND/g, '');
+      queries[i] = queries[i].replace(/gender = 'all' AND/g, '');
     }
     if (employStatus == 'all') {
-      queries[i] = queries[i].replace(/R.employment_status = 'all' AND/g, '');
+      queries[i] = queries[i].replace(/employment_status = 'all' AND/g, '');
     }
   }  
 
@@ -124,10 +127,8 @@ module.exports.getResults = function (req, res) {
         entities_1.push(rows[i].entity);
         freqs.push(rows[i].freq);
         ave_sentiments.push(Math.round(rows[i].aveSentiment * 10));
-        if (i == rows.length - 1) {
-          stop1 = true;
-        }
       }
+      stop1 = true;
     }
     else if (queryIndex == 1) {
       if (rows.length == 0) {
@@ -136,10 +137,8 @@ module.exports.getResults = function (req, res) {
       for (i = 0; i < rows.length; i++) {
         response_ids.push(rows[i].responseID);
         entities_2.push(rows[i].entity);
-        if (i == rows.length - 1) {
-          stop2 = true;
-        }
       }
+      stop2 = true;
     }
   }
 

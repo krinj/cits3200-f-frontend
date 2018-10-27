@@ -37,6 +37,9 @@ module.exports.getResponse = function (req, res) {
 
   var query = "SELECT response AS responseDetail, timestamp AS submitDate, overall_sentiment from `cits-3200.analytics.responses_dev` WHERE employment_status = '" + employStatus + "' AND abn_hash = '" + orgABNhash + "' AND survey_id = '" + surveyID + "' AND question_id = '" + questionID + "' AND gender = '" + gender + "' AND timestamp BETWEEN '" + startDate + "' AND '" + endDate + "' AND year_of_birth BETWEEN " + birthStart + " AND " + birthEnd + " ;";
 
+  if (orgABNhash == 'all') {
+    query = query.replace(/abn_hash = 'all' AND/, '');
+  }
   if (gender == 'all') {
     query = query.replace(/gender = 'all' AND/g, '');
   }

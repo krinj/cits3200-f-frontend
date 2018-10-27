@@ -61,6 +61,7 @@ block content
         #timeSeriesPanel
           .timeSeriesContainer#focusTimeSeriesCont
           .timeSeriesContainer#fullTimeSeriesCont
+          #dateSliderContainer
           #dateSlider    
           p#lastDate 
             | Most recent submission: 
@@ -89,7 +90,7 @@ block content
     .centredBody
       h1 KEYWORDS &amp; CONNECTIONS
 
-      p Explore the dominant keywords and their associations as mentioned by your workers. The table and graph organise the most frequent or most strongly affective words, their relative importance, average sentiment, and the strength of pairwise relationships. Click on an entity circle to view the entities most strongly linked to it.
+      p Explore the dominant keywords and their associations as mentioned by your workers. The table and graph organise the most frequent or most strongly affective words, their relative importance, average sentiment, and the strength of pairwise relationships. Click on a keyword circle or search for a keyword (and press Enter) to view the keywords most strongly linked to it.
           
       p.centred
         b Display Mode:
@@ -107,7 +108,6 @@ block content
           | Keyword Focus
         input(type="text" list="fullEntityList" id="searchedEntity" size=15)
         datalist#fullEntityList
-        button(type="button" id="entitySearchButton") GO
 
       #entityTableDiag
         #entityTable

@@ -15,7 +15,7 @@
 
   var DEFAULT_FONT = "'Roboto Condensed', sans-serif";
   var DEFAULT_FONT_COLOUR = 'rgb(109, 109, 109)';
-  var CHART_FONT_SIZE = 13;
+  var CHART_FONT_SIZE = 14; // NB: this gets reduced slightly in the canvas
 
   var NUM_ENTITIES = 30; // (Max) number of entities to display in Entity Table & Diagram
 
@@ -162,8 +162,8 @@
       getEntityTableDiagData();
     });
 
-    // Add event listener to search 'Go' button:
-    document.getElementById('entitySearchButton').addEventListener('click', function() {  
+    // Add event listener to searched entity box:
+    document.getElementById('searchedEntity').addEventListener('change', function() {  
       FocusEntity.name = document.getElementById("searchedEntity").value;
       EntityDisplayMode = "focus";
       document.getElementById('focusRadio').checked = true;
@@ -188,10 +188,10 @@
         OrgABNs = data.orgABNs, 
         OrgABNhashes = data.orgABNhashes,
 
-        fillDropDown(OrgABNhashes, OrgNames, "orgList", false);
+        fillDropDown(OrgABNhashes, OrgNames, "orgList", true);
         fillDropDown(SurveyIDs, SurveyNames, "surveyList", false);
 
-        OrgABNhash = OrgABNhashes[0]; // choose first in list
+        OrgABNhash = 'all'; // all organisations for the survey
         SurveyID = SurveyIDs[0]; // choose first in list
 
         document.getElementById("orgList").value = OrgABNhash;
@@ -297,8 +297,11 @@
     var startDate_ms = StartDate.getTime();
     var endDate_ms = EndDate.getTime();
 
-    var slider = document.getElementById('dateSlider');
-    noUiSlider.create(slider, {
+    var sliderContDOM = document.getElementById('dateSliderContainer');
+    sliderContDOM.innerHTML = "<div id='dateSlider'></div>"; 
+    var sliderDOM = document.getElementById('dateSlider');
+
+    noUiSlider.create(sliderDOM, {
       connect: [false, true, false], // shades regions between handles
       range: {
           min: rangeStart_ms,
@@ -317,7 +320,7 @@
       document.getElementById('endDateBox')
     ];
 
-    slider.noUiSlider.on('change', function (values, handle) {
+    sliderDOM.noUiSlider.on('change', function (values, handle) {
       dateValues[handle].valueAsDate = new Date(+values[handle]);
       StartDate = new Date(document.getElementById("startDateBox").valueAsDate);
       EndDate = new Date(document.getElementById("endDateBox").valueAsDate);  
@@ -995,7 +998,7 @@
             for (j = 0; j < NumDisplayedEnts; j++) {
               ConcurrencyMatrix[i][j] = 0;
             }
-          }      
+          }        
           
           // Build the concurrency matrix:
           var prevID = -1;
@@ -1024,7 +1027,7 @@
               }
               groupedEntRanks = []; // clear the array            
             }    
-            
+
             // Check whether entity is already in group 
             // (i.e. same word appearing twice in a particular response)
             // if not, add its rank to the group
@@ -1037,6 +1040,16 @@
             prevID = thisID;        
           }
         }
+
+        // console.log("Concurrency matrix:")
+        // var thisRow;
+        // for (i = 0; i < NumDisplayedEnts; i++) {
+        //   thisRow = "";
+        //   for (j = 0; j < NumDisplayedEnts; j++) {
+        //     thisRow += ConcurrencyMatrix[i][j] + " ";
+        //   }
+        //   console.log(thisRow);
+        // }        
 
         fillEntityTable();
         drawEntityDiagram();        
@@ -1093,8 +1106,8 @@
     var maxEntRadius = 0.45 * Math.PI * orbitRadius * 2 / NUM_ENTITIES;
     var MIN_ENT_RADIUS = 5;
     var ENT_LABEL_FONTSIZE = 11; // font size in pixels/points of entity label text
-    var HOVER_BOX_WIDTH = 105;
-    var HOVER_BOX_HEIGHT = 45;
+    var HOVER_BOX_WIDTH = 90;
+    var HOVER_BOX_HEIGHT = 35;
     var html = "";
     
     var startTheta, startEntCentre_x, startEntCentre_y;
@@ -1181,23 +1194,29 @@
         textAnchor_y = centre_y - (orbitRadius + entRadius + 7 + textWidth) * Math.sin((theta + 1) * Math.PI / 180);
         textRotation = 180 - theta;
       }
-      var hoverBoxCentre_x = centre_x + (orbitRadius - 2.5*maxEntRadius) * Math.cos(theta * Math.PI / 180);
-      var hoverBoxCentre_y = centre_y - (orbitRadius - 2.5*maxEntRadius) * Math.sin(theta * Math.PI / 180);
+      var hoverBoxCentre_x = centre_x + (orbitRadius - 2.7*maxEntRadius) * Math.cos(theta * Math.PI / 180);
+      var hoverBoxCentre_y = centre_y - (orbitRadius - 2.7*maxEntRadius) * Math.sin(theta * Math.PI / 180);
       var paddedAveSentiment = padPointZero(DisplayedEntities[i].aveSentiment);
       
+      // Entity circle:
       html += "<circle class='entCircles' id='ec" + i + "' cx='" + entCentre_x + "' cy='" + entCentre_y + "' r='" + entRadius + "' + stroke='black' stroke-width='1' fill='" + getColor(fillColorFactor) + "' />";
+
+      // Entity label:
       html += "<text class='entLabel' x='" + textAnchor_x + "' y='" + textAnchor_y + "' transform='rotate(" + textRotation + "," + textAnchor_x + "," + textAnchor_y + ")'>" + DisplayedEntities[i].name + "</text>"; 
-      html += "<rect id='' x='" + (hoverBoxCentre_x - HOVER_BOX_WIDTH/2)  + "' y='" + (hoverBoxCentre_y - HOVER_BOX_HEIGHT/2) + "' width='" + HOVER_BOX_WIDTH + "' height='" + HOVER_BOX_HEIGHT  + "' rx='5' ry = '5' fill='rgb(255,255,204)' stroke='gold' stroke-width='2'  visibility='hidden'>"; 
+      
+      // Tool-tip box:
+      html += "<rect id='' x='" + (hoverBoxCentre_x - HOVER_BOX_WIDTH/2)  + "' y='" + (hoverBoxCentre_y - HOVER_BOX_HEIGHT/2) + "' width='" + HOVER_BOX_WIDTH + "' height='" + HOVER_BOX_HEIGHT  + "' fill='rgb(255,255,204)' visibility='hidden'>"; 
       html += "<set attributeName='visibility' from='hidden' to='visible' begin='ec" + i + ".mouseover' end='ec" + i + ".mouseout'/>";
       html += "</rect>";
+
+      // Tooltip text:
       html += "<text class='hoverText' x='" + (hoverBoxCentre_x - HOVER_BOX_WIDTH/2 + 5) + "' y='" + (hoverBoxCentre_y - HOVER_BOX_HEIGHT/2 + 15) + "' font-size='12' fill='black' visibility='hidden'>";
-      html += "<tspan dx='0' dy='0'>Rank: " +  (i+1) + "</tspan>";
       if (EntityDisplayMode == "focus") {
-        html += "<tspan x='" + (hoverBoxCentre_x - HOVER_BOX_WIDTH/2 + 5) + "' dy='12'>Link Freq.: " +  DisplayedEntities[i].linkFreq + "</tspan>";
+        html += "<tspan x='" + (hoverBoxCentre_x - HOVER_BOX_WIDTH/2 + 5) + "' dy='0'>Connections: " +  DisplayedEntities[i].linkFreq + "</tspan>";
       } else {
-        html += "<tspan x='" + (hoverBoxCentre_x - HOVER_BOX_WIDTH/2 + 5) + "' dy='12'>Frequency: " +  DisplayedEntities[i].freq + "</tspan>";
+        html += "<tspan x='" + (hoverBoxCentre_x - HOVER_BOX_WIDTH/2 + 5) + "' dy='0'>Frequency: " +  DisplayedEntities[i].freq + "</tspan>";
       }
-      html += "<tspan x='" + (hoverBoxCentre_x - HOVER_BOX_WIDTH/2 + 5) + "' dy='12'>Ave. Sentiment: " +  paddedAveSentiment + "</tspan>";
+      html += "<tspan x='" + (hoverBoxCentre_x - HOVER_BOX_WIDTH/2 + 5) + "' dy='12'>Sent. Score: " +  paddedAveSentiment + "</tspan>";
       html += "<set attributeName='visibility' from='hidden' to='visible' begin='ec" + i + ".mouseover' end='ec" + i + ".mouseout'/>";
       html += "</text>";
     }

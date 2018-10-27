@@ -4,7 +4,7 @@ body {
   padding: 0;
   margin: 0;
   font-family: 'Roboto Condensed', sans-serif;
-  background-color: black; /* DELETE WHEN FRAMING REMOVED */
+  background-color: rgb(31, 31, 31); /* DELETE WHEN FRAMING REMOVED */
 }
 
 h1 {
@@ -47,28 +47,27 @@ select {
   font-size: 11pt;
 }
 
-input[type='radio'] {
-  cursor: pointer;
+input {
+  font-family: 'Roboto Condensed', sans-serif;
 }
 
 input[type=date] {
-  font-family: 'Roboto Condensed', sans-serif;
   margin: 0px 5px;
   border: 1px solid rgb(204, 204, 204)
 }
 
-button {
-  font-size: 11pt;
-  font-family: 'Roboto Condensed', sans-serif; 
-  padding: 5px;
-  margin: 5px;
-  border-radius: 4px;
-  color: white;
+input[type='radio'] {
   cursor: pointer;
 }
 
-button:hover {
-  background-color:  rgb(0, 204, 0);
+button {
+  border: none;
+  font-size: 11pt;
+  font-family: 'Roboto Condensed', sans-serif; 
+  padding: 6px;
+  margin: 5px;
+  color: white;
+  cursor: pointer;
 }
 
 a {
@@ -119,7 +118,7 @@ img#LFPlogo {
   position: sticky;
   top: 0px;
   z-index: 1;
-  background-color: black;
+  background-color: rgb(31, 31, 31);
 }
 
 /*********** FILTER SECTION *************/
@@ -144,7 +143,7 @@ img#LFPlogo {
 }
 
 p.filterLine {
-  margin: 5px 5px 18px 0px;
+  margin: 5px 5px 22px 0px;
 }
 
 .section#filters label {
@@ -154,7 +153,6 @@ p.filterLine {
   margin: 5px;
   background-color: white;
   border: 2px solid rgb(136, 135, 135);
-  border-radius: 4px;
 }
 
 p#tooFewResponsesP {
@@ -175,6 +173,8 @@ label#tooFewResponses {
 
 button#resetFilters {
   background-color: rgb(80, 80, 80);
+  position: relative;
+  top: 5px;
 }
 
 button#resetFilters:hover {
@@ -221,6 +221,11 @@ span#aveSentimentSpan {
 
 #fullTimeSeriesCont {
   height: 125px;  
+}
+
+#dateSliderContainer {
+  margin: 0;
+  padding: 0;
 }
 
 #dateSlider {
@@ -332,7 +337,9 @@ input.dispModeRadio {
 }
 
 input#searchedEntity {
-  margin: 0px 10px 0px 10px;
+  margin: 0px;
+  padding: 3px;
+  border: 1px solid rgb(204, 204, 204);
 }
 
 #entityTableDiag {
@@ -352,10 +359,11 @@ table#entityTable {
 
 table#entityTable td {
   margin: -1;
-  padding: 3px;
+  padding: 2px;
   border: none;
   text-align: center;
-  color: rgb(109,109,109)
+  color: rgb(109,109,109);
+  /* font-size: 10pt; */
 }
 
 table#entityTable th {
