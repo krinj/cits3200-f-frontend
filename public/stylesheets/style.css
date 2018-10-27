@@ -1,19 +1,32 @@
 /************ GENERIC SELECTORS *************/
 
+body {
+  padding: 0;
+  margin: 0;
+  font-family: 'Roboto Condensed', sans-serif;
+  background-color: black; /* DELETE WHEN FRAMING REMOVED */
+}
+
 h1 {
-  font-size: 20pt;
+  font-size: 16pt;
   text-align: center;
   margin: 10px 0px 0px 0px;
 }
 
 h2 {
-  font-size: 16pt;
+  font-size: 14pt;
   text-align: center;
 }
 
 h3 {
-  font-size: 13pt;
+  font-size: 12pt;
   text-align: center;
+}
+
+p {
+  font-size: 11pt;
+  line-height: 20px; 
+  color: rgb(109, 109, 109)
 }
 
 td {
@@ -22,16 +35,16 @@ td {
 
 label {
   font-weight: 600;
+  padding: 5px;
+  margin: 5px;
 }
 
-input, select {
-  font-size: 11pt;
+select {
+  margin: 0;
+  padding: 0px 3px 0px 0px;
+  border: none;
   font-family: 'Roboto Condensed', sans-serif; 
-  padding: 3px;
-  margin: 5px;
-  border: 1px solid rgb(204, 204, 204);
-  border-radius: 4px;
-  box-shadow: 1px 1px 1px darkgrey;
+  font-size: 11pt;
 }
 
 input[type='radio'] {
@@ -40,6 +53,8 @@ input[type='radio'] {
 
 input[type=date] {
   font-family: 'Roboto Condensed', sans-serif;
+  margin: 0px 5px;
+  border: 1px solid rgb(204, 204, 204)
 }
 
 button {
@@ -47,10 +62,7 @@ button {
   font-family: 'Roboto Condensed', sans-serif; 
   padding: 5px;
   margin: 5px;
-  border: 1px solid rgb(204, 204, 204);
   border-radius: 4px;
-  box-shadow: 2px 2px 2px darkgrey;
-  background-color: darkgreen;
   color: white;
   cursor: pointer;
 }
@@ -80,13 +92,6 @@ a {
 }
 
 /************ SELECTORS JUST FOR FRAMING (TO DELETE) *************/
-
-body {
-  padding: 0;
-  margin: 0;
-  font-family: 'Roboto Condensed', sans-serif;
-  background-color: black;
-}
 
 #logoDiv {
   float: left;
@@ -120,56 +125,89 @@ img#LFPlogo {
 /*********** FILTER SECTION *************/
 
 .section#filters {
-  background: rgb(236, 239, 241);
-  box-shadow: 0px 3px 3px rgb(107, 107, 107);  
+  background: rgba(255, 255, 255, 0);
   position: sticky;
   top: 80px;
   z-index: 1;
 }
 
 #filterContainer {
-  padding: 5px 0px 0px 0px;
   display: flex;
+  background: rgba(255, 255, 255, 0);
 }
 
 #filterBody {
+  background: rgba(255, 255, 255, 0);
   margin: 0px;
   padding: 5px 0px 0px 0px;
   width: 1050px;
 }
 
-#filterBody select, #filterBody input {
-  margin: 0px 10px 0px 5px;
+p.filterLine {
+  margin: 5px 5px 18px 0px;
 }
 
-p.filterLine {
-  margin: 0px 0px 8px 0px;
-  font-size: 11pt;
+.section#filters label {
+  font-weight: 600;
+  color: black;
+  padding: 5px;
+  margin: 5px;
+  background-color: white;
+  border: 2px solid rgb(136, 135, 135);
+  border-radius: 4px;
+}
+
+p#tooFewResponsesP {
+  display: none;
+}
+
+label#tooFewResponses {
+  display: none;
+  color: red !important;
 }
 
 #filterButtons {
+  background: rgba(255, 255, 255, 0);
   margin-left: 10px;
   text-align: right;
   width: 130px;
-
 }
 
 button#resetFilters {
   background-color: rgb(80, 80, 80);
-  margin: 0px 5px 5px 0px;
 }
 
 button#resetFilters:hover {
   background-color: rgb(151, 149, 149);
 }
 
-p#dateNote {
-  float:right;
-  margin: 10px 20px 0px 0px;
-  font-size: 9pt;
+/*********** DIAL & TIME SERIES *************/
+
+#dialAndTimeSeries {
+  display: flex;
 }
 
-/*********** TIME SERIES *************/
+#dialPanel {
+  width: 25%;
+}
+
+canvas#dialCanvasContainer {
+  margin: 0;
+  padding: 0;
+}
+
+canvas#dialCanvas {
+  margin: 10px 0px 0px 0px;
+}
+
+span#aveSentimentSpan {
+  font-size: 28pt;
+}
+
+#timeSeriesPanel {
+  width: 75%;
+  padding-left: 20px;
+}
 
 .timeSeriesContainer {
   position: relative; 
@@ -206,89 +244,60 @@ p#firstDate {
 p#lastDate {
   float: right;
   color: grey;
-  margin-top: 5px;
-}
-
-/*********** SENTIMENT DIAL & COMPARE SENTIMENT CHART *************/
-
-#dialAndCompareChart {
-  display: flex;
-}
-
-#aveOverallSentiment {
-  width:50%;
-}
-
-#dialColumn {
-  float: left;  
-}
-
-#compareAveSentiment {
-  width:50%;
-}
-
-#compareAveSentContainer {
-  width: 180px;
-  height: 200px;
-  float: left;
-}
-
-canvas#dialCanvasContainer {
-  margin: 0;
-  padding: 0;
-}
-
-canvas#dialCanvas {
-  margin: 10px 0px 0px 0px;
+  margin-top: 0px;
 }
 
 /*********** HISTOGRAM *************/
 
+.section#histogram {
+  background-color: rgb(236, 239, 241);
+}
+
 #histogramContainer {
   display: flex; /* or inline-flex */
-  min-height: 400px;
-  
+  min-height: 400px;  
 }
 
 #histogramContainer #left {
-  width: 64%;
+  width: 66%;
   left: 0;
-  background-color: white;
-  
-  float: left;
 }
 
 #histogramContainer #right {
-  margin-left: 10px;
-  width: 32%;
+  margin: 10px 0px 10px 15px;
+  width: 33%;
   right: 0;
 }
 
+#responseMetadata {
+  visibility: hidden;
+  display: flex;
+  color: rgb(109, 109, 109);
+}
+
+p#responseIndex  {
+  font-size: 9pt;
+  width: 50%;
+  left: 0;
+  margin: 0;
+}
+
+p#responseDate  {
+  font-size: 9pt;
+  width: 50%;
+  right: 0;
+  text-align: right;
+  margin: 0;
+}
+
 #responseText {  
-  max-height: 200px;
+  max-height: 320px;
   overflow: auto;
   font-style: italic;
   font-size: 13pt;
+  line-height: 20pt;
 }
 
-#histogramContainer #centered-text {
-  text-align: center;  
-}
-#histogramSection{
-  background-color: #EEEBEB;
-}
-td.alignRight {
-  text-align: right;
-}
-
-button.responseCtrl {
-  background-color: #00B7FF;
-  margin-right: 3px;
-}
-
-strong#responseIndex {
-  margin: 0px 5px;
-}
 
 /*********** SUMMARY STATISTICS *************/
 
@@ -330,13 +339,10 @@ input#searchedEntity {
   display:flex
 }
 
-#entityTable {
-  width: 300px;
-}
-
 #entityDiag {
   width: 800px;
   margin-left:50px;
+  right: 0;
 }
 
 table#entityTable {
@@ -344,31 +350,42 @@ table#entityTable {
   border-collapse: collapse;
 }
 
-table#entityTable th, table#entityTable td {
-  border: 1px solid grey;
+table#entityTable td {
   margin: -1;
   padding: 3px;
-  font-size: 10pt;
+  border: none;
+  text-align: center;
+  color: rgb(109,109,109)
 }
 
 table#entityTable th {
-  background-color: rgb(182, 182, 182);
+  margin: -1;
+  padding: 5px;
+  border: 1px solid white;
+  background-color: rgb(127, 127, 127);
+  color: white;
   font-weight: bold;
 }
 
+table#entityTable th#keywordHead {
+  text-align: left !important;
+}
+
+table#entityTable td.keywords {
+  text-align: left !important;
+  color: black;
+  font-weight: 600;
+}
+
 col#etcol1 {
-  width: 40px;
+  max-width: 150px;
 }
 
 col#etcol2 {
-  max-width: 140px;
-}
-
-col#etcol3 {
   width: 65px;
 }
 
-col#etcol4 {
+col#etcol3 {
   width: 55px;
 }
 
@@ -386,3 +403,4 @@ text.entLabel {
 tspan.bold {
   font-weight: bold;
 }
+

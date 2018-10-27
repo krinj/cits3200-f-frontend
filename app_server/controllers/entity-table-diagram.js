@@ -67,7 +67,6 @@ module.exports.getResults = function (req, res) {
     if (employStatus == 'all') {
       queries[i] = queries[i].replace(/R.employment_status = 'all' AND/g, '');
     }
-    console.log(queries[i]);
   }  
 
   // Arrays to store columns of query 1:

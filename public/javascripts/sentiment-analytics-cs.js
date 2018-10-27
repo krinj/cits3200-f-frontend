@@ -13,6 +13,10 @@
   var GREY_COLOUR = [188, 191, 191];
   var GREEN_COLOUR = [52, 143, 104];
 
+  var DEFAULT_FONT = "'Roboto Condensed', sans-serif";
+  var DEFAULT_FONT_COLOUR = 'rgb(109, 109, 109)';
+  var CHART_FONT_SIZE = 13;
+
   var NUM_ENTITIES = 30; // (Max) number of entities to display in Entity Table & Diagram
 
   // *** TODO: Server should POST the logged in user's organisation name ***
@@ -20,7 +24,7 @@
 
   // *** TESTING: High level filters
   var OrgNames = []; 
-  var OrgABNs = [];
+  // var OrgABNs = [];
   var OrgABNhashes = [];
   var SurveyNames = [];
   var SurveyIDs = [];  
@@ -45,10 +49,7 @@
 
   // Filter result variables:
   var NumResponses;
-  var PercentCompleted;
-  var AveCharCount;
-  var MaxCharCount;
-  var NationalAveSentiment;
+  // var NationalAveSentiment;
   var OrgAveSentiment;
   var HistogramScoreFreqs = [];  
   
@@ -60,7 +61,7 @@
   var ResponseScore;
   var IndexOfResponse = 0;
   var ResponseInfo;
-  var NoHistColSelected = false;
+  var NoHistColSelected = true;
 
   // Entity Listing/Diagram variables:
   var EntityDisplayMode = "topFreq";
@@ -251,7 +252,6 @@
   function fillDropDowns() {
 
     fillDropDown(QuestionIDs, QuestionWordings, "questionList", false);
-    fillDropDown(SurveyIDs, SurveyNames, "surveyList", true);
     fillDropDown(EmployStatuses, EmployStatuses, "employStatus", true);
     fillDropDown(GenderOptions, GenderOptions, "gender", true);
     
@@ -343,43 +343,53 @@
       dataType: 'JSON',
       success: function (data) { // data is the JSON object returned from SQL via controller
         NumResponses = data.numResponses;
-        OrgAveSentiment = data.orgAveSentiment;
-        // NationalAveSentiment = data.nationalAveSentiment;
-        HistogramScoreFreqs = data.scoreFreqArray;
-
-        // Initialise/clear data for time-series:
-        var timeSeriesX = [];
-        var timeSeriesY = [];
-        WeekAveX = [];
-        WeekAveY = [];
-
-        var timeSeries = data.timeSeries;
-        for (i = 0; i < timeSeries.length; i++) {
-          timeSeriesX.push(timeSeries[i].ds.value.slice(0, 10));
-          timeSeriesY.push(timeSeries[i].avgOs*10);
+        document.getElementById("tooFewResponsesP").style.display = "none";
+        document.getElementById("tooFewResponses").style.display = "none";
+        document.getElementById("tooFewResponses").innerText = "";
+        if (NumResponses < 5) {
+          console.log("showing too few error message")
+          document.getElementById("tooFewResponsesP").style.display = "block";
+          document.getElementById("tooFewResponses").style.display = "inline";
+          document.getElementById("tooFewResponses").innerText = "The selected filter configuration would return less than 5 responses, which may affect the privacy of the respondents. Please select another filter configuration.";
+        } 
+        else {
+          OrgAveSentiment = data.orgAveSentiment;
+          // NationalAveSentiment = data.nationalAveSentiment;
+          HistogramScoreFreqs = data.scoreFreqArray;
+  
+          // Initialise/clear data for time-series:
+          var timeSeriesX = [];
+          var timeSeriesY = [];
+          WeekAveX = [];
+          WeekAveY = [];
+  
+          var timeSeries = data.timeSeries;
+          for (i = 0; i < timeSeries.length; i++) {
+            timeSeriesX.push(timeSeries[i].ds.value.slice(0, 10));
+            timeSeriesY.push(timeSeries[i].avgOs*10);
+          }
+          for (i = 0; i < timeSeries.length; i += 4) {
+            WeekAveY.push(Math.round(((timeSeriesY[i] + timeSeriesY[i + 1] + timeSeriesY[i + 2] + timeSeriesY[i + 3]) / 4)*10)/10);
+            WeekAveX.push(timeSeriesX[i]);
+          }
+  
+          // Populate the entity list for search:
+          var entities = data.entityList;
+          var html = "";
+          for (i = 0; i < entities.length; i++) {
+            html += "<option value='" + entities[i].ent + "'>";
+          }
+          document.getElementById("fullEntityList").innerHTML = html;
+  
+          document.getElementById("numResponses").innerText = "" + NumResponses + " responses";
+  
+          renderFocusTimeSeries();
+          renderFullTimeSeries();
+          renderAveSentimentDial();
+          renderHistogramByScore();
+          fillResponseDetails();
+          getEntityTableDiagData();
         }
-        for (i = 0; i < timeSeries.length; i += 4) {
-          WeekAveY.push(Math.round(((timeSeriesY[i] + timeSeriesY[i + 1] + timeSeriesY[i + 2] + timeSeriesY[i + 3]) / 4)*10)/10);
-          WeekAveX.push(timeSeriesX[i]);
-        }
-
-        // Populate the entity list for search:
-        var entities = data.entityList;
-        var html = "";
-        for (i = 0; i < entities.length; i++) {
-          html += "<option value='" + entities[i].ent + "'>";
-        }
-        document.getElementById("fullEntityList").innerHTML = html;
-
-        renderFocusTimeSeries();
-        renderFullTimeSeries();
-        renderAveSentimentDial();
-        renderCompareSentimentChart();
-        renderHistogramByScore();
-        fillResponseDetails();
-        fillSummaryTable();
-        getEntityTableDiagData();
-
       },
       error: function (data) {
         console.log("Could not load results data.");
@@ -452,12 +462,20 @@
               min: StartDate,
               max: EndDate,              
             },
+            ticks: { 
+              fontSize: CHART_FONT_SIZE,
+              fontColor: DEFAULT_FONT_COLOUR,
+              fontFamily: DEFAULT_FONT,
+            },
           }],
           yAxes: [{
             ticks: {
               min: -10,
               max: 10,
-              stepSize: 5
+              stepSize: 5,
+              fontSize: CHART_FONT_SIZE,
+              fontColor: DEFAULT_FONT_COLOUR,
+              fontFamily: DEFAULT_FONT,
             },
           }],
         },
@@ -572,12 +590,20 @@
               min: FirstDate,
               max: LastDate,              
             },
+            ticks: { 
+              fontSize: CHART_FONT_SIZE,
+              fontColor: DEFAULT_FONT_COLOUR,
+              fontFamily: DEFAULT_FONT,
+            },
           }],
           yAxes: [{
             ticks: {
               min: -10,
               max: 10,
-              stepSize: 10
+              stepSize: 10,
+              fontSize: CHART_FONT_SIZE,
+              fontColor: DEFAULT_FONT_COLOUR,
+              fontFamily: DEFAULT_FONT,
             },
           }],
         },
@@ -627,80 +653,20 @@
     ctx.beginPath();
     ctx.moveTo(needleBaseX, needleBaseY);
     ctx.lineTo(needleTipX, needleTipY);
-    ctx.scale(5,5);
-    ctx.strokeStyle='red';
+    ctx.scale(5, 5);
+    ctx.strokeStyle = 'red';
     ctx.stroke();
 
-    document.getElementById('aveSentimentSpan').innerHTML = Math.round(OrgAveSentiment * 10) / 10;
-  }
-
-  function renderCompareSentimentChart() {
-
-    // (Re-)create canvas DOM element
-    // (otherwise duplicate canvases will form on fetching new results)
-    var canvasContainerDOM = document.getElementById("compareAveSentContainer");
-    var html = "<canvas id='compareAveSentCanvas'>";
-    html += "Your browser does not support the HTML5 canvas tag. </canvas>";
-    canvasContainerDOM.innerHTML = html; // (re-) insert the canvas into the DOM
-    var canvasDOM = document.getElementById("compareAveSentCanvas");
-    
-    var myChart = canvasDOM.getContext('2d');
-    var compareSentChart = new Chart(myChart, {
-      type: 'bar',
-      data: {
-        labels: [ "Your Organisation" , "National Average" ],
-        datasets: [{
-          data: [OrgAveSentiment, NationalAveSentiment],
-          backgroundColor: [
-          'rgba(255, 206, 86, 1)',
-          'rgba(128, 128, 128, 1)',
-          ],
-          borderWidth: 1,
-          borderColor: '#777',
-          hoverBorderWidth: 6,
-          hoverBorderColor: 'red'
-        }]
-      },
-      options: {
-        maintainAspectRatio: false,
-        scales: {
-          xAxes:[{
-            gridLines:{display:false},
-            barPercentage: 1,
-            categoryPercentage: 1,
-            labels: ["",""],
-          }],          
-          yAxes: [{
-             gridLines:{
-              display:false
-            },
-            ticks: {
-              min: -10,
-              max: 10,
-              maxTicksLimit: 10,
-              stepSize: 5
-            },                   
-          }],
-        },
-        title: {
-          display: false
-        },
-        legend: {          
-          display: false,        
-        },
-        layout: {
-          padding: {
-            left:  50,
-            right: 0,
-            bottom: 10,
-            top: 10
-          }
-        },
-        tooltips: {
-          enabled: true
-        }
-      }
-    });
+    var scoreRounded = Math.round(OrgAveSentiment * 10) / 10;
+    var scoreString = "";
+    if (scoreRounded > 0) {
+      scoreString = "+ " + scoreRounded; 
+    } else if (scoreRounded == 0) {
+      scoreString = scoreRounded;
+    } else {
+      scoreString = "- " + scoreRounded *-1;
+    }
+    document.getElementById('aveSentimentSpan').innerHTML = scoreString;
   }
 
   function renderHistogramByScore () {
@@ -739,8 +705,9 @@
       type: 'bar',
       data: data,
       options: {
-        defaultFontFamily: Chart.defaults.global.defaultFontFamily = "'Roboto Condensed'",
-        defaultFontSize: Chart.defaults.global.defaultFontSize = 16,
+        defaultFontFamily: Chart.defaults.global.defaultFontFamily = DEFAULT_FONT,
+        defaultFontColor: Chart.defaults.global.defaultFontColor = DEFAULT_FONT_COLOUR,
+        defaultFontSize: Chart.defaults.global.defaultFontSize = CHART_FONT_SIZE,
         legend: {
           display: false
         },
@@ -828,7 +795,7 @@
     var previousClickedBar = -1;
 
     canvasDOM.onclick = function (event) {
-      NoHistColSelected = true;
+      NoHistColSelected = false;
       var activeElement = histogramChart.getElementAtEvent(event)[0];
       ResponseScore = histogramChart.data.labels[activeElement._index];
       if (ResponseScore != previousClickedBar) {
@@ -874,27 +841,20 @@
   }
 
   function fillResponseDetails() {
-    if (NoHistColSelected == false) {
-      document.getElementById('responseScoreSpan').innerHTML = "< Click on the bars to explore responses.";
+    if (NoHistColSelected) {
+      document.getElementById('responseMetadata').style.visibility = "hidden";
+      document.getElementById('responseText').innerText = "<-- Click on the bars to explore responses.";
       return;
+    } else {
+      document.getElementById('responseMetadata').style.visibility = "visible";
+      var text = "Response: " + (IndexOfResponse + 1) + " of " + ResponseInfo.length
+      document.getElementById('responseIndex').innerText = text;
+      var date = ResponseInfo[IndexOfResponse].submitDate.value.slice(0, 10);
+      document.getElementById('responseDate').innerText = "Date: " + date;
+      document.getElementById('responseText').innerText = '"' + ResponseInfo[IndexOfResponse].responseDetail + '"';
+
     }
 
-    var date = ResponseInfo[IndexOfResponse].submitDate.value.slice(0, 10);
-    document.getElementById('responseDateSpan').innerHTML = "Date: " + date;
-    document.getElementById('responseScoreSpan').innerHTML = "Response for overall score of " + ResponseScore;
-    document.getElementById('responseText').innerHTML = "''" + ResponseInfo[IndexOfResponse].responseDetail + "''";
-    var responseIndex = IndexOfResponse + 1;
-    document.getElementById('responseIndex').innerHTML = "Response " + responseIndex + ' '; //+ ResponseInfo.length;
-    document.getElementById('responseIndex').style = 'font-size:14px;';
-    document.getElementById('totalResponse').innerHTML = "Of " + ResponseInfo.length;
-    document.getElementById('totalResponse').style = 'font-size:14px;';
-  }
-  
-  function fillSummaryTable() {
-    document.getElementById("numResponses").innerHTML = NumResponses;
-    document.getElementById("percentCompleted").innerHTML = PercentCompleted;
-    document.getElementById("aveCharCount").innerHTML = AveCharCount;
-    document.getElementById("maxCharCount").innerHTML = MaxCharCount;
   }
 
   // Render the Entity Table and Linkage Diagram for a given set of filters, display mode 
@@ -1101,24 +1061,12 @@
   }   
 
   function fillEntityTable() {
-
-    if (EntityDisplayMode == "focus") {
-      document.getElementById("linkSpan").innerText = "Link ";
-    } else {
-      document.getElementById("linkSpan").innerText = "";
-    }
-
     var html = "";
     for(i = 0; i < NumDisplayedEnts; i++) {
       html += "<tr>";
-      html += "<td class='centred'>" + (DisplayedEntities[i].rank + 1) + "</td>";
-      html += "<td>" + DisplayedEntities[i].name + "</td>";
-      if (EntityDisplayMode == "focus") {
-        html += "<td class='centred'>" + DisplayedEntities[i].linkFreq + "</td>";  
-      } else {
-        html += "<td class='centred'>" + DisplayedEntities[i].freq + "</td>";
-      }
-      html += "<td class='centred'>" + padPointZero(DisplayedEntities[i].aveSentiment) + "</td>";
+      html += "<td class='keywords'>" + DisplayedEntities[i].name + "</td>";
+      html += "<td>" + DisplayedEntities[i].freq + "</td>";
+      html += "<td>" + padPointZero(DisplayedEntities[i].aveSentiment) + "</td>";
       html += "</tr>";
     }
     document.getElementById('entityTableBody').innerHTML = html;
@@ -1141,8 +1089,8 @@
     var SVG_HEIGHT = 800; 
     var centre_x = SVG_WIDTH / 2;
     var centre_y = SVG_HEIGHT / 2;
-    var orbitRadius = SVG_HEIGHT / 2 - 150;
-    var maxEntRadius = 0.5 * Math.PI * orbitRadius * 2 / NUM_ENTITIES;
+    var orbitRadius = SVG_HEIGHT / 2 - 160;
+    var maxEntRadius = 0.45 * Math.PI * orbitRadius * 2 / NUM_ENTITIES;
     var MIN_ENT_RADIUS = 5;
     var ENT_LABEL_FONTSIZE = 11; // font size in pixels/points of entity label text
     var HOVER_BOX_WIDTH = 105;

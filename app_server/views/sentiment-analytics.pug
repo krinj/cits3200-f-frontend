@@ -4,17 +4,15 @@ block content
   .section#filters
     .centredBody#filterContainer
       #filterBody
-        p#dateNote *Can use the time-series date range slider to control dates
         p.filterLine 
-          label Organisation
-          |:
-          select#orgList
-          label Survey
-          |:
-          select#surveyList
-          label Question
-          |:
-          select#questionList
+          label Organisation : 
+            select#orgList
+          label Survey :
+            select#surveyList
+          label Question :
+            select#questionList
+            | &emsp;
+            span#numResponses
         p.filterLine
           label Gender:
             select#gender             
@@ -30,14 +28,12 @@ block content
               option(value='age65plus') 65+  
           label Employment Status: 
             select#employStatus       
-          | &emsp;
-          label Date Range
-            | * &nbsp; 
-            i Start:
-            input(id="startDateBox" type="date" name="startDate")
-          label 
-            i End: 
+          label Date Range: 
+            input(id="startDateBox" type="date" name="startDate") 
+            | to
             input(id="endDateBox" type="date" name="endDate")
+        p.filterLine#tooFewResponsesP
+          label#tooFewResponses
       #filterButtons
         br
         br
@@ -45,102 +41,61 @@ block content
 
   .section#aveSentiment
     .centredBody
-      p#orgABNp Organisation ABN Hash: 
-        span#orgABNhash=orgABNhash
-      h1 SENTIMENT ANALYTICS
-      h2 OVERALL SENTIMENTS OF RESPONSES
+      h1 WORKER SENTIMENTS
 
-      p.centred 
-        | Overall sentiment of each response is scored from 
-        span(style="color:rgb(204, 69, 40)") -10 (extremely negative) 
-        | to 
-        span(style="color:rgb(52, 143, 104)") 10 (extremely positive)
-        |. Data for these overall scores is visualised in the charts below.
+      p Understand what matters most to your people and purpose. These sentiment analytics instantly summarise your workers’ own words and feelings in response to the selected question. Discover the phenomena raised most frequently, the tone, the associations, and change over time. So you can identify and address the trends, issues, and opportunities that matter for impact.
 
-      h3 Overall Sentiment Over Time
-      p The following is a smoothed plot of the daily average overall sentiment for responses for the question selected, with the above filters applied. The lower graph shows the time series over all time for this survey; click into it or drag the handles to define the sub-range presented in the main graph above (this also changes the filter dates above). 
+      #dialAndTimeSeries
+        #dialPanel
+          img#dialImg(src='/images/sentiment_dial.png', style='display:none')
+          #dialCanvasContainer
+          p.centred 
+            span#aveSentimentSpan
+          p 
+            | Our artificial intelligence isolates meaningful phrases from natural language text, understands the affective polarity and assigns an overall sentiment score: 
+            span(style="color:rgb(204, 69, 40)") -10 (very negative) 
+            | to 
+            span(style="color:rgb(52, 143, 104)") +10 (very positive) 
+            | to each response. 
+          p The time series shows how the weekly average score changed over time, whereas the dial shows the overall average for the whole time period.
+        #timeSeriesPanel
+          .timeSeriesContainer#focusTimeSeriesCont
+          .timeSeriesContainer#fullTimeSeriesCont
+          #dateSlider    
+          p#lastDate 
+            | Most recent submission: 
+            b 
+              span#lastDateSpan
+          p#firstDate 
+            b
+              span#firstDateSpan
+            | : First submission
 
-      .timeSeriesContainer#focusTimeSeriesCont
-      .timeSeriesContainer#fullTimeSeriesCont
-      #dateSlider    
-      p#lastDate 
-        | Most recent submission: 
-        b 
-          span#lastDateSpan
-      p#firstDate 
-        b
-          span#firstDateSpan
-        | : First submission
-
-      #dialAndCompareChart
-        #aveOverallSentiment
-          h3 Overall Sentiment (averaged over selected time period)
-          #dialColumn
-            img#dialImg(src='/images/sentiment_dial.png', style='display:none')
-            #dialCanvasContainer
-            p.centred 
-              b Ave. Score: 
-              span#aveSentimentSpan
-          #dialExplan
-            p.centred [Explanatory text about the dial]
-        #compareAveSentiment
-          h3 How Your Sentiment Compares
-          #compareAveSentContainer
-          p.centred [Explanatory text about this chart]
-  #histogramSection
-      h3(style = "font-size: 20px") Sentiment Distribution
+  .section#histogram
+    .centredBody
+      h1 SENTIMENT DISTRIBUTION
       p This histogram represents the distribution of all responses over their respective sentiment score. The higher the bar, the more responses with that particular affective magnitude. Click on the bars to explore the responses in verbatim.
   
       #histogramContainer
         #left
           #histogramByScoreContainer
         #right
-         #selected-response
-            #centered-text
-            p.centred
-              strong 
-              span#responseScoreSpan 
-            p
-              | &emsp;
-              | &emsp;
-              | &emsp;
-              span#responseIndex
-              span#totalResponse  
-              | &emsp;
-              | &emsp;
-              | &emsp;
-              
-              span(style='font-size:14px;')#responseDateSpan 
-            p#responseText
-            
-            
-  .section#summary
-    .centredBody
-      h2 RESPONSE STATISTICS
-      table
-        tr
-          th Response Count
-          th % Completed*
-          th Ave. Character Count
-          th Max. Character Count
-        tr
-          td#numResponses
-          td#percentCompleted
-          td#aveCharCount
-          td#maxCharCount
-        tr
-          td(align='center' colspan='4')
-            span(style='font-size: 11pt;') * Percentage of surveys submitted that had a response entered for this question.              
+          #responseMetadata
+            p#responseIndex
+            p#responseDate  
+          p#responseText   
 
   .section#EntityAnalytics
     .centredBody
-      h2 KEYWORDS/ENTITIES IN RESPONSES
+      h1 KEYWORDS &amp; CONNECTIONS
+
+      p Explore the dominant keywords and their associations as mentioned by your workers. The table and graph organise the most frequent or most strongly affective words, their relative importance, average sentiment, and the strength of pairwise relationships. Click on an entity circle to view the entities most strongly linked to it.
           
       p.centred
         b Display Mode:
         label.displayMode#topFreqLabel
           input(type="radio" class="dispModeRadio" name="dispModeRadio" value="topFreq" checked) 
-          | Top Frequency Keywords 
+          | Most Frequent Keywords 
         label.displayMode#mostPosLabel
           input(type="radio" class="dispModeRadio" name="dispModeRadio" value="mostPos") 
           | Most Positive Keywords
@@ -156,23 +111,17 @@ block content
 
       #entityTableDiag
         #entityTable
-          h3 Keyword Listing
           table#entityTable 
             col#etcol1
             col#etcol2
             col#etcol3
-            col#etcol4
             thead
               tr
-                th Rank
-                th Keyword
-                th
-                  span#linkSpan
-                  | Frequency
-                th Average Sentiment Score
+                th#keywordHead Keyword
+                th Frequency
+                th Sentiment Score
             tbody#entityTableBody
         #entityDiag
-          h3 Keyword Linkage Diagram
           svg#entitySvg(width="800" height="800") 
 
 
