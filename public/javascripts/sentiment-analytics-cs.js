@@ -5,39 +5,53 @@
 // JQUERY FUNCTIONS
 (function($) {
 
-  /*** GLOBAL VARIABLES / 'MODEL' VARIABLES (Use capital first letter for globals): ***/
+  /*** GLOBAL VARIABLES / 'MODEL' VARIABLES 
+   * (Use capital first letter for globals, all caps for constants): ***/
 
   // Sentiment colour scale end a middle points:
   var RED_COLOUR = [204, 69, 40];
   var GREY_COLOUR = [188, 191, 191];
   var GREEN_COLOUR = [52, 143, 104];
 
+  var DEFAULT_FONT = "'Roboto Condensed', sans-serif";
+  var DEFAULT_FONT_COLOUR = 'rgb(109, 109, 109)';
+  var CHART_FONT_SIZE = 14; // NB: this gets reduced slightly in the canvas
+
   var NUM_ENTITIES = 30; // (Max) number of entities to display in Entity Table & Diagram
 
   // *** TODO: Server should POST the logged in user's organisation name ***
-  var Organisation = "Honeywell"; 
-  
-  var FirstDate;
-  var LastDate;
-  var QuestionArray = [];
-  var SurveyName;
+  // var OrgABNhash; 
 
-  // Filter variables:
-  var QuestionNum;
+  // *** TESTING: High level filters
+  var OrgNames = []; 
+  // var OrgABNs = [];
+  var OrgABNhashes = [];
+  var SurveyNames = [];
+  var SurveyIDs = [];  
+  var OrgABNhash; // selected organisation's ABN hash
+  var SurveyID; // selected survey's ID
+  
+  // Filter option sets:
+  var QuestionWordings = [];
+  var QuestionIDs = [];
+  var EmployStatuses = [];
+  var GenderOptions = [];
+  
+  // Active filter variables:
+  var QuestionID;
   var Gender;
   var AgeRange;
   var EmployStatus;
   var StartDate;
   var EndDate;
+  var FirstDate;
+  var LastDate;
 
   // Filter result variables:
   var NumResponses;
-  var PercentCompleted;
-  var AveCharCount;
-  var MaxCharCount;
-  var NationalAveSentiment;
+  // var NationalAveSentiment;
   var OrgAveSentiment;
-  var ScoreFreqArray = [];  
+  var HistogramScoreFreqs = [];  
   
   // Time Series variables:
   var WeekAveX = [];  // weekly dates
@@ -47,7 +61,7 @@
   var ResponseScore;
   var IndexOfResponse = 0;
   var ResponseInfo;
-  var CheckFlag = false;
+  var NoHistColSelected = true;
 
   // Entity Listing/Diagram variables:
   var EntityDisplayMode = "topFreq";
@@ -68,24 +82,25 @@
 
   window.onload = function() {
 
-    // Set initial filter values:
-    QuestionNum = 1;
-    Gender = 'all';
-    AgeRange = 'all';
-    EmployStatus = 'all';
+    // Get logged in user's organisation's ABN hash
+    // OrgABNhash = document.getElementById("orgABNhash").innerText;
 
-    // Initialise the elements in the DOM accordingly:
-    document.getElementById("questionList").value = QuestionNum;
-    document.getElementById("gender").value = Gender;
-    document.getElementById("ageRange").value = AgeRange;
-    document.getElementById("employStatus").value = EmployStatus;
-
-    runInitialQueries();
+    getOrgsAndSurveys();
 
     /************************** ESTABLISH EVENT LISTENERS ****************************/
 
+    // TESTING ONLY ***
+    document.getElementById("orgList").addEventListener('change', function () {
+      OrgABNhash = document.getElementById("orgList").value;      
+      runInitialQueries();      
+    });
+    document.getElementById("surveyList").addEventListener('change', function () {
+      SurveyID = document.getElementById("surveyList").value;      
+      runInitialQueries();      
+    });
+
     document.getElementById("questionList").addEventListener('change', function () {
-      QuestionNum = document.getElementById("questionList").value;      
+      QuestionID = document.getElementById("questionList").value;      
       loadResults();      
     });
 
@@ -115,11 +130,6 @@
       // Don't need to re-fetch data, only re-render it based on new date range  
       loadResults(); 
     });
-
-    // Event Listener for Fetch Results button:
-    // document.getElementById('fetchResults').addEventListener('click', function () {
-    //   loadResults();
-    // });
 
     // When resetting filters, reset start date and end date to overall range start and range end:
     document.getElementById('resetFilters').addEventListener('click', function() {
@@ -152,8 +162,8 @@
       getEntityTableDiagData();
     });
 
-    // Add event listener to search 'Go' button:
-    document.getElementById('entitySearchButton').addEventListener('click', function() {  
+    // Add event listener to searched entity box:
+    document.getElementById('searchedEntity').addEventListener('change', function() {  
       FocusEntity.name = document.getElementById("searchedEntity").value;
       EntityDisplayMode = "focus";
       document.getElementById('focusRadio').checked = true;
@@ -162,43 +172,100 @@
 
   };
 
+  // *** FOR TESTING ONLY ***
+  // jQuery AJAX function to get organisation and survey data from the database
+  function getOrgsAndSurveys() {
+    $.ajax({
+      url: "/get-orgs-and-surveys",   
+      // i.e. [Nodejs app]/app_server/controllers/get-orgs-and-surveys.js
+      data: {}, // data to send to controller
+      method: "POST",
+      dataType: 'JSON',
+      success: function (data) { // data is the JSON object returned from controller
+        SurveyNames = data.surveyNames,
+        SurveyIDs = data.surveyIDs,
+        OrgNames = data.orgNames,
+        OrgABNs = data.orgABNs, 
+        OrgABNhashes = data.orgABNhashes,
+
+        fillDropDown(OrgABNhashes, OrgNames, "orgList", true);
+        fillDropDown(SurveyIDs, SurveyNames, "surveyList", false);
+
+        OrgABNhash = 'all'; // all organisations for the survey
+        SurveyID = SurveyIDs[0]; // choose first in list
+
+        document.getElementById("orgList").value = OrgABNhash;
+        document.getElementById("surveyList").value = SurveyID;
+
+        runInitialQueries();
+      },
+      error: function (data) {
+        console.log("Could not fetch organisation and survey id data.");
+      }
+    });
+  }
+
+  function fillDropDown(valueArray, textArray, selectDOM, inclAll) {
+    var html = "";
+    if (inclAll) {
+      html += "<option value='all'>ALL</option>";
+    }
+    for (var i = 0; i < textArray.length; i++) {
+      html += "<option value='" + valueArray[i] + "'>" + textArray[i] + "</option>";
+    }
+    document.getElementById(selectDOM).innerHTML = html;
+  }
+
   // jQuery AJAX function to fetch and load results from the database
   function runInitialQueries() {
     $.ajax({
       url: "/initial-queries",   
       // i.e. [Nodejs app]/app_server/controllers/initial-queries.js
       data: { // data to send to controller
-        // "orgABN" : OrganisatioABN,
+        "orgABNhash" : OrgABNhash,
+        "surveyID" : SurveyID,
       },
       method: "POST",
       dataType: 'JSON',
       success: function (data) { // data is the JSON object returned from SQL via controller
-
+        QuestionWordings = data.questionWordings;
+        QuestionIDs = data.questionIDs;
+        GenderOptions = data.genderOptions;
+        EmployStatuses = data.employmentStatuses;
         FirstDate = new Date(data.firstDate.slice(0,10));
         LastDate = new Date(data.lastDate.slice(0,10));
         StartDate = FirstDate;
         EndDate = LastDate;
-        QuestionArray = data.questionArray;
 
-        fillQuestionsList();
+        fillDropDowns();
         setOverallDates();
         renderDateSlider();
         loadResults();
       },
       error: function (data) {
-        console.log("Could not load results data.");
+        console.log("Could not fetch results of initial queries.");
       }
     });
   }
 
-  // Set the filter DOM inputs to the values returned from the loadResults method
-  // (which have been saved to global variables)
-  function fillQuestionsList() {
-    var html = "";
-    for(var i = 0; i < QuestionArray.length; i++) {
-      html += "<option value='" + (i+1) + "'>" + QuestionArray[i] + "</option>";
-    }
-    document.getElementById("questionList").innerHTML = html;    
+  // Populate the filter drop downs:
+  function fillDropDowns() {
+
+    fillDropDown(QuestionIDs, QuestionWordings, "questionList", false);
+    fillDropDown(EmployStatuses, EmployStatuses, "employStatus", true);
+    fillDropDown(GenderOptions, GenderOptions, "gender", true);
+    
+    // Set initial filter values:    
+    QuestionID = QuestionIDs[0];
+    Gender = 'all';
+    AgeRange = 'all';
+    EmployStatus = 'all';
+
+    // Initialise the elements in the DOM accordingly:    
+    document.getElementById("questionList").value = QuestionID;
+    document.getElementById("gender").value = Gender;
+    document.getElementById("ageRange").value = AgeRange;
+    document.getElementById("employStatus").value = EmployStatus;    
   }
 
   // Set full survey history date range limits 
@@ -230,8 +297,11 @@
     var startDate_ms = StartDate.getTime();
     var endDate_ms = EndDate.getTime();
 
-    var slider = document.getElementById('dateSlider');
-    noUiSlider.create(slider, {
+    var sliderContDOM = document.getElementById('dateSliderContainer');
+    sliderContDOM.innerHTML = "<div id='dateSlider'></div>"; 
+    var sliderDOM = document.getElementById('dateSlider');
+
+    noUiSlider.create(sliderDOM, {
       connect: [false, true, false], // shades regions between handles
       range: {
           min: rangeStart_ms,
@@ -250,7 +320,7 @@
       document.getElementById('endDateBox')
     ];
 
-    slider.noUiSlider.on('change', function (values, handle) {
+    sliderDOM.noUiSlider.on('change', function (values, handle) {
       dateValues[handle].valueAsDate = new Date(+values[handle]);
       StartDate = new Date(document.getElementById("startDateBox").valueAsDate);
       EndDate = new Date(document.getElementById("endDateBox").valueAsDate);  
@@ -263,7 +333,9 @@
     $.ajax({
       url: "/load-results",   // i.e. [Nodejs app]/app_server/controllers/load-results.js
       data: { // data to send to load-results.js controller
-        "questionNum" : QuestionNum,
+        "orgABNhash" : OrgABNhash,
+        "surveyID" : SurveyID,
+        "questionID" : QuestionID,
         "gender" : Gender,
         "ageRange" : AgeRange,
         "employStatus" : EmployStatus,
@@ -274,46 +346,53 @@
       dataType: 'JSON',
       success: function (data) { // data is the JSON object returned from SQL via controller
         NumResponses = data.numResponses;
-        PercentCompleted = data.percentCompleted;
-        AveCharCount = data.aveCharCount;
-        MaxCharCount = data.maxCharCount;
-        OrgAveSentiment = data.orgAveSentiment;
-        NationalAveSentiment = data.nationalAveSentiment;
-        ScoreFreqArray = data.scoreFreqArray;
-
-        // Initialise/clear data for time-series:
-        var timeSeriesX = [];
-        var timeSeriesY = [];
-        WeekAveX = [];
-        WeekAveY = [];
-
-        var timeSeries = data.timeSeries;
-        for (i = 0; i < timeSeries.length; i++) {
-          timeSeriesX.push(timeSeries[i].ds.slice(0, 10));
-          timeSeriesY.push(timeSeries[i].avgOs);
+        document.getElementById("tooFewResponsesP").style.display = "none";
+        document.getElementById("tooFewResponses").style.display = "none";
+        document.getElementById("tooFewResponses").innerText = "";
+        if (NumResponses < 5) {
+          console.log("showing too few error message")
+          document.getElementById("tooFewResponsesP").style.display = "block";
+          document.getElementById("tooFewResponses").style.display = "inline";
+          document.getElementById("tooFewResponses").innerText = "The selected filter configuration would return less than 5 responses, which may affect the privacy of the respondents. Please select another filter configuration.";
+        } 
+        else {
+          OrgAveSentiment = data.orgAveSentiment;
+          // NationalAveSentiment = data.nationalAveSentiment;
+          HistogramScoreFreqs = data.scoreFreqArray;
+  
+          // Initialise/clear data for time-series:
+          var timeSeriesX = [];
+          var timeSeriesY = [];
+          WeekAveX = [];
+          WeekAveY = [];
+  
+          var timeSeries = data.timeSeries;
+          for (i = 0; i < timeSeries.length; i++) {
+            timeSeriesX.push(timeSeries[i].ds.value.slice(0, 10));
+            timeSeriesY.push(timeSeries[i].avgOs*10);
+          }
+          for (i = 0; i < timeSeries.length; i += 4) {
+            WeekAveY.push(Math.round(((timeSeriesY[i] + timeSeriesY[i + 1] + timeSeriesY[i + 2] + timeSeriesY[i + 3]) / 4)*10)/10);
+            WeekAveX.push(timeSeriesX[i]);
+          }
+  
+          // Populate the entity list for search:
+          var entities = data.entityList;
+          var html = "";
+          for (i = 0; i < entities.length; i++) {
+            html += "<option value='" + entities[i].ent + "'>";
+          }
+          document.getElementById("fullEntityList").innerHTML = html;
+  
+          document.getElementById("numResponses").innerText = "" + NumResponses + " responses";
+  
+          renderFocusTimeSeries();
+          renderFullTimeSeries();
+          renderAveSentimentDial();
+          renderHistogramByScore();
+          fillResponseDetails();
+          getEntityTableDiagData();
         }
-        for (i = 0; i < timeSeries.length; i += 4) {
-          WeekAveY.push(Math.round(((timeSeriesY[i] + timeSeriesY[i + 1] + timeSeriesY[i + 2] + timeSeriesY[i + 3]) / 4)*10)/10);
-          WeekAveX.push(timeSeriesX[i]);
-        }
-
-        // Populate the entity list for search:
-        var entities = data.entityList;
-        var html = "";
-        for (i = 0; i < entities.length; i++) {
-          html += "<option value='" + entities[i] + "'>";
-        }
-        document.getElementById("fullEntityList").innerHTML = html;
-
-        renderFocusTimeSeries();
-        renderFullTimeSeries();
-        renderAveSentimentDial();
-        renderCompareSentimentChart();
-        renderHistogramByScore();
-        fillResponseDetails();
-        fillSummaryTable();
-        getEntityTableDiagData();
-
       },
       error: function (data) {
         console.log("Could not load results data.");
@@ -337,61 +416,6 @@
     }
     return paddedString;
   }
-
-  // Get time series data, for either the full or focus time series
-  // param series - either "full" or "focused"
-  function getTimeSeriesData(series) {
-
-    var start, end;
-    if (series == "full") {
-      start = FirstDate;
-      end = LastDate;
-    } else {
-      start = StartDate;
-      end = EndDate;
-    }
-
-    $.ajax({
-      url: "/time-series",   // i.e. [Nodejs app]/app_server/controllers/full-time-series.js
-      data: { // data to send to controller
-        "questionNum" : QuestionNum,
-        "gender" : Gender,
-        "ageRange" : AgeRange,
-        "employStatus" : EmployStatus,
-        "startDate" : toYYYY_MM_DD(start),
-        "endDate" : toYYYY_MM_DD(end)
-      },
-      method: "POST",
-      dataType: 'JSON',
-      success: function (data) { // data is the JSON object returned from SQL via controller
-
-        // Initialise/clear data:
-        var timeSeriesX = [];
-        var timeSeriesY = [];
-        WeekAveX = [];
-        WeekAveY = [];
-
-        var timeSeries = data.timeSeries;
-        for (i = 0; i < timeSeries.length; i++) {
-          timeSeriesX.push(timeSeries[i].ds.slice(0, 10));
-          timeSeriesY.push(timeSeries[i].avgOs);
-        }
-        for (i = 0; i < timeSeries.length; i += 4) {
-          WeekAveY.push(Math.round(((timeSeriesY[i] + timeSeriesY[i + 1] + timeSeriesY[i + 2] + timeSeriesY[i + 3]) / 4)*10)/10);
-          WeekAveX.push(timeSeriesX[i]);
-        }
-
-        if (series == "full") {
-          renderFullTimeSeries();
-        } else {
-          renderFocusTimeSeries();
-        }        
-      },
-      error: function (data) {
-        console.log("Could not fetch time series data.");
-      }
-    });
-  }  
 
   function renderFocusTimeSeries() {
 
@@ -441,21 +465,25 @@
               min: StartDate,
               max: EndDate,              
             },
+            ticks: { 
+              fontSize: CHART_FONT_SIZE,
+              fontColor: DEFAULT_FONT_COLOUR,
+              fontFamily: DEFAULT_FONT,
+            },
           }],
           yAxes: [{
             ticks: {
               min: -10,
               max: 10,
-              stepSize: 5
+              stepSize: 5,
+              fontSize: CHART_FONT_SIZE,
+              fontColor: DEFAULT_FONT_COLOUR,
+              fontFamily: DEFAULT_FONT,
             },
           }],
         },
-        title: {
-          display: false
-        },
-        legend: {
-          display: false,
-        },
+        title: { display: false },
+        legend: { display: false },
         layout: {
           padding: {
             left: 0,
@@ -464,9 +492,7 @@
             top: 0
           }
         },
-        tooltips: {
-          enabled: true
-        }
+        tooltips: { enabled: true }
       }
     });
   }
@@ -567,12 +593,20 @@
               min: FirstDate,
               max: LastDate,              
             },
+            ticks: { 
+              fontSize: CHART_FONT_SIZE,
+              fontColor: DEFAULT_FONT_COLOUR,
+              fontFamily: DEFAULT_FONT,
+            },
           }],
           yAxes: [{
             ticks: {
               min: -10,
               max: 10,
-              stepSize: 10
+              stepSize: 10,
+              fontSize: CHART_FONT_SIZE,
+              fontColor: DEFAULT_FONT_COLOUR,
+              fontFamily: DEFAULT_FONT,
             },
           }],
         },
@@ -592,7 +626,7 @@
         },
         tooltips: { enabled: false},
         animation: { duration: 0 },
-        hover: {animationDuration: 0 },
+        hover: { animationDuration: 0 },
         responsiveAnimationDuration: 0, 
       }
     });
@@ -622,80 +656,20 @@
     ctx.beginPath();
     ctx.moveTo(needleBaseX, needleBaseY);
     ctx.lineTo(needleTipX, needleTipY);
-    ctx.scale(5,5);
-    ctx.strokeStyle='red';
+    ctx.scale(5, 5);
+    ctx.strokeStyle = 'red';
     ctx.stroke();
 
-    document.getElementById('aveSentimentSpan').innerHTML = Math.round(OrgAveSentiment * 10) / 10;
-  }
-
-  function renderCompareSentimentChart() {
-
-    // (Re-)create canvas DOM element
-    // (otherwise duplicate canvases will form on fetching new results)
-    var canvasContainerDOM = document.getElementById("compareAveSentContainer");
-    var html = "<canvas id='compareAveSentCanvas'>";
-    html += "Your browser does not support the HTML5 canvas tag. </canvas>";
-    canvasContainerDOM.innerHTML = html; // (re-) insert the canvas into the DOM
-    var canvasDOM = document.getElementById("compareAveSentCanvas");
-    
-    var myChart = canvasDOM.getContext('2d');
-    var compareSentChart = new Chart(myChart, {
-      type: 'bar',
-      data: {
-        labels: [ "Your Organisation" , "National Average" ],
-        datasets: [{
-          data: [OrgAveSentiment, NationalAveSentiment],
-          backgroundColor: [
-          'rgba(255, 206, 86, 1)',
-          'rgba(128, 128, 128, 1)',
-          ],
-          borderWidth: 1,
-          borderColor: '#777',
-          hoverBorderWidth: 6,
-          hoverBorderColor: 'red'
-        }]
-      },
-      options: {
-        maintainAspectRatio: false,
-        scales: {
-          xAxes:[{
-            gridLines:{display:false},
-            barPercentage: 1,
-            categoryPercentage: 1,
-            labels: ["",""],
-          }],          
-          yAxes: [{
-             gridLines:{
-              display:false
-            },
-            ticks: {
-              min: -10,
-              max: 10,
-              maxTicksLimit: 10,
-              stepSize: 5
-            },                   
-          }],
-        },
-        title: {
-          display: false
-        },
-        legend: {          
-          display: false,        
-        },
-        layout: {
-          padding: {
-            left:  50,
-            right: 0,
-            bottom: 10,
-            top: 10
-          }
-        },
-        tooltips: {
-          enabled: true
-        }
-      }
-    });
+    var scoreRounded = Math.round(OrgAveSentiment * 10) / 10;
+    var scoreString = "";
+    if (scoreRounded > 0) {
+      scoreString = "+ " + scoreRounded; 
+    } else if (scoreRounded == 0) {
+      scoreString = scoreRounded;
+    } else {
+      scoreString = "- " + scoreRounded *-1;
+    }
+    document.getElementById('aveSentimentSpan').innerHTML = scoreString;
   }
 
   function renderHistogramByScore () {
@@ -715,30 +689,28 @@
     var tiers = 20;
 
     // Populate data and bar colours
-    for (var i = 0; i < tiers + 1; i++)
-    {
+    for (var i = 0; i < tiers + 1; i++) {
       xData.push(i - tiers/2);
-      yData.push(ScoreFreqArray[i]);
+      yData.push(HistogramScoreFreqs[i]);
       fillColor.push(getColor(i/tiers));
     }
 
     var data = {
       labels: xData,
-      datasets: [
-        {
-          fill: true,
-          backgroundColor: fillColor,
-          data: yData,
-        }
-      ]
+      datasets: [{
+        fill: true,
+        backgroundColor: fillColor,
+        data: yData,          
+      }]
     };
 
     var histogramChart = new Chart(ctx, {
       type: 'bar',
       data: data,
       options: {
-        defaultFontFamily: Chart.defaults.global.defaultFontFamily = "'Roboto Condensed'",
-        defaultFontSize:  Chart.defaults.global.defaultFontSize = 16,
+        defaultFontFamily: Chart.defaults.global.defaultFontFamily = DEFAULT_FONT,
+        defaultFontColor: Chart.defaults.global.defaultFontColor = DEFAULT_FONT_COLOUR,
+        defaultFontSize: Chart.defaults.global.defaultFontSize = CHART_FONT_SIZE,
         legend: {
           display: false
         },
@@ -746,16 +718,16 @@
           yAxes: [{
             scaleLabel: {
               display: true,
-              labelString: "Frequency"
+              labelString: "Response Frequency"
             },
-            ticks : {
-              beginAtZero : true
+            ticks: {
+              beginAtZero: true
             }
           }],
           xAxes: [{
             scaleLabel: {
               display: true,
-              labelString: "Overall Sentiment Score"
+              labelString: "Sentiment Score"
             },
             barPercentage: 0.9,
             categoryPercentage: 1.0
@@ -763,7 +735,61 @@
         },
         tooltips: {
           enabled: false,
-          borderColor: 'red',
+          custom: function (tooltipModel) {
+            // Tooltip Element
+            var tooltipEl = document.getElementById('chartjs-tooltip');
+
+            // Create element on first render
+            if (!tooltipEl) {
+              tooltipEl = document.createElement('div');
+              tooltipEl.id = 'chartjs-tooltip';
+              tooltipEl.innerHTML = "<table></table>";
+              document.body.appendChild(tooltipEl);
+            }
+
+            // Hide if no tooltip
+            if (tooltipModel.opacity === 0) {
+              tooltipEl.style.opacity = 0;
+              return;
+            }
+
+            // Set caret Position
+            tooltipEl.classList.remove('above', 'below', 'no-transform');
+            if (tooltipModel.yAlign) {
+              tooltipEl.classList.add(tooltipModel.yAlign);
+            } else {
+              tooltipEl.classList.add('no-transform');
+            }
+
+            function getBody(bodyItem) {
+              return bodyItem.lines;
+            }
+
+            // Set Text
+            if (tooltipModel.body) {
+              var titleLines = tooltipModel.title || [];
+              var bodyLines = tooltipModel.body.map(getBody);
+              var innerHtml = '<thead>';
+              innerHtml += 'Click me';
+              var tableRoot = tooltipEl.querySelector('table');
+              tableRoot.innerHTML = innerHtml;
+            }
+
+            // 'this' will be the overall tooltip
+            var position = this._chart.canvas.getBoundingClientRect();
+
+            // Display, position, and set styles for font
+            tooltipEl.style.opacity = 1;
+            tooltipEl.style.position = 'absolute';
+            tooltipEl.style.left = position.left + window.pageXOffset + tooltipModel.caretX + 'px';
+            tooltipEl.style.top = position.top + window.pageYOffset + tooltipModel.caretY + 'px';
+            tooltipEl.style.fontFamily = tooltipModel._bodyFontFamily;
+            tooltipEl.style.fontSize = tooltipModel.bodyFontSize + 'px';
+            tooltipEl.style.fontStyle = tooltipModel._bodyFontStyle;
+            tooltipEl.style.padding = tooltipModel.yPadding + 'px ' + tooltipModel.xPadding + 'px';
+            tooltipEl.style.pointerEvents = 'none';
+            tooltipEl.style.backgroundColor = '#F9EAC7';
+          }
         }
       }
     });
@@ -772,25 +798,25 @@
     var previousClickedBar = -1;
 
     canvasDOM.onclick = function (event) {
-      CheckFlag = true;
+      NoHistColSelected = false;
       var activeElement = histogramChart.getElementAtEvent(event)[0];
       ResponseScore = histogramChart.data.labels[activeElement._index];
       if (ResponseScore != previousClickedBar) {
         IndexOfResponse = 0;
         previousClickedBar = ResponseScore;
-        //histogramChart.data.datasets[0].backgroundColor = 'red';
-        //histogramChart.data.labels.xData = ResponseScore+10;
         $.ajax({
           url: "/response-details",
           // i.e. [Nodejs app]/app_server/controllers/response-details.js
           data: { // data to send to controller
-            "score": previousClickedBar,
-            "questionNum": QuestionNum,
+            "orgABNhash" : OrgABNhash,
+            "surveyID" : SurveyID,
+            "questionID" : QuestionID,
             "gender": Gender,
             "ageRange": AgeRange,
             "employStatus": EmployStatus,
             "startDate": toYYYY_MM_DD(StartDate),
-            "endDate": toYYYY_MM_DD(EndDate)
+            "endDate": toYYYY_MM_DD(EndDate),
+            "score": previousClickedBar
           },
           method: "POST",
           dataType: 'JSON',
@@ -809,12 +835,8 @@
     };    
   }
   
-  function nextResponse() {
-    //  var next = document.getElementById("nextButton");
-    //next.onclick = function () {
-    
+  function nextResponse() {  
     if (IndexOfResponse == ResponseInfo.length - 1) {
-      alert("This is already the last response.");
       return;
     }
     IndexOfResponse++;
@@ -822,26 +844,20 @@
   }
 
   function fillResponseDetails() {
-
-    if (CheckFlag == false) {
-      document.getElementById('responseText').innerHTML = "Please click the chart bars.";
+    if (NoHistColSelected) {
+      document.getElementById('responseMetadata').style.visibility = "hidden";
+      document.getElementById('responseText').innerText = "<-- Click on the bars to explore responses.";
       return;
+    } else {
+      document.getElementById('responseMetadata').style.visibility = "visible";
+      var text = "Response: " + (IndexOfResponse + 1) + " of " + ResponseInfo.length
+      document.getElementById('responseIndex').innerText = text;
+      var date = ResponseInfo[IndexOfResponse].submitDate.value.slice(0, 10);
+      document.getElementById('responseDate').innerText = "Date: " + date;
+      document.getElementById('responseText').innerText = '"' + ResponseInfo[IndexOfResponse].responseDetail + '"';
+
     }
-    var date = ResponseInfo[IndexOfResponse].submitDate.slice(0, 10);
-    document.getElementById('responseDateSpan').innerHTML = date;
-    document.getElementById('responseScoreSpan').innerHTML = ResponseScore;
-    document.getElementById('responseText').innerHTML = "''" + ResponseInfo[IndexOfResponse].responseDetail + "''";
-    var responseIndex = IndexOfResponse + 1;
-    document.getElementById('responseIndex').innerHTML = responseIndex + ' '; //+ ResponseInfo.length;
-    document.getElementById('responseIndex').style = 'font-weight:bold; font-size:17px;';
-    document.getElementById('totalResponse').innerHTML = ResponseInfo.length;
-  }
-  
-  function fillSummaryTable() {
-    document.getElementById("numResponses").innerHTML = NumResponses;
-    document.getElementById("percentCompleted").innerHTML = PercentCompleted;
-    document.getElementById("aveCharCount").innerHTML = AveCharCount;
-    document.getElementById("maxCharCount").innerHTML = MaxCharCount;
+
   }
 
   // Render the Entity Table and Linkage Diagram for a given set of filters, display mode 
@@ -852,7 +868,9 @@
       url: "/entity-table-diagram",   
       // i.e. [Nodejs app]/app_server/controllers/entity-table-diagram.js
       data: { // data to send to controller
-        "questionNum" : QuestionNum,
+        "orgABNhash" : OrgABNhash,
+        "surveyID" : SurveyID,
+        "questionID" : QuestionID,
         "gender" : Gender,
         "ageRange" : AgeRange,
         "employStatus" : EmployStatus,
@@ -980,7 +998,7 @@
             for (j = 0; j < NumDisplayedEnts; j++) {
               ConcurrencyMatrix[i][j] = 0;
             }
-          }      
+          }        
           
           // Build the concurrency matrix:
           var prevID = -1;
@@ -1009,7 +1027,7 @@
               }
               groupedEntRanks = []; // clear the array            
             }    
-            
+
             // Check whether entity is already in group 
             // (i.e. same word appearing twice in a particular response)
             // if not, add its rank to the group
@@ -1022,6 +1040,16 @@
             prevID = thisID;        
           }
         }
+
+        // console.log("Concurrency matrix:")
+        // var thisRow;
+        // for (i = 0; i < NumDisplayedEnts; i++) {
+        //   thisRow = "";
+        //   for (j = 0; j < NumDisplayedEnts; j++) {
+        //     thisRow += ConcurrencyMatrix[i][j] + " ";
+        //   }
+        //   console.log(thisRow);
+        // }        
 
         fillEntityTable();
         drawEntityDiagram();        
@@ -1046,24 +1074,12 @@
   }   
 
   function fillEntityTable() {
-
-    if (EntityDisplayMode == "focus") {
-      document.getElementById("linkSpan").innerText = "Link ";
-    } else {
-      document.getElementById("linkSpan").innerText = "";
-    }
-
     var html = "";
     for(i = 0; i < NumDisplayedEnts; i++) {
       html += "<tr>";
-      html += "<td class='centred'>" + (DisplayedEntities[i].rank + 1) + "</td>";
-      html += "<td>" + DisplayedEntities[i].name + "</td>";
-      if (EntityDisplayMode == "focus") {
-        html += "<td class='centred'>" + DisplayedEntities[i].linkFreq + "</td>";  
-      } else {
-        html += "<td class='centred'>" + DisplayedEntities[i].freq + "</td>";
-      }
-      html += "<td class='centred'>" + padPointZero(DisplayedEntities[i].aveSentiment) + "</td>";
+      html += "<td class='keywords'>" + DisplayedEntities[i].name + "</td>";
+      html += "<td>" + DisplayedEntities[i].freq + "</td>";
+      html += "<td>" + padPointZero(DisplayedEntities[i].aveSentiment) + "</td>";
       html += "</tr>";
     }
     document.getElementById('entityTableBody').innerHTML = html;
@@ -1086,12 +1102,12 @@
     var SVG_HEIGHT = 800; 
     var centre_x = SVG_WIDTH / 2;
     var centre_y = SVG_HEIGHT / 2;
-    var orbitRadius = SVG_HEIGHT / 2 - 150;
-    var maxEntRadius = 0.5 * Math.PI * orbitRadius * 2 / NUM_ENTITIES;
+    var orbitRadius = SVG_HEIGHT / 2 - 160;
+    var maxEntRadius = 0.45 * Math.PI * orbitRadius * 2 / NUM_ENTITIES;
     var MIN_ENT_RADIUS = 5;
     var ENT_LABEL_FONTSIZE = 11; // font size in pixels/points of entity label text
-    var HOVER_BOX_WIDTH = 105;
-    var HOVER_BOX_HEIGHT = 45;
+    var HOVER_BOX_WIDTH = 90;
+    var HOVER_BOX_HEIGHT = 35;
     var html = "";
     
     var startTheta, startEntCentre_x, startEntCentre_y;
@@ -1178,23 +1194,29 @@
         textAnchor_y = centre_y - (orbitRadius + entRadius + 7 + textWidth) * Math.sin((theta + 1) * Math.PI / 180);
         textRotation = 180 - theta;
       }
-      var hoverBoxCentre_x = centre_x + (orbitRadius - 2.5*maxEntRadius) * Math.cos(theta * Math.PI / 180);
-      var hoverBoxCentre_y = centre_y - (orbitRadius - 2.5*maxEntRadius) * Math.sin(theta * Math.PI / 180);
+      var hoverBoxCentre_x = centre_x + (orbitRadius - 2.7*maxEntRadius) * Math.cos(theta * Math.PI / 180);
+      var hoverBoxCentre_y = centre_y - (orbitRadius - 2.7*maxEntRadius) * Math.sin(theta * Math.PI / 180);
       var paddedAveSentiment = padPointZero(DisplayedEntities[i].aveSentiment);
       
+      // Entity circle:
       html += "<circle class='entCircles' id='ec" + i + "' cx='" + entCentre_x + "' cy='" + entCentre_y + "' r='" + entRadius + "' + stroke='black' stroke-width='1' fill='" + getColor(fillColorFactor) + "' />";
+
+      // Entity label:
       html += "<text class='entLabel' x='" + textAnchor_x + "' y='" + textAnchor_y + "' transform='rotate(" + textRotation + "," + textAnchor_x + "," + textAnchor_y + ")'>" + DisplayedEntities[i].name + "</text>"; 
-      html += "<rect id='' x='" + (hoverBoxCentre_x - HOVER_BOX_WIDTH/2)  + "' y='" + (hoverBoxCentre_y - HOVER_BOX_HEIGHT/2) + "' width='" + HOVER_BOX_WIDTH + "' height='" + HOVER_BOX_HEIGHT  + "' rx='5' ry = '5' fill='rgb(255,255,204)' stroke='gold' stroke-width='2'  visibility='hidden'>"; 
+      
+      // Tool-tip box:
+      html += "<rect id='' x='" + (hoverBoxCentre_x - HOVER_BOX_WIDTH/2)  + "' y='" + (hoverBoxCentre_y - HOVER_BOX_HEIGHT/2) + "' width='" + HOVER_BOX_WIDTH + "' height='" + HOVER_BOX_HEIGHT  + "' fill='rgb(255,255,204)' visibility='hidden'>"; 
       html += "<set attributeName='visibility' from='hidden' to='visible' begin='ec" + i + ".mouseover' end='ec" + i + ".mouseout'/>";
       html += "</rect>";
+
+      // Tooltip text:
       html += "<text class='hoverText' x='" + (hoverBoxCentre_x - HOVER_BOX_WIDTH/2 + 5) + "' y='" + (hoverBoxCentre_y - HOVER_BOX_HEIGHT/2 + 15) + "' font-size='12' fill='black' visibility='hidden'>";
-      html += "<tspan dx='0' dy='0'>Rank: " +  (i+1) + "</tspan>";
       if (EntityDisplayMode == "focus") {
-        html += "<tspan x='" + (hoverBoxCentre_x - HOVER_BOX_WIDTH/2 + 5) + "' dy='12'>Link Freq.: " +  DisplayedEntities[i].linkFreq + "</tspan>";
+        html += "<tspan x='" + (hoverBoxCentre_x - HOVER_BOX_WIDTH/2 + 5) + "' dy='0'>Connections: " +  DisplayedEntities[i].linkFreq + "</tspan>";
       } else {
-        html += "<tspan x='" + (hoverBoxCentre_x - HOVER_BOX_WIDTH/2 + 5) + "' dy='12'>Frequency: " +  DisplayedEntities[i].freq + "</tspan>";
+        html += "<tspan x='" + (hoverBoxCentre_x - HOVER_BOX_WIDTH/2 + 5) + "' dy='0'>Frequency: " +  DisplayedEntities[i].freq + "</tspan>";
       }
-      html += "<tspan x='" + (hoverBoxCentre_x - HOVER_BOX_WIDTH/2 + 5) + "' dy='12'>Ave. Sentiment: " +  paddedAveSentiment + "</tspan>";
+      html += "<tspan x='" + (hoverBoxCentre_x - HOVER_BOX_WIDTH/2 + 5) + "' dy='12'>Sent. Score: " +  paddedAveSentiment + "</tspan>";
       html += "<set attributeName='visibility' from='hidden' to='visible' begin='ec" + i + ".mouseover' end='ec" + i + ".mouseout'/>";
       html += "</text>";
     }

@@ -3,23 +3,21 @@ extends layout
 block content
   .section#filters
     .centredBody#filterContainer
-      #filterHeading
-        h2 RESULT FILTERS
       #filterBody
-        p#dateNote *Can use the time-series date range slider to control dates
-        p.filterLine
-          label Question
-          |:
-          select#questionList(name='question')
+        p.filterLine 
+          label Organisation : 
+            select#orgList
+          label Survey :
+            select#surveyList
+          label Question :
+            select#questionList
+            | &emsp;
+            span#numResponses
         p.filterLine
           label Gender:
-            select#gender(name="gender")
-              option(value='all') ALL
-              option(value='male') Male
-              option(value='female') Female
-              option(value='unspecified') Unspecified
+            select#gender             
           label Age:
-            select#ageRange(name="ageRange")
+            select#ageRange
               option(value='all') ALL
               option(value='ageunder18') Under 18
               option(value='age18_24') 18-24
@@ -29,20 +27,13 @@ block content
               option(value='age55_64') 55-64
               option(value='age65plus') 65+  
           label Employment Status: 
-            select#employStatus(name="employStatus")
-              option(value='all') ALL
-              option(value='permanent') Permanent
-              option(value='fixedTerm') Fixed Term
-              option(value='partTime') Part-Time
-              option(value='casual') Casual
-          | &emsp;
-          label Date Range
-            | * &nbsp; 
-            i Start:
-            input(id="startDateBox" type="date" name="startDate")
-          label 
-            i End: 
+            select#employStatus       
+          label Date Range: 
+            input(id="startDateBox" type="date" name="startDate") 
+            | to
             input(id="endDateBox" type="date" name="endDate")
+        p.filterLine#tooFewResponsesP
+          label#tooFewResponses
       #filterButtons
         br
         br
@@ -50,95 +41,62 @@ block content
 
   .section#aveSentiment
     .centredBody
-      h1 SENTIMENT ANALYTICS
-      h2 OVERALL SENTIMENTS OF RESPONSES
+      h1 WORKER SENTIMENTS
 
-      p.centred 
-        | Overall sentiment of each response is scored from 
-        span(style="color:rgb(204, 69, 40)") -10 (extremely negative) 
-        | to 
-        span(style="color:rgb(52, 143, 104)") 10 (extremely positive)
-        |. Data for these overall scores is visualised in the charts below.
+      p Understand what matters most to your people and purpose. These sentiment analytics instantly summarise your workers’ own words and feelings in response to the selected question. Discover the phenomena raised most frequently, the tone, the associations, and change over time. So you can identify and address the trends, issues, and opportunities that matter for impact.
 
-      h3 Overall Sentiment Over Time
-      p The following is a smoothed plot of the daily average overall sentiment for responses for the question selected, with the above filters applied. The lower graph shows the time series over all time for this survey; click into it or drag the handles to define the sub-range presented in the main graph above (this also changes the filter dates above). 
+      #dialAndTimeSeries
+        #dialPanel
+          img#dialImg(src='/images/sentiment_dial.png', style='display:none')
+          #dialCanvasContainer
+          p.centred 
+            span#aveSentimentSpan
+          p 
+            | Our artificial intelligence isolates meaningful phrases from natural language text, understands the affective polarity and assigns an overall sentiment score: 
+            span(style="color:rgb(204, 69, 40)") -10 (very negative) 
+            | to 
+            span(style="color:rgb(52, 143, 104)") +10 (very positive) 
+            | to each response. 
+          p The time series shows how the weekly average score changed over time, whereas the dial shows the overall average for the whole time period.
+        #timeSeriesPanel
+          .timeSeriesContainer#focusTimeSeriesCont
+          .timeSeriesContainer#fullTimeSeriesCont
+          #dateSliderContainer
+          #dateSlider    
+          p#lastDate 
+            | Most recent submission: 
+            b 
+              span#lastDateSpan
+          p#firstDate 
+            b
+              span#firstDateSpan
+            | : First submission
 
-      .timeSeriesContainer#focusTimeSeriesCont
-      .timeSeriesContainer#fullTimeSeriesCont
-      #dateSlider    
-      p#lastDate 
-        | Most recent submission: 
-        b 
-          span#lastDateSpan
-      p#firstDate 
-        b
-          span#firstDateSpan
-        | : First submission
-
-      #dialAndCompareChart
-        #aveOverallSentiment
-          h3 Overall Sentiment (averaged over selected time period)
-          #dialColumn
-            img#dialImg(src='/images/sentiment_dial.png', style='display:none')
-            #dialCanvasContainer
-            p.centred 
-              b Ave. Score: 
-              span#aveSentimentSpan
-          #dialExplan
-            p.centred [Explanatory text about the dial]
-        #compareAveSentiment
-          h3 How Your Sentiment Compares
-          #compareAveSentContainer
-          p.centred [Explanatory text about this chart]
-
-      h3 Histogram of Response Sentiment Scores for Result Period
-      p Frequency describes  amount of responses which have a particular overall sentiment score. If the column for 0 has a frequency of 0.4, then there were 40 responses for the question that had an overall sentiment for the response of 0.
+  .section#histogram
+    .centredBody
+      h1 SENTIMENT DISTRIBUTION
+      p This histogram represents the distribution of all responses over their respective sentiment score. The higher the bar, the more responses with that particular affective magnitude. Click on the bars to explore the responses in verbatim.
+  
       #histogramContainer
         #left
           #histogramByScoreContainer
         #right
-         #selected-response
-            #centered-text
-            p.centred
-              strong Response for overall score of 
-              span#responseScoreSpan 
-            p.centred
-              text(style='font-size:12px;') Response: 
-              span#responseIndex
-              text(style='font-size:12px;') of  
-              span#totalResponse  
-            p#responseText
-            p.centred
-              text(style='font-size:12px;') Date 
-              span(style='font-size:12px;')#responseDateSpan 
-            
-  .section#summary
-    .centredBody
-      h2 RESPONSE STATISTICS
-      table
-        tr
-          th Response Count
-          th % Completed*
-          th Ave. Character Count
-          th Max. Character Count
-        tr
-          td#numResponses
-          td#percentCompleted
-          td#aveCharCount
-          td#maxCharCount
-        tr
-          td(align='center' colspan='4')
-            span(style='font-size: 11pt;') * Percentage of surveys submitted that had a response entered for this question.              
+          #responseMetadata
+            p#responseIndex
+            p#responseDate  
+          p#responseText   
 
   .section#EntityAnalytics
     .centredBody
-      h2 KEYWORDS/ENTITIES IN RESPONSES
+      h1 KEYWORDS &amp; CONNECTIONS
 
+      p Explore the dominant keywords and their associations as mentioned by your workers. The table and graph organise the most frequent or most strongly affective words, their relative importance, average sentiment, and the strength of pairwise relationships. Click on a keyword circle or search for a keyword (and press Enter) to view the keywords most strongly linked to it.
+          
       p.centred
         b Display Mode:
         label.displayMode#topFreqLabel
           input(type="radio" class="dispModeRadio" name="dispModeRadio" value="topFreq" checked) 
-          | Top Frequency Keywords 
+          | Most Frequent Keywords 
         label.displayMode#mostPosLabel
           input(type="radio" class="dispModeRadio" name="dispModeRadio" value="mostPos") 
           | Most Positive Keywords
@@ -150,28 +108,22 @@ block content
           | Keyword Focus
         input(type="text" list="fullEntityList" id="searchedEntity" size=15)
         datalist#fullEntityList
-        button(type="button" id="entitySearchButton") GO
 
       #entityTableDiag
         #entityTable
-          h3 Keyword Listing
           table#entityTable 
             col#etcol1
             col#etcol2
             col#etcol3
-            col#etcol4
             thead
               tr
-                th Rank
-                th Keyword
-                th
-                  span#linkSpan
-                  | Frequency
-                th Average Sentiment Score
+                th#keywordHead Keyword
+                th Frequency
+                th Sentiment Score
             tbody#entityTableBody
         #entityDiag
-          h3 Keyword Linkage Diagram
           svg#entitySvg(width="800" height="800") 
+
 
 
 
